@@ -1,0 +1,13 @@
+version: "1.0"
+repo: itcm-dp-consentimiento-ibk
+equipo: data-platform
+stack:
+  - bq_pipeline
+
+modules:
+  - id: consentimiento-ibk
+    type: bq_pipeline
+    spec: docs/specs/spec-ibk-20260819-001.yaml
+    status: draft
+    etapa_actual: PLAN
+    descripcion: "Centralización de Consentimientos LPDP Interbank (IBK)"

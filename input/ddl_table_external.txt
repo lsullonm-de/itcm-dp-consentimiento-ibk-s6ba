@@ -1,0 +1,29 @@
+CREATE OR REPLACE EXTERNAL TABLE `dev-intercorp-data-storage.lsullon.T_IN_LPDP_CONSENTIMIENTO_{YYYYMMDD}_validacion` (
+  process_date STRING,
+  itc_company_id STRING,
+  itc_company_name STRING,
+  business_unit_id STRING,
+  business_unit STRING,
+  consent_transaction_id STRING,
+  party_id STRING,
+  consent_id STRING,
+  documento_legal_id STRING,
+  approval_channel_id STRING,
+  approval_channel_name STRING,
+  employee_id STRING,
+  place_id STRING,
+  consent_type STRING,
+  consent_date STRING,
+  consent_date_time STRING,
+  signed_document STRING,
+  record_source STRING,
+  load_date STRING,
+  creation_user STRING
+)
+OPTIONS (
+  format = 'CSV',
+  uris = ['gs://p-ibkbi-rdp-stg-dlk-us-suoh/data/m_consent/current/{YYYYMMDD}/{UUID}/T_IN_LPDP_CONSENTIMIENTO_{YYYYMMDD}.txt.gz'],
+  field_delimiter = '|',      -- Cambia por ',' si tu delimitador es coma
+  skip_leading_rows = 0,     -- Cambia a 0 si el archivo NO tiene cabecera
+  allow_quoted_newlines = true
+);

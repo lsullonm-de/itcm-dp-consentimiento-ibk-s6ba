@@ -1,0 +1,23 @@
+CREATE OR REPLACE TABLE `dev-intercorp-data-storage.master_party.ba_customer_consent_group`
+(
+  process_date          DATE,
+  itc_company_id        STRING,
+  itc_company_name      STRING,
+  business_unit_id      STRING,
+  business_unit         STRING,
+  id                    STRING,
+  documento_legal_id    STRING,
+  approval_channel_id   STRING,
+  approval_channel_name STRING,
+  employee_id           STRING,
+  place_id              STRING,
+  consent_date          DATE,
+  signed_document       STRING,
+  record_source         STRING,
+  load_date             DATETIME,
+  creation_user         STRING
+)
+PARTITION BY consent_date
+OPTIONS (
+  description = 'Tabla de agrupación de consentimientos de clientes Intercorp'
+);

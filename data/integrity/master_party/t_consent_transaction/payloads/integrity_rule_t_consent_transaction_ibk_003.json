@@ -1,0 +1,20 @@
+{
+  "code": "RI-IBK-T_CONSENT_TRANSACTION-003",
+  "process_code": "${env}-t-consent-transaction-ibk",
+  "task_code": "${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk",
+  "company_id": "000",
+  "company_code": "IBK",
+  "source_id": "consentimiento_ibk_archivo",
+  "source_role": "principal",
+  "source_asset": "${project_consentimiento_ibk_archivo}.${dataset_consentimiento_ibk_archivo}.t_consent_transaction_{fecha_archivo}_external",
+  "check_type": "llave_nula",
+  "check_action": "excluir_registros",
+  "tolerance_days": null,
+  "key_columns": ["party_id", "consent_transaction_id"],
+  "date_field": null,
+  "business_name": "Excluir llave nula de la fuente principal (consentimiento_ibk_archivo)",
+  "technical_name": "RI-IBK-T_CONSENT_TRANSACTION-003",
+  "flag_active": "1",
+  "last_status_code": null,
+  "creation_user": "dataops-deploy"
+}

@@ -1,0 +1,229 @@
+2026-03-02
+ok aqui te paso algunas definiciones para enriquecer el standar necesario y skills para dataops
+
+A. BIGQUERY
+- Ultima actualizacion> 20260304
+
+1. Proyectos
+1.1. proyectos donde estan las tablas input: Aqui las tablas ya existen y  forman parte del modelo data storage de toda empresa, generalemten pedimos permisos a las cuentas de servicio sobre estas tablas
+    para variables de despliegue, cada tabla input debe tener su propia variable despliegue para su proyecto como prefijo project_[nombre tabla input].
+    Ejemplo> project_ba_itc_attr_demographic, project_ba_itc_attr_payment_pos
+1.2. proyectos donde estan los objetos y tabNO ES VIABLE ATENCIÓN, COLABORADOR SOBREENDEUDADO POR S/171,000 APROX EN RCC, NO PROCEDE EXTENDER PLAZO A 60 MESES DEUDAS DE TARJETAS, LÍNEAS ENNO ES VIABLE ATENCIÓN, COLABORADOR SOBREENDEUDADO POR S/171,000 APROX EN RCC, NO PROCEDE EXTENDER PLAZO A 60 MESES DEUDAS DE TARJETAS, LÍNEAS EN ASCENSO Y CONSUMIDAS AL 90%.NO ES VIABLE ATENCIÓN, COLABORADOR SOBREENDEUDADO POR S/171,000 APROX EN RCC, NO PROCEDE EXTENDER PLAZO A 60 MESES DEUDAS DE TARJETAS, LÍNEAS EN ASCENSO Y CONSUMIDAS AL 90%. ASCENSO Y CONSUMIDAS AL 90%.las output: aqui se crean los servicios, stored procedures y tablas finales del proceso
+    para variables de despliegue se puede definir proyect_analytics
+1.3. proyectos donde estan ubicados los servicios como functions, workflows, pipeline de vertex, etc
+
+2. Datasets:
+2.1. dataset de las tablas input: estas pueden ser distintas por dominio de negocio al que pertenecen las tablas
+    variable de despliegue dataset_[nombre-tabla-input]. Ejemplo dataset_ba_itc_attr_demographic, dataset_ba_itc_attr_payment_pos, etc.
+2.2. dataset temporales: Aqui se deben crear todas las tablas temporales de los procesos que desarrollemos [abrev-company]_stage
+    variable de despliegue: dataset_stage
+2.3. dataset para stored procedures. [abrev-company]_sp
+    variable de despliegue dataset_sp
+2.4. dataset para tablas finales. [abrev-company]_analytics. Aqui se deben crear las tablas output de los procesos a desarrollar
+    variable de despliegue: dataset_analytics
+
+3. Tablas:
+3.1. Todo nombre de tabla input debe estar en variable de despliegue. Asi y con todo lo anterior toda la referencia quedarian con variables de despliegue. Ejemplo
+  ${project_ba_itc_attr_demographic}.${dataset_ba_itc_attr_demographic}.${table_ba_itc_attr_demographic}
+  ${project_ba_itc_attr_insurance}.${dataset_ba_itc_attr_insurance}.${table_ba_itc_attr_insurance}
+  ${project_ba_itc_attr_payment_pos}.${dataset_ba_itc_attr_payment_pos}.${table_ba_itc_attr_payment_pos}
+  ${project_ba_itc_attr_rcc}.${dataset_ba_itc_attr_rcc}.${table_ba_itc_attr_rcc}
+
+B. PIPELINE DE VERTEX
+Reglas para tener en cuenta al momento de desarrollar un notebook para despliegue en vertex ai como un servicio
+1. Todo yaml para despliegue de pipeline de vertex debe tener estos flags obligatoriamente y con esas etiquetas
+    project: proyecto donde se desplegara el pipeline
+    region: us-central1
+    service_account: cuenta de servicio que ejecutara el pipeline
+    pipeline_bucket_dataops: nombre del bucket que usara el framework dataops para desplegar artefactos para vertex. Ej dev-itc-farmas-recommendation-files-8ufs
+    pipeline_path_dataops: nombre que tendran los jobs o pipelines en la ejecucion que. Ejemplo itc-recommendation-pipeline
+    pipelines: Listado de notebooks a desplegar con el yaml de configuración. Ejemplo
+    - "./notebook/pipeline-train.ipynb"
+    dataops_variable: nombre de la variable en dataops si tuviese algun retorno el despliegue del pipeline vertex. Ej: VERTEX_PIPELINE_URL
+    env_vars: # Variables de entorno para el pipeline
+
+2. Todos los notebooks deben manejar Las variables de entorno, valores los cuales seran definidos en la seccion env_vars de su yaml de despliegue. Pero en el notebook deben estar definidos y obtenidos via getenv
+    PIPELINE_ID = os.getenv("PIPELINE_CONFIG_ID") # Identificador unico
+    PIPELINE_COMPANY = os.getenv("PIPELINE_CONFIG_COMPANY") # Nombre de la compañia
+    PIPELINE_COMPANY_ABBR = os.getenv("PIPELINE_CONFIG_COMPANY_ABBR") # Abreviatura de la compañia
+    PIPELINE_DISPLAY_NAME = os.getenv("PIPELINE_DISPLAY_NAME", "mypipeline")
+    PIPELINE_DESCRIPTION = os.getenv("PIPELINE_DESCRIPTION", "")
+    PIPELINE_KEY = os.getenv("PIPELINE_KEY", "") # Key asignado en el config.yaml
+    PIPELINE_COMPILE_FILE = os.getenv("PIPELINE_COMPILE_FILE", './pipeline_compile.json') # Ruta local temporal del json pipeline
+    PIPELINE_SERVICE_ACCOUNT = os.getenv("PIPELINE_SERVICE_ACCOUNT", "dev-dp-ml-vertex@int-advanced-analytics-01.iam.gserviceaccount.com") # Cuenta de Servicio que se asignara al pipeline
+    PIPELINE_PROJECT_ID = os.getenv("PIPELINE_PROJECT_ID", "int-advanced-analytics-01") # Proyecto GCP donde se ejecuta el pipeline
+    PIPELINE_REGION = os.getenv("PIPELINE_REGION", "us-central1") # Region
+    PIPELINE_BUCKET = os.getenv("PIPELINE_BUCKET", "dev-dp-vertex-analytics-ai") # Bucket donde se guardaran artefactos del despliegue
+    PIPELINE_PATH_ROOT = os.getenv("PIPELINE_PATH_ROOT", "locale_root")
+    # Resources Data
+    PIPELINE_BUCKET_PROJECT_PATH = os.getenv("PIPELINE_BUCKET_PROJECT_PATH")
+    PATH_PIPELINES_WORKSPACE_ABS = os.getenv('PATH_PIPELINES_WORKSPACE_ABS')
+    PIPELINE_VALIDATION_BIGQUERY_TABLES = os.getenv("PIPELINE_VALIDATION_BIGQUERY_TABLES", "")
+
+    # COMPONENTS
+    PIPELINE_COMPONENTS_BQ_VAL_PATH = os.getenv("PIPELINE_COMPONENTS_BQ_VAL_PATH", '../../sources/components/component-mlops-validation-bigquery.yaml')
+    PIPELINE_COMPONENTS_BQ_EXPORT_TABLE_TO_GCS = os.getenv("PIPELINE_COMPONENTS_BQ_EXPORT_TABLE_TO_GCS", '../../sources/components/component-mlops-export-table-to-gcs.yaml')
+
+3. Toda carpeta debe tener su requirements.txt donde iran las librerias necesarias para desplegar el pipeline vertex, se debe mapear el codigo python y poner ahi las librerias
+
+2026-03-11 lmorales
+Al momento de generar el archivo env_[dev/prd].json, que el orden de creacionde las variables de espliegue
+ sea por tabla, es decir primero proyecto, dataset y tabla para toda referncia a tabla 
+
+2026-03-23 amoreno
+Regla:
+En los nb, hay diccionarios definidos los cuales se usan para formar nombres de variables, los cuales estan asociados a los dataset
+ se debe respetar los nombres de los diccionarios y los valores por ejemplo se define el map: 
+nivel_map = {
+        'ANALFABETO/A': 'Sin_educacion', 'ILETRADO': 'Sin_educacion', 'SIN EDUCACIÓN FORMAL': 'Sin_educacion','SIN EDUCACION FORMAL': 'Sin_educacion',
+        'N/E': 'Sin categoria',#na
+        ' ': 'Sin categoria',#na
+        'SIN DATOS': 'Sin categoria',#na       
+        'PRIMARIA COMPLETA': 'Primaria',
+        'PRIMARIA INCOMPLETA': 'Primaria',
+        'SECUNDARIA': 'Secundaria_c',
+        'SECUNDARIA COMPLETA': 'Secundaria_c',
+        'EDUCACIÓN SECUNDARIA COMPLETA': 'Secundaria_c',
+        'EDUCACIÓN ESCOLAR COMPLETA': 'Secundaria_c',
+        'SECUNDARIA INCOMPLET': 'Secundaria_i',       
+        'UNIVERSITARIA COMPLETA/MAGISTER': 'Postgrado',
+        'UNIVERSIDAD INCOMPLETA': 'Universitaria_i',
+        'UNIVERSIDAD INCOMPLETA                           ': 'Universitaria_i',
+        'EDUCACIÓN UNIVERSITARIA INCOMPLETA': 'Universitaria_i',
+        'SUPERIOR COMPLETA': 'Universitaria_c',
+        'SUPERIOR INCOMPLETA': 'Universitaria_i',
+        'POSTGRADO': 'Postgrado',       
+        'ESTUDIOS DE DOCTORADO COMPLETO': 'Postgrado',
+        'ESTUDIOS DE DOCTORADO INCOMPLETO': 'Postgrado',
+        'TITULADO': 'Universitaria_c',
+        'GRADO DE BACHILLER': 'Universitaria_c'
+}
+Luego se crean una nueva columna con la agrupación
+df_final['nivel_educativo'] = df_final['nivel_educativo'].map(nivel_map).fillna('Sin categoria')
+print(df_final['nivel_educativo'].value_counts())
+
+output:
+nivel_educativo
+Sin categoria      13393281
+Secundaria_c         707141
+Universitaria_c      600545
+Tecnica_c            295518
+Primaria             130893
+Postgrado             46646
+Universitaria_i       30838
+Tecnica_i             17185
+Secundaria_i          12971
+Sin_educacion           482
+
+Por ningun motivo generes o asignes otros valores. Se debe respetar y mantener todos los valores del diccionario, No es valido realizar lo siguiente:
+
+educ_map = {
+        "Sin educacion": 1, "Primaria incompleta": 2, "Primaria completa": 3,
+        "Secundaria incompleta": 4, "Secundaria completa": 5,
+        "Tecnico incompleto": 6, "Tecnico completo": 7,
+        "Universitario incompleto": 8, "Universitario completo": 9, "Postgrado": 9,
+    }
+
+Aqui nivel_map lo definiste como educ_map y mapeaste 'ANALFABETO/A': 'Sin_educacion' en nivel_map, mientras que en educ_map lo generaste "Sin educacion": 1
+
+2026-03-26 amoreno
+Se debe generar el archivo env_dev.json y env_prd.json, dentro de la carpeta deploy, considerando todas las
+ variables de despliegue definidas en los distintos componentes. Aqui un ejemplo del contenido
+ considera que la variable de despliegue "env" es global y forma parte del framework por lo que no es
+ necesario que este presente
+ {
+  "url_api_campaign_mngt":                                        "https://dev-itc-campaign-mngt-api-232282934791.us-central1.run.app",
+  "SECRET_ID":                                                    "projects/232282934791/secrets/dev-itcbi-sgad-campaign-scrt-psql-7ewm/versions/latest",
+  "inca_cloudsql_instance":                                       "dev-intercorp-data-operation:us-central1:dev-itcbi-lake-csql-usct1-fcys",
+
+  "proyecto_farmas_input":                                        "qa-itc-customer-services",
+  "dataset_farmas_input":                                         "input_farmas_tables",
+  "tabla_farmas_dv_productos":                                    "dv_productos",
+  "tabla_farmas_dv_locales":                                      "dv_locales",
+  "tabla_farmas_dv_campanias":                                    "dv_campanias",
+  "tabla_farmas_dv_fact_cupones_demanda":                         "bi_comercial_dv_fact_cupones_demanda",
+  "tabla_farmas_ba_resumen_variable_cupon_digital":               "ba_resumen_variable_cupon_digital",
+  "tabla_farmas_dv_modulo_prioridad":                             "dv_modulo_prioridad",
+
+  "schema_pg_customer_recommendation":                            "customer_recommendation",
+  "dblink_pg":                                                    "dev-intercorp-data-operation.us.connx_cust_recommendation",
+
+  "mail_pubsub_project":                                          "central-data-governance-260223",
+  "mail_pubsub_topic":                                            "itcm-mail",
+
+  "topico_farmas_campaign_item_inserted":                         "pendiente_definir",
+  "url_fun_itc_validador_export":                                 "https://us-central1-dev-itc-customer-services.cloudfunctions.net/dev-farmas-fn-campaign-constraint-postgres",
+
+  "crun_itc_campaign_loader_api_uri":                             "pendiente_definir",
+
+  "dataset_governance":                                           "amoreno",
+  "dataset_itc_stage":                                            "itc_customer_stage",
+  "dataset_itc_customer_sp":                                      "itc_customer_sp",
+  "dataset_itc_analytics_output":                                 "ba_itc_customer_analytics",
+  "dataset_farmas_recom_sp":                                      "farmas_recommendation_sp",
+  "dataset_farmas_recom_stage":                                   "farmas_recommendation_stage",
+  "dataset_farmas_analytics_output":                              "ba_farmas_analytics",
+
+  "proyecto_itc_data_storage_pv":                                 "intercorp-data-storage-pv",
+  "dataset_itc_data_storage_pv":                                  "jtoribioa_inside",
+  "dataset_itc_data_storage_pv_segmentation":                     "jtoribioa_inside",
+
+  "tabla_intercorp_data_storage_pv_ba_ibk_ba_consumo_comercios":                    "intercorp_data_storage_pv_ba_ibk_ba_consumo_comercios",
+  "tabla_ba_segmentacion_itc_clientes_cluster_interes":                             "ba_segmentacion_itc_clientes_cluster_interes",
+  "tabla_intercorp_data_storage_pv_master_party_iden_itc_party":                    "intercorp_data_storage_pv_master_party_iden_itc_party",
+  "tabla_ba_itc_attr_prediction":                                                   "intercorp_data_storage_pv_bi_itc_attribute_party_ba_itc_attr_prediction",
+  "tabla_ba_customer_prediction":                                                   "intercorp_data_storage_pv_ba_prediction_ba_customer_prediction",
+
+  "bucket_modelo_recom":                                          "dev-itc-farmas-recommendation-files-8ufs",
+
+  "proyecto_governance":                                          "itc-data-governance-01",
+  "proyecto_verificacion":                                        "int-advanced-analytics-01",
+  "dataset_verificacion":                                         "aodarm",
+
+  "proyecto_input_2_s":                                           "intercorp-data-storage-pb",
+  "proyecto_input_foh":                                           "qa-itc-customer-services",
+  "dataset_input_foh":                                            "input_foh_tables",
+
+  "tabla_ba_itc_attr_demographic":                                "intercorp_data_storage_pv_bi_itc_attribute_party_ba_itc_attr_demographic",  
+  "tabla_iden_itc_party":                                         "intercorp_data_storage_pv_master_party_iden_itc_party",
+  "tabla_t_retail_transaction":                                   "intercorp_data_storage_pv_master_transaction_t_retail_transaction",
+  "tabla_bi_retail_outliers":                                     "intercorp_data_storage_pv_bi_vuc_insight_bi_retail_outliers",
+  "tabla_ba_itc_attr_rcc":                                        "intercorp_data_storage_pv_bi_itc_attribute_party_ba_itc_attr_rcc",
+  "tabla_m_customer_hist":                                        "intercorp_data_storage_pv_master_party_m_customer_hist",
+  "tabla_aux_gesfu_parque":                                       "foh_datastorage_prd_master_aux_gesfu_parque_bkp",
+  "tabla_ba_consumo_comercios":                                   "intercorp_data_storage_pv_ba_ibk_ba_consumo_comercios",
+  "tabla_m_place":                                                "intercorp_data_storage_pv_master_placement_m_place",
+  "tabla_t_transaction":                                          "intercorp_data_storage_pv_master_transaction_t_transaction",
+  "tabla_geodata_inei_population":                                "intercorp_data_storage_pv_master_aux_aux_customer_geodata_inei_population",
+  "tabla_m_commerce":                                             "intercorp_data_storage_pv_master_placement_m_commerce",
+  "tabla_m_product":                                              "intercorp_data_storage_pv_master_product_m_product",
+  "tabla_valid_customer":                                         "intercorp_data_storage_pv_bi_vuc_insight_ba_itc_valid_customer",
+  "tabla_t_experience_transaction":                               "intercorp_data_storage_pv_master_transaction_t_experience_transaction",
+  "tabla_t_parametro":                                            "t_parametro",  
+
+  "dataset_inca_customer_recom_fisico":                           "pendiente_definir",
+  "tabla_inca_customer_recom_fisico":                             "pendiente_definir",
+  "tabla_base_inca_customer_recom":                               "pendiente_definir",
+
+  "itc_code":                                                     "074"
+}
+
+
+--20260427 Ajuste y mejora respecto a la definicion de los proyectos
+Segun la naturaleza del componente se necesita crear, los proyectos se definan segun lo siguiente
+De forma estandar pueden haber proyectos para 
+1. Crear componentes de tipo servicios y funciones para operar: functions, store procedures, jobs, schedulers
+2. Tablas bigquery, buckets
+
+Para dataops, se deben definir siempre variables de despliegue para los 3 tipos de proyectos:
+project_operation  -> ej: [env]-[emp]-data-operation
+    componentes de tipo servicios y funciones: functions, store procedures, jobs, schedulers
+project_analytics => ej: [env]-[emp]-data-storage-pv
+    Tablas bigquery, buckets
+project_billing  -> data-operation
+    Proyecto para configurar la ejecucion de bigquery jobs, dentro de los workflows
+
+--20260429 
+los store procedures deben estar definidos con la variable project_operation
+
+

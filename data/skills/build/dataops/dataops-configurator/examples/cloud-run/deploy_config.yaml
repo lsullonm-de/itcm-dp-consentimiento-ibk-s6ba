@@ -1,0 +1,44 @@
+# Ejemplo de Cloud Run deployment config
+# Fuente: itcm-inca-audience-campaign-loader-api/service/cloud_run/itc-campaign-loader-api
+# Este es el PATRÓN CANÓNICO correcto que usa el framework Dataops
+
+name: ${env}-itc-campaign-loader-run-h09a
+dataops_variable: crun_itc_campaign_loader_api_uri
+region: us-central1
+image: us-central1-docker.pkg.dev/${env}-itc-customer-services/dataops-artifacts/${env}-itc-campaign-loader-api:latest
+platform: managed
+project: ${env}-itc-customer-services
+service_account: ${env}-farmas-cupones-job@${env}-itc-customer-services.iam.gserviceaccount.com
+allow_unauthenticated: true
+memory: 2Gi
+cpu: 2
+concurrency: 1
+timeout: 3600
+max_instances: 5
+add_cloudsql_instances:
+  - ${inca_cloudsql_instance}
+env_vars:
+  CURR_ENVI: "${env}"
+  APP_DEBUG: "false"
+  SECRET_ID: "${SECRET_ID}"
+  TABLE_CAMPAIGN: "${schema_pg_customer_recommendation}.campaign"
+  TABLE_CAMPAIGN_ITEM: "${schema_pg_customer_recommendation}.campaign_item"
+  TABLE_TMP_CAMPAIGN_ITEM: "${schema_pg_customer_recommendation}.tmp_campaign_item"
+  itc_company_id: "074"
+  TABLE_BQ_PRODUCT: "${proyecto_farmas_input}.${dataset_farmas_input}.${tabla_farmas_dv_productos}"
+  TABLE_TMP_PRODUCT: "${schema_pg_customer_recommendation}.tmp_product"
+  TABLE_PRODUCT: "${schema_pg_customer_recommendation}.product"
+  TABLE_VARIABLE: "${schema_pg_customer_recommendation}.variable"
+  TABLE_VARIABLE_DATA: "${schema_pg_customer_recommendation}.variable_data"
+  SCHEMA_CUSTOMER_RECOMMENDATION: "${schema_pg_customer_recommendation}"
+  api_create_campaign_param: "${url_api_campaign_mngt}/campaign-management/campaign-bucket/create-campaign-param"
+  PUBSUB_PROJECT_ID: "${env}-itc-customer-services"
+  PUBSUB_TOPIC_ID: "${topico_farmas_campaign_item_inserted}"
+  PROJECT_ID_PUBSUB_MAIL: "${mail_pubsub_project}"
+  TOPIC_NAME_MAIL: "${mail_pubsub_topic}"
+  TABLE_BQ_PROCESS_RESOURCE: "${env}-itc-customer-services.bi_services_monitoring.process_resource"
+  TABLE_BQ_CAMPAIGN_CTR: "${env}-itc-customer-services.bi_services_monitoring.ctr_inca_customer_recommendation_campaign"
+  BQ_PROJECT_ID: "${env}-itc-customer-services"
+  BQ_DBLINK_PG: "${dblink_pg}"
+  EXECUTION_PIPELINE: >-
+    {"config":{"project_id":"${env}-itc-customer-services","region":"us-central1","bucket":"gs://${bucket_modelo_recom}","service_account":"${env}-farmas-cupones-job@${env}-itc-customer-services.iam.gserviceaccount.com"},"pipelines":{"itc-recommendation-model-train-als":{"display_name":"itc-recommendation-model-training","description":"Ejecuta el pipeline de entrenamiento del modelo ALS.","template_path":"gs://${bucket_modelo_recom}/itc-recommendation-pipeline/pipeline-train-pipeline-latest.json"},"itc-recommendation-model-inference-als":{"display_name":"itc-recommendation-model-inference","description":"Ejecuta el pipeline de inferencia del modelo ALS.","template_path":"gs://${bucket_modelo_recom}/itc-recommendation-pipeline/pipeline-inference-pipeline-latest.json"}}}

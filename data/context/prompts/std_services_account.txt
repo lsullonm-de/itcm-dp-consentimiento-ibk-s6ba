@@ -1,0 +1,50 @@
+2026-01-05
+Tipos de cuentas de servicio, estas cuentas no se crean con dataops, deben ser creadas por algun framework de despliegue de infraestructura o por el administrador de operaciones de la plataforma
+Solo se crean una única vez
+
+1. Cuentas de servicios para servicios como cloud runs y functions
+Nomenclatura
+[env]-[abrev-empresa]-[caso de uso]-app@[proyecto].iam.gserviceaccount.com
+Ejemplo> dev-farmas-cupones-app@dev-itc-customer-services.iam.gserviceaccount.com
+prd-itc-execution-engine-app@prd-itc-ai-hub-services.iam.gserviceaccount.com
+Roles necesarios sobre el proyecto que va operar
+    prd-itc-execution-engine-app	
+    BigQuery Data Editor
+    BigQuery Job User
+    Cloud Run Invoker
+    Service Account Token Creator
+    Service Account User
+    Workflows Invoker
+    Pub/Sub [publisher/consumer]
+
+2. Cuentas de servicios para trabajos en procesamiento de datos
+Nomenclatura
+[env]-[abrev-empresa]-[caso de uso]-app@[proyecto].iam.gserviceaccount.com
+Ejemplo> dev-farmas-cupones-job@dev-itc-customer-services.iam.gserviceaccount.com
+
+Roles necesarios sobre el proyecto que va operar
+BigQuery Connection User
+BigQuery Data Editor
+BigQuery Job User
+Logs Writer
+Vertex AI User
+
+3. Cuentas de servicio para despliegue (uso por dataops).
+Nomenclatura
+[env]-[abrev-empresa]-dataops-deployer@[proyecto-dataops].iam.gserviceaccount.com
+Donde proyecto-dataops es el proyecto donde se crean los triggers para despliegue con cloud build
+
+Ejemplo> prd-trv-itcbi-devops-app-itc-d@itc-data-devops-01.iam.gserviceaccount.com
+
+Roles Minimos necesarios sobre el proyecto que va desplegar
+
+Artifact Registry Administrator
+Cloud Build Service Account
+Cloud Run Admin
+Cloud Scheduler Admin
+Logs Writer
+Monitoring Editor
+Service Account User
+Storage Admin
+Viewer
+Workflows Admin

@@ -1,0 +1,18 @@
+{
+  "code": "${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk",
+  "process_code": "${env}-t-consent-transaction-ibk",
+  "process_parent_code": null,
+  "company_id": "000",
+  "company_code": "IBK",
+  "business_name": "Deriva consentimientos CP_2 otorgados en ba_customer_consent_group",
+  "technical_name": "${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk",
+  "object_catalog": "${project_ba_customer_consent_group}",
+  "object_schema": "${dataset_ba_customer_consent_group}",
+  "object_name": "ba_customer_consent_group",
+  "object_type": "TABLE",
+  "object_source": ["${project_t_consent_transaction}.${dataset_t_consent_transaction}.${table_t_consent_transaction}"],
+  "flag_active": "1",
+  "last_status_code": null,
+  "flag_reprocess": "0",
+  "creation_user": "dataops-deploy"
+}

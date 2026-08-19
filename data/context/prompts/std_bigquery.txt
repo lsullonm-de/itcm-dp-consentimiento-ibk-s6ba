@@ -1,0 +1,4 @@
+######################################################################################
+#este texto se uso para generar el md docs\standard\standard_workflow_development.md
+#Si se va agregar más reglas y definiciones seria sobre este contenido
+######################################################################################

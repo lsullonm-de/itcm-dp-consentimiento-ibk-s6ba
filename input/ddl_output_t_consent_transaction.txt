@@ -1,0 +1,28 @@
+CREATE TABLE `dev-intercorp-data-storage.master_party.t_consent_transaction`
+(
+  process_date DATE OPTIONS(description="Fecha de foto/datos configurada en el ETL para la extracción de datos"),
+  itc_company_id STRING OPTIONS(description="Código identificador de la compañía que genera el registro único del cliente: 00033"),
+  itc_company_name STRING OPTIONS(description="Nombre de la empresa que genera el registro único de cliente. FINANCIERA OH"),
+  business_unit_id STRING OPTIONS(description="Código identificador de la Unidad de negocio de la organización que vende, almacena o distribuye mercancías y servicios a través de una ubicación física (tienda), catálogo, página web u otro canal, centro de distribución o almacén."),
+  business_unit STRING OPTIONS(description="Descripción de la Unidad de negocio de la organización que vende, almacena o distribuye mercancías y servicios a través de una ubicación física (tienda), catálogo, página web u otro canal, centro de distribución o almacén.   Puede pertenecer a la siguiente clasificación:   -Tienda   -Tienda dentro de una tienda (servicio rápido, tintorería, banco, cajero automático, peluquería, servicio de paquetería, proveedor de servicios inalámbricos)   -Departamento (farmacia, cine, óptico, guardería, cosméticos, registro de regalos, servicio al cliente, mostrador de devoluciones, mostrador de recogida, servicio de autoservicio)   -Quiosco (carro, video, fijo)   -Almacén de máquinas expendedoras   -Centro de distribucion   -Centro de llamadas   -Administrativo"),
+  conset_transaction_id STRING OPTIONS(description="código identificar del evento por un determinado canal donde el cliente da el consentimiento o rechazo del tratamiento de sus datos"),
+  customer_id STRING OPTIONS(description="Código identificador del cliente en el sistema origen"),
+  id STRING OPTIONS(description="Código identificador de la persona en el sistema origen"),
+  conset_id STRING OPTIONS(description="Código identificador del consentimento que da el cliente a la empresa. 01 = Permitir que OE App acceda a la ubicación de este dispositivo, 02 = Políticas de Cookies"),
+  documento_legal_id STRING OPTIONS(description="código identificador del documento legal que tiene la información que el cliente firma"),
+  approval_channel_id STRING OPTIONS(description="Código identificador del canal por el cual se contactó al cliente y dio su aprobación o rechazo su consentimiento de tratamiento de datos"),
+  employee_id STRING OPTIONS(description="Código identificador del empleado en el sistema origen"),
+  place_id STRING OPTIONS(description="Código identificador del lugar donde se realiza la venta puede ser un punto de venta físico o por el canal online"),
+  consent_type STRING OPTIONS(description="Indica la aprobación o rechazo cuando la empresa se contacta con el cliente para preguntar si desea el tratamiento de datos"),
+  consent_date DATE OPTIONS(description="Indica la fecha en la que el cliente responde cuando la empresa lo contacta para preguntar por su tratamiento de datos"),
+  signed_document STRING OPTIONS(description="Almacena la ruta donde se almacena el documento firmado por el cliente"),
+  record_source STRING OPTIONS(description="Dato de Auditoría: Descripción del aplicativo origen de los datos"),
+  load_date TIMESTAMP OPTIONS(description="Fecha y hora de inserción del registro en el modelo"),
+  creation_user STRING OPTIONS(description="Usuario que crea el registro en la BD")
+)
+PARTITION BY consent_date
+CLUSTER BY itc_company_name
+OPTIONS(
+  description="Registra cuando un individuo otorgando o revoca un consentimiento para un propósito específico.",
+  labels=[("inca_sync", "true")]
+);

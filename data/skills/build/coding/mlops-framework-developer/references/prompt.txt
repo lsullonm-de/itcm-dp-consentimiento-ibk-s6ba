@@ -1,0 +1,56 @@
+
+2026-03-23 amoreno
+Regla:
+En los nb, hay diccionarios definidos los cuales se usan para formar nombres de variables, los cuales estan asociados a los dataset
+ se debe respetar los nombres de los diccionarios y los valores por ejemplo se define el map: 
+nivel_map = {
+        'ANALFABETO/A': 'Sin_educacion', 'ILETRADO': 'Sin_educacion', 'SIN EDUCACIÓN FORMAL': 'Sin_educacion','SIN EDUCACION FORMAL': 'Sin_educacion',
+        'N/E': 'Sin categoria',#na
+        ' ': 'Sin categoria',#na
+        'SIN DATOS': 'Sin categoria',#na       
+        'PRIMARIA COMPLETA': 'Primaria',
+        'PRIMARIA INCOMPLETA': 'Primaria',
+        'SECUNDARIA': 'Secundaria_c',
+        'SECUNDARIA COMPLETA': 'Secundaria_c',
+        'EDUCACIÓN SECUNDARIA COMPLETA': 'Secundaria_c',
+        'EDUCACIÓN ESCOLAR COMPLETA': 'Secundaria_c',
+        'SECUNDARIA INCOMPLET': 'Secundaria_i',       
+        'UNIVERSITARIA COMPLETA/MAGISTER': 'Postgrado',
+        'UNIVERSIDAD INCOMPLETA': 'Universitaria_i',
+        'UNIVERSIDAD INCOMPLETA                           ': 'Universitaria_i',
+        'EDUCACIÓN UNIVERSITARIA INCOMPLETA': 'Universitaria_i',
+        'SUPERIOR COMPLETA': 'Universitaria_c',
+        'SUPERIOR INCOMPLETA': 'Universitaria_i',
+        'POSTGRADO': 'Postgrado',       
+        'ESTUDIOS DE DOCTORADO COMPLETO': 'Postgrado',
+        'ESTUDIOS DE DOCTORADO INCOMPLETO': 'Postgrado',
+        'TITULADO': 'Universitaria_c',
+        'GRADO DE BACHILLER': 'Universitaria_c'
+}
+Luego se crean una nueva columna con la agrupación
+df_final['nivel_educativo'] = df_final['nivel_educativo'].map(nivel_map).fillna('Sin categoria')
+print(df_final['nivel_educativo'].value_counts())
+
+output:
+nivel_educativo
+Sin categoria      13393281
+Secundaria_c         707141
+Universitaria_c      600545
+Tecnica_c            295518
+Primaria             130893
+Postgrado             46646
+Universitaria_i       30838
+Tecnica_i             17185
+Secundaria_i          12971
+Sin_educacion           482
+
+Por ningun motivo generes o asignes otros valores. Se debe respetar y mantener todos los valores del diccionario, No es valido realizar lo siguiente:
+
+educ_map = {
+        "Sin educacion": 1, "Primaria incompleta": 2, "Primaria completa": 3,
+        "Secundaria incompleta": 4, "Secundaria completa": 5,
+        "Tecnico incompleto": 6, "Tecnico completo": 7,
+        "Universitario incompleto": 8, "Universitario completo": 9, "Postgrado": 9,
+    }
+
+Aqui nivel_map lo definiste como educ_map y mapeaste 'ANALFABETO/A': 'Sin_educacion' en nivel_map, mientras que en educ_map lo generaste "Sin educacion": 1

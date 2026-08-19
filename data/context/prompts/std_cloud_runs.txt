@@ -1,0 +1,12 @@
+2026-03-05
+1. La cuenta de servicio con la que operan los cruns es -app, esta sa debe tener permisos basicos de acceso a datos en postgresql o BigQuery y lectura a cloud storage
+2. Si el servicio necesita invocar algun trabajo de datos debera impersonar la sa -job para trabajar con workflows, pipeline de vertex, movimiento en cloud storage y 
+3. Todo servicio debe estar basado en uso de FAST API
+4. Las credenciales de acceso a postgresql se obtienen accediendo a un secreto, la uri del secreto siempre va como una variable de entorno del servicio
+5. Deben realizarse bajo pyton 3.11 o superior
+
+para scripts que se tengan en la carpeta input, no tomar la forma de despliegue con scripts sh ya que todo sera con dataops
+Esos son los scripts de despliegue "manual" (Cloud Build + gcloud), reemplazados por el framework Dataops que ya scaffoldeamos. Los que voy a eliminar de input/:
+
+cloud_run.sh, scheduler.sh, setup.sh, workflow.sh (scripts gcloud de deploy)
+build_dev.yaml, build_prod.yaml, build_qa.yaml (triggers de Cloud Build viejos)

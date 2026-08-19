@@ -1,0 +1,27 @@
+{
+  "bigquery_ddl": [
+    "/data/bigquery/master_party/t_consent_transaction/ddl/t_consent_transaction.sql",
+    "/data/bigquery/master_party/ba_customer_consent_group/ddl/ba_customer_consent_group.sql"
+  ],
+  "bigquery_sp": [
+    "/data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql",
+    "/data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql",
+    "/data/bigquery/master_party/t_consent_transaction/sp/sp_dq_t_consent_transaction.sql",
+    "/data/bigquery/master_party/ba_customer_consent_group/sp/sp_ba_customer_consent_group_ibk.sql",
+    "/data/bigquery/master_party/ba_customer_consent_group/sp/sp_dq_ba_customer_consent_group.sql"
+  ],
+  "bigquery_dml": [
+    "/data/bigquery/master_party/t_consent_transaction/dml/dml_dq_config_t_consent_transaction.sql",
+    "/data/bigquery/master_party/ba_customer_consent_group/dml/dml_dq_config_ba_customer_consent_group.sql"
+  ],
+  "workflow": [
+    "/pipeline/workflow/master_party/t_consent_transaction/wf-ibk-consentimiento.yaml"
+  ],
+  "cloud_scheduler": [
+    "/pipeline/scheduler/master_party/t_consent_transaction/cs-ibk-consentimiento.yaml"
+  ],
+  "monitoring_register": [
+    "/data/monitoring/master_party/t_consent_transaction/payloads",
+    "/data/integrity/master_party/t_consent_transaction/payloads"
+  ]
+}

@@ -1,0 +1,1677 @@
+<title>dp_factory_dev — Requerimientos Funcionales v1.0</title>
+<meta name="description" content="Especificación funcional del módulo de observabilidad del flujo de fábrica: modelo de datos, diccionario, ejemplos JSON e integración con implement-stage.">
+<style>
+:root {
+  --ink:          #0C1A2C;
+  --mid:          #243C5C;
+  --muted:        #4D5F74;
+  --paper:        #F3F6FB;
+  --surface:      #FFFFFF;
+  --accent:       #1658A6;
+  --accent-2:     #0E4485;
+  --accent-light: #D4E4F7;
+  --border:       #BCC9DC;
+  --border-light: #DCE5F0;
+  --code-bg:      #192332;
+  --code-text:    #D8E6F5;
+  --code-key:     #79C0FF;
+  --code-str:     #A5D6A7;
+  --code-num:     #FFB74D;
+  --code-kw:      #E57373;
+  --s-critical-bg:#A8281A; --s-critical-fg:#FFFFFF;
+  --s-high-bg:    #B35215; --s-high-fg:    #FFFFFF;
+  --s-medium-bg:  #7D621A; --s-medium-fg:  #FFFFFF;
+  --s-low-bg:     #1A6B52; --s-low-fg:     #FFFFFF;
+  --s-info-bg:    #1658A6; --s-info-fg:    #FFFFFF;
+  --font-head: 'Gill Sans', 'Gill Sans MT', 'Century Gothic', Calibri, sans-serif;
+  --font-body: Georgia, Cambria, 'Times New Roman', serif;
+  --font-mono: Consolas, 'Courier New', monospace;
+  --font-ui:   system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.doc-header {
+  background: var(--ink);
+  color: #FFFFFF;
+  padding: 36px 48px 28px;
+}
+.doc-header .eyebrow {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7CA8D4;
+  margin-bottom: 10px;
+}
+.doc-header h1 {
+  font-family: var(--font-head);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+.doc-header .subtitle {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: #8AAEC8;
+  margin-bottom: 20px;
+}
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+.doc-meta dt { color: #6888A4; text-transform: uppercase; letter-spacing: 0.06em; }
+.doc-meta dd { color: #C8D9EB; font-weight: 500; }
+.doc-meta dl { display: flex; gap: 6px; align-items: baseline; }
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 3px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.badge-draft { background: #7D621A; color: #FFF; }
+.badge-stable { background: var(--s-low-bg); color: #FFF; }
+
+/* ── TOC NAV ─────────────────────────────────────────────── */
+.toc-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0 48px;
+}
+.toc-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  list-style: none;
+  overflow-x: auto;
+}
+.toc-nav li a {
+  display: block;
+  padding: 11px 16px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  letter-spacing: 0.01em;
+}
+.toc-nav li a:hover { color: var(--accent); border-bottom-color: var(--accent-light); }
+
+/* ── MAIN CONTENT ────────────────────────────────────────── */
+.doc-content {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 48px 80px;
+}
+
+/* ── SECTIONS ────────────────────────────────────────────── */
+.doc-section {
+  padding-top: 56px;
+}
+.doc-section h2 {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--mid);
+  padding-left: 14px;
+  border-left: 3px solid var(--accent);
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.doc-section h3 {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--mid);
+  margin: 28px 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.doc-section h4 {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 20px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.doc-section p { margin-bottom: 12px; max-width: 72ch; }
+
+.section-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-light);
+  margin: 40px 0;
+}
+
+/* ── PROSE BLOCKS ────────────────────────────────────────── */
+.abstract {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  padding: 18px 22px;
+  margin-bottom: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  max-width: 78ch;
+}
+
+/* ── TABLES ──────────────────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; margin: 16px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+thead th {
+  background: var(--mid);
+  color: #FFFFFF;
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+tbody td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+  line-height: 1.5;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:nth-child(even) td { background: #F8FAFE; }
+td code, th code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--accent-light);
+  color: var(--accent-2);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.field-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.type-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.req-badge {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.req-pk  { background: #1658A6; color: #FFF; }
+.req-fk  { background: #5A6B80; color: #FFF; }
+.req-nn  { background: #2C4870; color: #FFF; }
+.req-opt { color: var(--muted); border: 1px solid var(--border); }
+
+/* ── CHIPS ───────────────────────────────────────────────── */
+.chip {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.chip-critical { background: var(--s-critical-bg); color: var(--s-critical-fg); }
+.chip-high     { background: var(--s-high-bg);     color: var(--s-high-fg); }
+.chip-medium   { background: var(--s-medium-bg);   color: var(--s-medium-fg); }
+.chip-low      { background: var(--s-low-bg);       color: var(--s-low-fg); }
+.chip-info     { background: var(--s-info-bg);      color: var(--s-info-fg); }
+.chip-neutral  { background: var(--muted);          color: #FFF; }
+
+/* ── CODE BLOCKS ─────────────────────────────────────────── */
+.code-wrap {
+  position: relative;
+  margin: 16px 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.code-lang {
+  background: #283C52;
+  color: #7CA8D4;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-bottom: 1px solid #354D67;
+}
+pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  padding: 18px 20px;
+  overflow-x: auto;
+  tab-size: 2;
+}
+pre code { background: none; color: inherit; padding: 0; border-radius: 0; font-size: inherit; }
+/* JSON highlight classes (applied by JS) */
+.jk { color: var(--code-key); }     /* key */
+.js { color: var(--code-str); }     /* string value */
+.jn { color: var(--code-num); }     /* number */
+.jb { color: var(--code-kw); }      /* bool/null */
+/* SQL highlight */
+.sql-kw { color: #79C0FF; font-weight: bold; }
+.sql-fn { color: #FFB74D; }
+.sql-cm { color: #5C7A8A; font-style: italic; }
+.sql-st { color: #A5D6A7; }
+
+/* ── ERD DIAGRAM ─────────────────────────────────────────── */
+.erd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  margin: 24px 0;
+  font-family: var(--font-mono);
+}
+.erd-row { display: flex; align-items: flex-start; gap: 0; }
+.erd-box {
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: 3px;
+  min-width: 220px;
+}
+.erd-box-head {
+  background: var(--accent);
+  color: #FFF;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  letter-spacing: 0.03em;
+}
+.erd-box-body {
+  padding: 8px 12px;
+  font-size: 11.5px;
+  color: var(--mid);
+  line-height: 1.8;
+}
+.erd-box-body .pk { color: var(--accent); font-weight: 700; }
+.erd-box-body .fk { color: var(--muted); }
+.erd-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 6px;
+  position: relative;
+}
+.erd-line-v {
+  width: 1px;
+  flex: 1;
+  background: var(--border);
+  min-height: 20px;
+}
+.erd-line-h {
+  height: 1px;
+  width: 60px;
+  background: var(--border);
+  align-self: center;
+}
+.erd-label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: var(--paper);
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+.erd-children {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-top: 0;
+}
+.erd-child-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.erd-box-sub { border-color: var(--border); }
+.erd-box-sub .erd-box-head { background: var(--mid); }
+
+/* ── FLOW STEPS ──────────────────────────────────────────── */
+.flow-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+.flow-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-left: 3px solid var(--border);
+}
+.flow-item.event-init { border-left-color: var(--accent); }
+.flow-item.event-complete { border-left-color: var(--s-low-bg); }
+.flow-item.event-retry { border-left-color: var(--s-medium-bg); }
+.flow-item.event-close { border-left-color: var(--s-info-bg); }
+.flow-event {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 160px;
+  white-space: nowrap;
+}
+.flow-desc {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.5;
+}
+.flow-tables {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ── CONSTRAINTS LIST ────────────────────────────────────── */
+.constraint-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+}
+.constraint-list li {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding-left: 18px;
+  position: relative;
+  color: var(--mid);
+  line-height: 1.5;
+}
+.constraint-list li::before {
+  content: '›';
+  position: absolute;
+  left: 4px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.constraint-list code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--accent-light);
+  color: var(--accent-2);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+
+/* ── EXAMPLE HEADER ──────────────────────────────────────── */
+.example-block {
+  margin: 24px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.example-header {
+  background: #EEF3FA;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.example-title {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mid);
+}
+.example-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.example-block pre { border-radius: 0; margin: 0; }
+
+/* ── COST FORMULA ────────────────────────────────────────── */
+.formula-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 2;
+  margin: 12px 0;
+}
+.formula-box .comment { color: var(--muted); font-size: 12px; }
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+.doc-footer {
+  background: var(--ink);
+  color: #5A7A9A;
+  text-align: center;
+  padding: 20px 48px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  margin-top: 60px;
+}
+
+@media (max-width: 700px) {
+  .doc-header, .doc-content { padding-left: 20px; padding-right: 20px; }
+  .toc-nav { padding: 0 12px; }
+  .doc-header h1 { font-size: 20px; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // JSON syntax highlighting
+  document.querySelectorAll('pre.json').forEach(function(el) {
+    var html = el.innerHTML
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    html = html
+      .replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="jk">$1</span>$2')
+      .replace(/:(\s*)("(?:[^"\\]|\\.)*")/g, ':$1<span class="js">$2</span>')
+      .replace(/:\s*(-?\d+(?:\.\d+)?)/g, function(m, n) { return ': <span class="jn">' + n + '</span>'; })
+      .replace(/:\s*(true|false|null)/g, function(m, b) { return ': <span class="jb">' + b + '</span>'; });
+    el.innerHTML = html;
+  });
+});
+</script>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<header class="doc-header">
+  <div class="eyebrow">Data Platform · Flujo de Fábrica · Módulo de Observabilidad</div>
+  <h1>dp_factory_dev — Requerimientos Funcionales</h1>
+  <p class="subtitle">Modelo de datos, diccionario, ejemplos de integración y DDL para el módulo de trazabilidad del flujo de construcción asistido por IA.</p>
+  <div class="doc-meta">
+    <dl><dt>Versión</dt><dd>1.0</dd></dl>
+    <dl><dt>Fecha</dt><dd>2026-06-30</dd></dl>
+    <dl><dt>Estado</dt><dd><span class="badge badge-draft">Draft</span></dd></dl>
+    <dl><dt>Autor</dt><dd>amoreno@inside.com.pe</dd></dl>
+    <dl><dt>Área</dt><dd>Data Platform · ITCM</dd></dl>
+  </div>
+</header>
+
+<nav class="toc-nav" aria-label="Secciones">
+  <ul>
+    <li><a href="#contexto">Contexto</a></li>
+    <li><a href="#modelo">Modelo de Datos</a></li>
+    <li><a href="#diccionario">Diccionario</a></li>
+    <li><a href="#flujo">Flujo de Registro</a></li>
+    <li><a href="#ejemplos">Ejemplos JSON</a></li>
+    <li><a href="#ddl">DDL PostgreSQL</a></li>
+    <li><a href="#queries">Queries de Gestión</a></li>
+  </ul>
+</nav>
+
+<main class="doc-content">
+
+<!-- ── §1 CONTEXTO ─────────────────────────────────────────── -->
+<section class="doc-section" id="contexto">
+  <div class="section-label">§1</div>
+  <h2>Contexto y Propósito</h2>
+
+  <div class="abstract">
+    El módulo <strong>dp_factory_dev</strong> es la capa de observabilidad del <em>flujo de fábrica</em> de construcción asistido por IA. Registra la ejecución de cada etapa del ciclo PLAN → RELEASE: qué skill corrió, cuántos tokens consumió, qué artefactos generó, qué hallazgos (findings) detectó y cuánto costó. Funciona de forma análoga al framework de control de procesos productivos, pero aplicado al proceso de construcción en sí.
+  </div>
+
+  <h3>Motivación</h3>
+  <p>Cuando Claude ejecuta <code>/implement-stage CODING</code> en un repositorio Dataops, genera DDLs, SPs y YAMLs. Sin trazabilidad persistente, no hay forma de responder: ¿cuántas correcciones humanas requirió ese módulo? ¿Cuánto costó en tokens? ¿Qué reglas de compliance fallaron? ¿Qué módulos tienen mayor <em>spec coverage</em>? Este módulo cierra esa brecha.</p>
+
+  <h3>Alcance</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Dimensión</th><th>Detalle</th></tr></thead>
+      <tbody>
+        <tr><td>Tipos de módulo soportados</td><td><code>bq_pipeline</code>, <code>cloud_run_api</code>, <code>vertex_ml</code>, <code>cloud_function</code></td></tr>
+        <tr><td>Etapas trazadas</td><td>PLAN, DISCOVERY, DESIGN, CODING, ORCHESTRATION, MONITORING, DQ, LINEAGE, DATAOPS, COMPLIANCE, TESTING, INFRAOPS, SECURITY, DOCUMENTATION, RELEASE</td></tr>
+        <tr><td>Granularidad mínima</td><td>Una fila en <code>dp_factory_dev_execution</code> por ejecución de etapa (incluyendo re-ejecuciones)</td></tr>
+        <tr><td>Registro de artefactos</td><td>Una fila por archivo en <code>dp_factory_dev_artifacts</code> por ejecución</td></tr>
+        <tr><td>Registro de hallazgos</td><td>Una fila por issue en <code>dp_factory_dev_findings</code> (compliance violations, alertas de seguridad, observaciones)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Relación con el Ecosistema Existente</h3>
+  <p>El módulo <strong>no reemplaza</strong> el framework de control de procesos productivos (que monitorea ejecuciones de Cloud Workflows y SPs en producción). Es complementario: el control de procesos monitorea <em>qué corre en producción</em>; dp_factory_dev monitorea <em>cómo se construyó</em>.</p>
+</section>
+
+<hr class="divider">
+
+<!-- ── §2 MODELO DE DATOS ───────────────────────────────────── -->
+<section class="doc-section" id="modelo">
+  <div class="section-label">§2</div>
+  <h2>Modelo de Datos</h2>
+
+  <h3>Diagrama Entidad-Relación</h3>
+
+  <div class="erd">
+    <!-- Project box -->
+    <div class="erd-row">
+      <div class="erd-box">
+        <div class="erd-box-head">dp_factory_dev_project</div>
+        <div class="erd-box-body">
+          <div class="pk">PK  project_id  SERIAL</div>
+          <div>    spec_id     VARCHAR(100)</div>
+          <div>    module_type VARCHAR(50)</div>
+          <div>    status      VARCHAR(20)</div>
+          <div>    autor       VARCHAR(100)</div>
+          <div>    ···  (27 campos)</div>
+        </div>
+      </div>
+    </div>
+    <!-- Connector project → execution -->
+    <div style="display:flex; align-items:flex-start; padding-left:40px; gap:0;">
+      <div style="display:flex; flex-direction:column; align-items:center; width:2px;">
+        <div style="width:1px; height:24px; background:var(--border);"></div>
+        <span class="erd-label">1 : N</span>
+        <div style="width:1px; height:12px; background:var(--border);"></div>
+      </div>
+    </div>
+    <!-- Execution box -->
+    <div class="erd-row">
+      <div class="erd-box">
+        <div class="erd-box-head">dp_factory_dev_execution</div>
+        <div class="erd-box-body">
+          <div class="pk">PK  execution_id    SERIAL</div>
+          <div class="fk">FK  project_id      → project</div>
+          <div class="fk">FK  parent_exec_id  → execution (self)</div>
+          <div>    stage           VARCHAR(30)</div>
+          <div>    skill_used      VARCHAR(100)</div>
+          <div>    tokens_input    BIGINT</div>
+          <div>    ···  (38 campos)</div>
+        </div>
+      </div>
+    </div>
+    <!-- Connector execution → children -->
+    <div style="display:flex; align-items:flex-start; padding-left:40px;">
+      <div style="display:flex; flex-direction:column; align-items:flex-start; gap:0;">
+        <div style="width:1px; height:20px; background:var(--border); margin-left:1px;"></div>
+        <div style="display:flex; gap:80px;">
+          <!-- left branch -->
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <span class="erd-label" style="margin-bottom:4px;">1 : N</span>
+            <div style="width:1px; height:12px; background:var(--border);"></div>
+            <div class="erd-box erd-box-sub" style="min-width:190px;">
+              <div class="erd-box-head">dp_factory_dev_artifacts</div>
+              <div class="erd-box-body">
+                <div class="fk">FK  execution_id</div>
+                <div>    artifact_path</div>
+                <div>    artifact_type</div>
+                <div>    lines_added / removed</div>
+                <div>    is_new  BOOLEAN</div>
+              </div>
+            </div>
+          </div>
+          <!-- right branch -->
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <span class="erd-label" style="margin-bottom:4px;">1 : N</span>
+            <div style="width:1px; height:12px; background:var(--border);"></div>
+            <div class="erd-box erd-box-sub" style="min-width:190px;">
+              <div class="erd-box-head">dp_factory_dev_findings</div>
+              <div class="erd-box-body">
+                <div class="fk">FK  execution_id</div>
+                <div>    finding_type</div>
+                <div>    severity</div>
+                <div>    rule_id / description</div>
+                <div>    resolved / auto_resolved</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Relaciones</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Relación</th><th>Cardinalidad</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td><code>project</code> → <code>execution</code></td><td>1 : N</td><td>Un proyecto tiene múltiples ejecuciones de etapas (una por stage, más reintentos).</td></tr>
+        <tr><td><code>execution</code> → <code>artifacts</code></td><td>1 : N</td><td>Una ejecución puede generar cero o más artefactos (archivos creados o modificados).</td></tr>
+        <tr><td><code>execution</code> → <code>findings</code></td><td>1 : N</td><td>Una ejecución puede detectar cero o más hallazgos (violations, alertas, observaciones).</td></tr>
+        <tr><td><code>execution</code> → <code>execution</code></td><td>self-ref</td><td><code>parent_execution_id</code> encadena reintentos: si CODING falla y se re-ejecuta, el nuevo registro apunta al anterior.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── §3 DICCIONARIO ───────────────────────────────────────── -->
+<section class="doc-section" id="diccionario">
+  <div class="section-label">§3</div>
+  <h2>Diccionario de Datos</h2>
+
+  <!-- ── 3.1 PROJECT ── -->
+  <h3>3.1 dp_factory_dev_project</h3>
+  <p>Cabecera de nivel repositorio/módulo. Se crea al inicio del proyecto (evento <code>project_init</code>) y se actualiza con totales agregados al cierre (evento <code>project_closed</code>).</p>
+
+  <h4>Identificación y Clasificación</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Restr.</th><th>Descripción · Valores válidos</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">project_id</td><td class="type-badge">SERIAL</td><td><span class="req-badge req-pk">PK</span></td><td>Identificador autoincremental del proyecto.</td></tr>
+        <tr><td class="field-name">spec_id</td><td class="type-badge">VARCHAR(100)</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>Identificador único del spec del módulo. Ej: <code>spec-itc-20260628-ba-digital-profile</code>. Generado por <code>/spec-create</code>. Unique key.</td></tr>
+        <tr><td class="field-name">repo_name</td><td class="type-badge">VARCHAR(200)</td><td><span class="req-badge req-opt">OPT</span></td><td>Nombre del repositorio destino. Ej: <code>itcm-dp-ba-digital-profile</code>.</td></tr>
+        <tr><td class="field-name">module_id</td><td class="type-badge">VARCHAR(100)</td><td><span class="req-badge req-opt">OPT</span></td><td>Slug del módulo dentro del repo. Coincide con el nombre de la tabla destino principal. Ej: <code>ba_itc_attr_digital_profile</code>.</td></tr>
+        <tr><td class="field-name">module_type</td><td class="type-badge">VARCHAR(50)</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>Tipo de módulo factory. Valores: <code>bq_pipeline</code> · <code>cloud_run_api</code> · <code>vertex_ml</code> · <code>cloud_function</code>.</td></tr>
+        <tr><td class="field-name">tipo_flujo</td><td class="type-badge">VARCHAR(50)</td><td><span class="req-badge req-opt">OPT</span></td><td>Modalidad de ejecución del pipeline. Ej: <code>batch</code> · <code>streaming</code> · <code>api</code> · <code>ml_training</code>.</td></tr>
+        <tr><td class="field-name">empresa</td><td class="type-badge">VARCHAR(10)</td><td><span class="req-badge req-opt">OPT</span></td><td>Código de empresa. Ej: <code>itc</code> · <code>foh</code> · <code>spu</code> · <code>prm</code>.</td></tr>
+        <tr><td class="field-name">equipo</td><td class="type-badge">VARCHAR(50)</td><td><span class="req-badge req-opt">OPT</span></td><td>Equipo responsable. Ej: <code>data-platform</code> · <code>ml-team</code>.</td></tr>
+        <tr><td class="field-name">autor</td><td class="type-badge">VARCHAR(100)</td><td><span class="req-badge req-opt">OPT</span></td><td>Email del ingeniero que inició el proyecto. Ej: <code>amoreno@inside.com.pe</code>.</td></tr>
+        <tr><td class="field-name">aprobador</td><td class="type-badge">VARCHAR(100)</td><td><span class="req-badge req-opt">OPT</span></td><td>Email del tech lead o arquitecto que aprueba el spec. Puede ser NULL hasta fase DESIGN.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Estado y Progreso</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Restr.</th><th>Descripción · Valores válidos</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">status</td><td class="type-badge">VARCHAR(20)</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>Estado del proyecto. Valores: <code>in_progress</code> · <code>completed</code> · <code>failed</code> · <code>paused</code>. Default: <code>in_progress</code>.</td></tr>
+        <tr><td class="field-name">etapa_actual</td><td class="type-badge">VARCHAR(30)</td><td><span class="req-badge req-opt">OPT</span></td><td>Nombre de la etapa en curso. Se actualiza al inicio de cada stage. Ej: <code>CODING</code> · <code>COMPLIANCE</code>.</td></tr>
+        <tr><td class="field-name">etapas_total</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-opt">OPT</span></td><td>Número total de etapas planificadas según el spec. Ej: <code>9</code>.</td></tr>
+        <tr><td class="field-name">etapas_completadas</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-opt">OPT</span></td><td>Contador de etapas finalizadas con <code>status=completed</code>. Default: 0. Actualizado en cada <code>stage_completed</code>.</td></tr>
+        <tr><td class="field-name">created_at</td><td class="type-badge">TIMESTAMP</td><td><span class="req-badge req-opt">OPT</span></td><td>Timestamp de creación del registro. Default: <code>NOW()</code>.</td></tr>
+        <tr><td class="field-name">completed_at</td><td class="type-badge">TIMESTAMP</td><td><span class="req-badge req-opt">OPT</span></td><td>Timestamp cuando el proyecto alcanzó <code>status=completed</code> o <code>failed</code>.</td></tr>
+        <tr><td class="field-name">total_duration_seconds</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-opt">OPT</span></td><td>Suma de <code>duration_seconds</code> de todas las ejecuciones del proyecto. Calculado al cierre.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Métricas Agregadas (calculadas al cierre)</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">total_tokens_input_estimated</td><td class="type-badge">BIGINT</td><td>Suma de tokens de entrada estimados por Claude antes de cada stage.</td></tr>
+        <tr><td class="field-name">total_tokens_output_estimated</td><td class="type-badge">BIGINT</td><td>Suma de tokens de salida estimados.</td></tr>
+        <tr><td class="field-name">total_tokens_input</td><td class="type-badge">BIGINT</td><td>Suma de tokens de entrada reales (reportados por la API).</td></tr>
+        <tr><td class="field-name">total_tokens_output</td><td class="type-badge">BIGINT</td><td>Suma de tokens de salida reales.</td></tr>
+        <tr><td class="field-name">total_loc_generated</td><td class="type-badge">INTEGER</td><td>Total de líneas de código generadas en el proyecto (SQL + YAML + Python).</td></tr>
+        <tr><td class="field-name">total_files_created</td><td class="type-badge">INTEGER</td><td>Total de archivos nuevos creados a lo largo del proyecto.</td></tr>
+        <tr><td class="field-name">total_findings</td><td class="type-badge">INTEGER</td><td>Total de findings detectados. Default: 0.</td></tr>
+        <tr><td class="field-name">total_findings_resolved</td><td class="type-badge">INTEGER</td><td>Findings resueltos (auto o manualmente). Default: 0.</td></tr>
+        <tr><td class="field-name">compliance_score_pct</td><td class="type-badge">NUMERIC(5,2)</td><td>Score de cumplimiento del stage COMPLIANCE (0–100). Copiado desde la última ejecución de COMPLIANCE.</td></tr>
+        <tr><td class="field-name">cost_usd_estimated</td><td class="type-badge">NUMERIC(10,4)</td><td>Costo total estimado en USD. Suma de <code>cost_usd_estimated</code> de todas las ejecuciones.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 3.2 EXECUTION ── -->
+  <h3>3.2 dp_factory_dev_execution</h3>
+  <p>Una fila por ejecución de etapa, incluyendo reintentos. Es la tabla central del módulo.</p>
+
+  <h4>Identificación y Stage</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Restr.</th><th>Descripción · Valores válidos</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">execution_id</td><td class="type-badge">SERIAL</td><td><span class="req-badge req-pk">PK</span></td><td>Identificador autoincremental de la ejecución.</td></tr>
+        <tr><td class="field-name">project_id</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-fk">FK</span></td><td>Referencia a <code>dp_factory_dev_project.project_id</code>.</td></tr>
+        <tr><td class="field-name">spec_id</td><td class="type-badge">VARCHAR(100)</td><td><span class="req-badge req-opt">OPT</span></td><td>Desnormalizado desde project para facilitar queries sin JOIN. Mismo valor que project.</td></tr>
+        <tr><td class="field-name">module_id</td><td class="type-badge">VARCHAR(100)</td><td><span class="req-badge req-opt">OPT</span></td><td>Desnormalizado desde project.</td></tr>
+        <tr><td class="field-name">stage</td><td class="type-badge">VARCHAR(30)</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>Nombre de la etapa ejecutada. Valores: <code>PLAN</code> · <code>DISCOVERY</code> · <code>DESIGN</code> · <code>CODING</code> · <code>ORCHESTRATION</code> · <code>MONITORING</code> · <code>DQ</code> · <code>LINEAGE</code> · <code>DATAOPS</code> · <code>COMPLIANCE</code> · <code>TESTING</code> · <code>INFRAOPS</code> · <code>SECURITY</code> · <code>DOCUMENTATION</code> · <code>RELEASE</code>.</td></tr>
+        <tr><td class="field-name">stage_order</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-opt">OPT</span></td><td>Posición ordinal de la etapa en el flujo (1-based). Permite ordenar cronológicamente.</td></tr>
+        <tr><td class="field-name">stage_attempt_number</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>Número de intento (1 = primera ejecución, 2 = primer reintento, etc.). Default: <code>1</code>.</td></tr>
+        <tr><td class="field-name">parent_execution_id</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-fk">FK self</span></td><td>Apunta al <code>execution_id</code> del intento anterior. NULL en el primer intento de cada stage.</td></tr>
+        <tr><td class="field-name">status</td><td class="type-badge">VARCHAR(20)</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>Resultado de la ejecución. Valores: <code>completed</code> · <code>failed</code> · <code>in_progress</code> · <code>skipped</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Agente y Operador</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">skill_used</td><td class="type-badge">VARCHAR(100)</td><td>Nombre del skill o command invocado. Ej: <code>bigquery-pipeline-developer</code> · <code>compliance-reviewer</code> · <code>spec-create</code>.</td></tr>
+        <tr><td class="field-name">model_id</td><td class="type-badge">VARCHAR(80)</td><td>Modelo LLM utilizado. Ej: <code>claude-sonnet-4-6</code> · <code>claude-opus-4-8</code>.</td></tr>
+        <tr><td class="field-name">operator</td><td class="type-badge">VARCHAR(100)</td><td>Email del ingeniero que disparó la ejecución del stage.</td></tr>
+        <tr><td class="field-name">started_at</td><td class="type-badge">TIMESTAMP</td><td>Timestamp de inicio de la ejecución del stage.</td></tr>
+        <tr><td class="field-name">completed_at</td><td class="type-badge">TIMESTAMP</td><td>Timestamp de fin (cuando Claude entrega el resultado).</td></tr>
+        <tr><td class="field-name">duration_seconds</td><td class="type-badge">INTEGER</td><td>Duración en segundos. Calculado: <code>completed_at - started_at</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Métricas de Tokens y Costo</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">tokens_input_estimated</td><td class="type-badge">INTEGER</td><td>Estimación de tokens de entrada antes de ejecutar el stage (cálculo aproximado desde tamaño del contexto).</td></tr>
+        <tr><td class="field-name">tokens_output_estimated</td><td class="type-badge">INTEGER</td><td>Estimación de tokens de salida esperados.</td></tr>
+        <tr><td class="field-name">tokens_input</td><td class="type-badge">INTEGER</td><td>Tokens de entrada reales reportados por la API al finalizar el stage.</td></tr>
+        <tr><td class="field-name">tokens_output</td><td class="type-badge">INTEGER</td><td>Tokens de salida reales.</td></tr>
+        <tr><td class="field-name">cost_usd_estimated</td><td class="type-badge">NUMERIC(10,4)</td><td>Costo estimado en USD. Ver fórmula en §4. Calculado por Claude al generar el JSON.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Métricas de Producción</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">loc_sql</td><td class="type-badge">INTEGER</td><td>Líneas de código SQL generadas en el stage (DDLs + SPs + DMLs).</td></tr>
+        <tr><td class="field-name">loc_yaml</td><td class="type-badge">INTEGER</td><td>Líneas de código YAML generadas (workflows, deploy configs, specs).</td></tr>
+        <tr><td class="field-name">loc_python</td><td class="type-badge">INTEGER</td><td>Líneas de código Python generadas (Vertex pipelines, Cloud Functions).</td></tr>
+        <tr><td class="field-name">files_created</td><td class="type-badge">INTEGER</td><td>Número de archivos nuevos creados en el stage.</td></tr>
+        <tr><td class="field-name">files_modified</td><td class="type-badge">INTEGER</td><td>Número de archivos preexistentes modificados.</td></tr>
+        <tr><td class="field-name">tool_calls</td><td class="type-badge">INTEGER</td><td>Total de llamadas a tools de Claude (Read, Edit, Grep, MCP) durante el stage.</td></tr>
+        <tr><td class="field-name">retries</td><td class="type-badge">INTEGER</td><td>Número de reintentos automáticos internos de Claude (distintos de un re-stage completo). Default: 0.</td></tr>
+        <tr><td class="field-name">human_corrections</td><td class="type-badge">INTEGER</td><td>Correcciones aplicadas por el ingeniero sobre los outputs de Claude antes de commitear.</td></tr>
+        <tr><td class="field-name">git_commit_sha</td><td class="type-badge">VARCHAR(40)</td><td>SHA del commit generado al final del stage. NULL si el stage no produjo commit (ej. COMPLIANCE).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Métricas de Calidad</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">findings_count</td><td class="type-badge">INTEGER</td><td>Número de findings generados en este stage. Coincide con las filas insertadas en <code>dp_factory_dev_findings</code>.</td></tr>
+        <tr><td class="field-name">findings_resolved</td><td class="type-badge">INTEGER</td><td>Findings resueltos (auto o manual) durante el mismo stage.</td></tr>
+        <tr><td class="field-name">blocking_issues</td><td class="type-badge">INTEGER</td><td>Issues bloqueantes al cierre del stage. Si > 0, el status debe ser <code>failed</code> (constraint de negocio).</td></tr>
+        <tr><td class="field-name">compliance_score_pct</td><td class="type-badge">NUMERIC(5,2)</td><td>Score de compliance 0–100. Aplicable solo en stages COMPLIANCE y RELEASE. NULL en otros stages.</td></tr>
+        <tr><td class="field-name">spec_coverage_pct</td><td class="type-badge">NUMERIC(5,2)</td><td>Porcentaje del spec cubierto por los artefactos generados. Estimado por Claude al finalizar CODING y BUILD stages.</td></tr>
+        <tr><td class="field-name">validation_bq_rows_checked</td><td class="type-badge">INTEGER</td><td>Número de filas validadas en BigQuery durante TESTING. NULL en otros stages.</td></tr>
+        <tr><td class="field-name">spec_fields_autofilled</td><td class="type-badge">INTEGER</td><td>Campos del spec auto-completados por Claude desde el data catalog (solo aplica en PLAN/DISCOVERY).</td></tr>
+        <tr><td class="field-name">patterns_referenced</td><td class="type-badge">INTEGER</td><td>Número de skills/estándares de la knowledge base consultados durante el stage.</td></tr>
+        <tr><td class="field-name">notes</td><td class="type-badge">TEXT</td><td>Observaciones de la ejecución en texto libre. Claude describe decisiones, correcciones y puntos de atención.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 3.3 ARTIFACTS ── -->
+  <h3>3.3 dp_factory_dev_artifacts</h3>
+  <p>Registro de cada archivo generado o modificado en una ejecución de stage. Permite auditar el output de cada etapa.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Restr.</th><th>Descripción · Valores válidos</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">execution_id</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-fk">FK</span></td><td>Referencia a <code>dp_factory_dev_execution.execution_id</code>. Forma parte de la PK compuesta.</td></tr>
+        <tr><td class="field-name">artifact_path</td><td class="type-badge">VARCHAR(500)</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>Ruta relativa desde la raíz del repo. Ej: <code>data/bigquery/ba_itc_attr/ddl/ba_itc_attr.sql</code>. Forma parte de la PK compuesta.</td></tr>
+        <tr><td class="field-name">artifact_type</td><td class="type-badge">VARCHAR(30)</td><td><span class="req-badge req-opt">OPT</span></td><td>Tipo de artefacto. Valores: <code>ddl</code> · <code>sp</code> · <code>dml</code> · <code>workflow</code> · <code>image_yaml</code> · <code>deploy_json</code> · <code>env_json</code> · <code>infra_json</code> · <code>spec</code> · <code>python</code>.</td></tr>
+        <tr><td class="field-name">lines_added</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-opt">OPT</span></td><td>Número de líneas agregadas (equivalente a <code>git diff --stat</code>). Para archivos nuevos, es el total de líneas.</td></tr>
+        <tr><td class="field-name">lines_removed</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-opt">OPT</span></td><td>Número de líneas eliminadas. 0 para archivos nuevos.</td></tr>
+        <tr><td class="field-name">is_new</td><td class="type-badge">BOOLEAN</td><td><span class="req-badge req-nn">NOT NULL</span></td><td><code>true</code> si el archivo no existía antes del stage. <code>false</code> si fue modificado.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 3.4 FINDINGS ── -->
+  <h3>3.4 dp_factory_dev_findings</h3>
+  <p>Registro de hallazgos detectados durante un stage: violations de compliance, alertas de seguridad, inconsistencias y observaciones de mejora.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Restr.</th><th>Descripción · Valores válidos</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">execution_id</td><td class="type-badge">INTEGER</td><td><span class="req-badge req-fk">FK</span></td><td>Referencia a <code>dp_factory_dev_execution.execution_id</code>.</td></tr>
+        <tr><td class="field-name">finding_type</td><td class="type-badge">VARCHAR(50)</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>Categoría del hallazgo. Valores: <code>compliance_violation</code> · <code>security_alert</code> · <code>consistency_issue</code> · <code>observation</code>.</td></tr>
+        <tr><td class="field-name">severity</td><td class="type-badge">VARCHAR(10)</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>
+          Nivel de severidad:
+          <span class="chip chip-critical">critical</span> bloquea stage ·
+          <span class="chip chip-high">high</span> debe resolverse en stage ·
+          <span class="chip chip-medium">medium</span> debe resolverse antes de release ·
+          <span class="chip chip-low">low</span> recomendado ·
+          <span class="chip chip-info">info</span> observación.
+        </td></tr>
+        <tr><td class="field-name">rule_id</td><td class="type-badge">VARCHAR(30)</td><td><span class="req-badge req-opt">OPT</span></td><td>Identificador de la regla de compliance que fue violada. Ej: <code>BQ-001</code> · <code>WF-002</code> · <code>SEC-001</code>. NULL para observaciones sin regla asociada.</td></tr>
+        <tr><td class="field-name">description</td><td class="type-badge">TEXT</td><td><span class="req-badge req-nn">NOT NULL</span></td><td>Descripción del hallazgo en lenguaje natural. Claude debe incluir el artefacto afectado y la acción tomada o pendiente.</td></tr>
+        <tr><td class="field-name">resolved</td><td class="type-badge">BOOLEAN</td><td><span class="req-badge req-nn">NOT NULL</span></td><td><code>true</code> si el finding fue resuelto (auto o manualmente) antes de cerrar el stage.</td></tr>
+        <tr><td class="field-name">auto_resolved</td><td class="type-badge">BOOLEAN</td><td><span class="req-badge req-nn">NOT NULL</span></td><td><code>true</code> si Claude resolvió el finding de forma autónoma sin intervención humana.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── §4 FLUJO DE REGISTRO ─────────────────────────────────── -->
+<section class="doc-section" id="flujo">
+  <div class="section-label">§4</div>
+  <h2>Flujo de Registro</h2>
+
+  <p>Al finalizar cada stage, Claude genera un JSON estructurado como parte del output del comando <code>/implement-stage</code>. Este JSON se envía al endpoint de la metadata API (mismo sistema que <code>monitoring_register</code>) o se escribe a un archivo en <code>deploy/factory_events/</code> para su procesamiento diferido.</p>
+
+  <h3>Eventos y Tablas Afectadas</h3>
+  <ul class="flow-list">
+    <li class="flow-item event-init">
+      <div class="flow-event">project_init</div>
+      <div class="flow-desc">
+        Disparo: al finalizar el stage <strong>PLAN</strong> (primer stage de cualquier proyecto).<br>
+        <strong>INSERT</strong> en <code>dp_factory_dev_project</code> (crea la cabecera del proyecto).<br>
+        <strong>INSERT</strong> en <code>dp_factory_dev_execution</code> + <code>dp_factory_dev_artifacts</code> + <code>dp_factory_dev_findings</code> del stage PLAN.
+        <div class="flow-tables">
+          <span class="chip chip-neutral">project</span>
+          <span class="chip chip-neutral">execution</span>
+          <span class="chip chip-neutral">artifacts</span>
+          <span class="chip chip-neutral">findings</span>
+        </div>
+      </div>
+    </li>
+    <li class="flow-item event-complete">
+      <div class="flow-event">stage_completed</div>
+      <div class="flow-desc">
+        Disparo: al finalizar cualquier stage posterior a PLAN con <code>status=completed</code>.<br>
+        <strong>INSERT</strong> en <code>execution</code> + <code>artifacts</code> + <code>findings</code> del stage.<br>
+        <strong>UPDATE</strong> en <code>project</code>: incrementa <code>etapas_completadas</code>, actualiza <code>etapa_actual</code>.
+        <div class="flow-tables">
+          <span class="chip chip-neutral">execution</span>
+          <span class="chip chip-neutral">artifacts</span>
+          <span class="chip chip-neutral">findings</span>
+          <span class="chip chip-info">project (UPDATE)</span>
+        </div>
+      </div>
+    </li>
+    <li class="flow-item event-retry">
+      <div class="flow-event">stage_failed / stage_retry</div>
+      <div class="flow-desc">
+        Disparo: cuando un stage termina con <code>status=failed</code> o cuando se re-ejecuta un stage.<br>
+        <strong>INSERT</strong> en <code>execution</code> con <code>stage_attempt_number = N+1</code> y <code>parent_execution_id = execution_id_anterior</code>. Los artifacts y findings son de la re-ejecución, no del intento fallido.
+        <div class="flow-tables">
+          <span class="chip chip-neutral">execution</span>
+          <span class="chip chip-neutral">artifacts</span>
+          <span class="chip chip-neutral">findings</span>
+        </div>
+      </div>
+    </li>
+    <li class="flow-item event-close">
+      <div class="flow-event">project_closed</div>
+      <div class="flow-desc">
+        Disparo: al finalizar el stage <strong>RELEASE</strong> (último stage del flujo).<br>
+        <strong>INSERT</strong> en <code>execution</code> + <code>artifacts</code> + <code>findings</code> de RELEASE.<br>
+        <strong>UPDATE</strong> en <code>project</code>: <code>status=completed</code>, <code>completed_at</code>, y todos los totales agregados (<code>total_tokens_*</code>, <code>total_loc_generated</code>, <code>total_files_created</code>, <code>total_findings</code>, <code>cost_usd_estimated</code>, <code>compliance_score_pct</code>).
+        <div class="flow-tables">
+          <span class="chip chip-neutral">execution</span>
+          <span class="chip chip-neutral">artifacts</span>
+          <span class="chip chip-neutral">findings</span>
+          <span class="chip chip-info">project (UPDATE final)</span>
+        </div>
+      </div>
+    </li>
+  </ul>
+
+  <h3>Fórmula de Costo Estimado</h3>
+  <p>Claude calcula <code>cost_usd_estimated</code> al generar el JSON usando los precios del modelo usado en el stage:</p>
+  <div class="formula-box">
+    <span class="comment">-- claude-sonnet-4-6: $3 / MTok input · $15 / MTok output</span><br>
+    cost_usd = (tokens_input_estimated / 1_000_000 × 3.0)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + (tokens_output_estimated / 1_000_000 × 15.0)<br><br>
+    <span class="comment">-- claude-opus-4-8: $15 / MTok input · $75 / MTok output</span><br>
+    cost_usd = (tokens_input_estimated / 1_000_000 × 15.0)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + (tokens_output_estimated / 1_000_000 × 75.0)
+  </div>
+
+  <h3>Reglas de Negocio y Constraints</h3>
+  <ul class="constraint-list">
+    <li><code>spec_id</code> es UNIQUE en <code>dp_factory_dev_project</code>. Un spec no puede tener dos proyectos activos.</li>
+    <li>Si <code>blocking_issues &gt; 0</code>, el <code>status</code> del execution DEBE ser <code>failed</code>. Claude no puede reportar <code>completed</code> con issues bloqueantes.</li>
+    <li><code>stage_attempt_number</code> comienza en 1. Cada re-ejecución del mismo stage incrementa el contador. El historial completo de intentos se preserva (no se actualiza, se inserta).</li>
+    <li><code>compliance_score_pct</code> y <code>validation_bq_rows_checked</code> son NULL en stages que no aplican. No deben forzarse a 0.</li>
+    <li>Si un stage no genera artefactos (ej. COMPLIANCE solo modifica archivos existentes), la lista <code>artifacts</code> puede ser vacía. Si no modifica ningún archivo, <code>files_modified = 0</code>.</li>
+    <li>El campo <code>notes</code> es obligatorio cuando <code>human_corrections &gt; 0</code> — Claude debe describir qué fue corregido.</li>
+    <li><code>auto_resolved = true</code> en findings significa que Claude detectó Y solucionó el problema de forma autónoma en el mismo stage, sin loop de feedback humano.</li>
+  </ul>
+</section>
+
+<hr class="divider">
+
+<!-- ── §5 EJEMPLOS JSON ──────────────────────────────────────── -->
+<section class="doc-section" id="ejemplos">
+  <div class="section-label">§5</div>
+  <h2>Ejemplos de Registro JSON</h2>
+
+  <p>Los siguientes ejemplos corresponden al módulo ficticio <strong><code>ba_itc_attr_digital_profile</code></strong> (tipo <code>bq_pipeline</code>, repo <code>itcm-dp-ba-digital-profile</code>). Muestran el JSON completo que Claude genera al finalizar cada stage, listo para enviarse al endpoint de la metadata API.</p>
+
+  <!-- Example A -->
+  <div class="example-block">
+    <div class="example-header">
+      <span class="example-title">A — project_init (fin del stage PLAN)</span>
+      <div class="example-meta">
+        <span class="chip chip-info">stage: PLAN</span>
+        <span class="chip chip-neutral">Crea proyecto + primera ejecución</span>
+      </div>
+    </div>
+    <div class="code-wrap"><div class="code-lang">JSON</div>
+<pre class="json">{
+  "event": "project_init",
+  "project": {
+    "spec_id": "spec-itc-20260628-ba-digital-profile",
+    "repo_name": "itcm-dp-ba-digital-profile",
+    "module_id": "ba_itc_attr_digital_profile",
+    "module_type": "bq_pipeline",
+    "tipo_flujo": "batch",
+    "empresa": "itc",
+    "equipo": "data-platform",
+    "autor": "amoreno@inside.com.pe",
+    "aprobador": null,
+    "status": "in_progress",
+    "etapa_actual": "PLAN",
+    "etapas_total": 9,
+    "etapas_completadas": 1
+  },
+  "execution": {
+    "stage": "PLAN",
+    "stage_order": 1,
+    "status": "completed",
+    "skill_used": "spec-create",
+    "model_id": "claude-sonnet-4-6",
+    "operator": "amoreno@inside.com.pe",
+    "started_at": "2026-06-28T09:00:00",
+    "completed_at": "2026-06-28T09:14:32",
+    "duration_seconds": 872,
+    "tokens_input_estimated": 18000,
+    "tokens_output_estimated": 4200,
+    "tokens_input": 19432,
+    "tokens_output": 3987,
+    "loc_sql": 0,
+    "loc_yaml": 48,
+    "loc_python": 0,
+    "files_created": 2,
+    "files_modified": 0,
+    "findings_count": 0,
+    "findings_resolved": 0,
+    "human_corrections": 0,
+    "tool_calls": 6,
+    "retries": 0,
+    "cost_usd_estimated": 0.1175,
+    "git_commit_sha": null,
+    "compliance_score_pct": null,
+    "spec_coverage_pct": null,
+    "blocking_issues": 0,
+    "validation_bq_rows_checked": null,
+    "spec_fields_autofilled": 12,
+    "patterns_referenced": 2,
+    "stage_attempt_number": 1,
+    "parent_execution_id": null,
+    "notes": "spec.yaml creado (48 líneas). 12 campos auto-completados desde data catalog: datasets, tablas source, process_date_ini default. project.manifest.yaml generado."
+  },
+  "artifacts": [
+    {
+      "artifact_path": "spec.yaml",
+      "artifact_type": "spec",
+      "lines_added": 48,
+      "lines_removed": 0,
+      "is_new": true
+    },
+    {
+      "artifact_path": "project.manifest.yaml",
+      "artifact_type": "spec",
+      "lines_added": 24,
+      "lines_removed": 0,
+      "is_new": true
+    }
+  ],
+  "findings": []
+}</pre>
+    </div>
+  </div>
+
+  <!-- Example B -->
+  <div class="example-block">
+    <div class="example-header">
+      <span class="example-title">B — stage_completed (fin del stage CODING)</span>
+      <div class="example-meta">
+        <span class="chip chip-info">stage: CODING</span>
+        <span class="chip chip-neutral">5 artefactos · 3 findings</span>
+      </div>
+    </div>
+    <div class="code-wrap"><div class="code-lang">JSON</div>
+<pre class="json">{
+  "event": "stage_completed",
+  "project_update": {
+    "etapa_actual": "CODING",
+    "etapas_completadas": 4
+  },
+  "execution": {
+    "stage": "CODING",
+    "stage_order": 4,
+    "status": "completed",
+    "skill_used": "bigquery-pipeline-developer",
+    "model_id": "claude-sonnet-4-6",
+    "operator": "amoreno@inside.com.pe",
+    "started_at": "2026-06-28T11:30:00",
+    "completed_at": "2026-06-28T12:48:17",
+    "duration_seconds": 4697,
+    "tokens_input_estimated": 52000,
+    "tokens_output_estimated": 14000,
+    "tokens_input": 54821,
+    "tokens_output": 13652,
+    "loc_sql": 387,
+    "loc_yaml": 0,
+    "loc_python": 0,
+    "files_created": 4,
+    "files_modified": 1,
+    "findings_count": 3,
+    "findings_resolved": 2,
+    "human_corrections": 1,
+    "tool_calls": 14,
+    "retries": 0,
+    "cost_usd_estimated": 0.3615,
+    "git_commit_sha": "b4f1a9c2e3d7f8a2",
+    "compliance_score_pct": null,
+    "spec_coverage_pct": 91.7,
+    "blocking_issues": 0,
+    "validation_bq_rows_checked": null,
+    "spec_fields_autofilled": 0,
+    "patterns_referenced": 4,
+    "stage_attempt_number": 1,
+    "parent_execution_id": null,
+    "notes": "DDL: ba_itc_attr_digital_profile + tmp_base_digital. SPs: sp_carga_ba_itc_attr_digital_profile (248 líneas) + sp_tmp_base_digital (94 líneas). 1 corrección humana: prefijo sp_carga_ aplicado. 1 finding de observación sobre clustering pendiente."
+  },
+  "artifacts": [
+    {
+      "artifact_path": "data/bigquery/ba_itc_attr_digital_profile/ddl/ba_itc_attr_digital_profile.sql",
+      "artifact_type": "ddl",
+      "lines_added": 52,
+      "lines_removed": 0,
+      "is_new": true
+    },
+    {
+      "artifact_path": "data/bigquery/ba_itc_attr_digital_profile/ddl/tmp_base_digital.sql",
+      "artifact_type": "ddl",
+      "lines_added": 38,
+      "lines_removed": 0,
+      "is_new": true
+    },
+    {
+      "artifact_path": "data/bigquery/ba_itc_attr_digital_profile/sp/sp_carga_ba_itc_attr_digital_profile.sql",
+      "artifact_type": "sp",
+      "lines_added": 248,
+      "lines_removed": 0,
+      "is_new": true
+    },
+    {
+      "artifact_path": "data/bigquery/ba_itc_attr_digital_profile/sp/sp_tmp_base_digital.sql",
+      "artifact_type": "sp",
+      "lines_added": 94,
+      "lines_removed": 0,
+      "is_new": true
+    },
+    {
+      "artifact_path": "spec.yaml",
+      "artifact_type": "spec",
+      "lines_added": 6,
+      "lines_removed": 2,
+      "is_new": false
+    }
+  ],
+  "findings": [
+    {
+      "finding_type": "compliance_violation",
+      "severity": "high",
+      "rule_id": "BQ-001",
+      "description": "SP sp_carga_ba_itc_attr_digital_profile sin DECLARE process_date_end antes del BEGIN. Agregado en revisión inline del mismo stage.",
+      "resolved": true,
+      "auto_resolved": true
+    },
+    {
+      "finding_type": "compliance_violation",
+      "severity": "medium",
+      "rule_id": "BQ-004",
+      "description": "Naming de SP no seguía convención sp_carga_. Generado inicialmente como sp_ba_itc_attr_digital_profile, renombrado por corrección humana.",
+      "resolved": true,
+      "auto_resolved": false
+    },
+    {
+      "finding_type": "observation",
+      "severity": "info",
+      "rule_id": null,
+      "description": "tmp_base_digital sin CLUSTER BY. Se recomienda CLUSTER BY empresa para optimizar scans en el SP principal. Pendiente de decisión.",
+      "resolved": false,
+      "auto_resolved": false
+    }
+  ]
+}</pre>
+    </div>
+  </div>
+
+  <!-- Example C -->
+  <div class="example-block">
+    <div class="example-header">
+      <span class="example-title">C — stage_completed (stage COMPLIANCE, reintento 2)</span>
+      <div class="example-meta">
+        <span class="chip chip-info">stage: COMPLIANCE</span>
+        <span class="chip chip-medium">stage_attempt_number: 2</span>
+        <span class="chip chip-neutral">5 findings · 4 críticos resueltos</span>
+      </div>
+    </div>
+    <div class="code-wrap"><div class="code-lang">JSON</div>
+<pre class="json">{
+  "event": "stage_completed",
+  "project_update": {
+    "etapa_actual": "COMPLIANCE",
+    "etapas_completadas": 8
+  },
+  "execution": {
+    "stage": "COMPLIANCE",
+    "stage_order": 8,
+    "status": "completed",
+    "skill_used": "compliance-reviewer",
+    "model_id": "claude-sonnet-4-6",
+    "operator": "amoreno@inside.com.pe",
+    "started_at": "2026-06-29T10:00:00",
+    "completed_at": "2026-06-29T10:28:44",
+    "duration_seconds": 1724,
+    "tokens_input_estimated": 38000,
+    "tokens_output_estimated": 6500,
+    "tokens_input": 39114,
+    "tokens_output": 6288,
+    "loc_sql": 0,
+    "loc_yaml": 0,
+    "loc_python": 0,
+    "files_created": 0,
+    "files_modified": 3,
+    "findings_count": 5,
+    "findings_resolved": 4,
+    "human_corrections": 0,
+    "tool_calls": 11,
+    "retries": 0,
+    "cost_usd_estimated": 0.2112,
+    "git_commit_sha": "c9e3f2a1b8d4c7f1",
+    "compliance_score_pct": 96.4,
+    "spec_coverage_pct": null,
+    "blocking_issues": 0,
+    "validation_bq_rows_checked": null,
+    "spec_fields_autofilled": 0,
+    "patterns_referenced": 3,
+    "stage_attempt_number": 2,
+    "parent_execution_id": 14,
+    "notes": "Reintento 2 post-corrección de hallazgos críticos detectados en intento 1 (parent_execution_id=14). Auditado contra data/rules/bigquery.md, data/rules/security.md y data/rules/workflow.md. 1 observación de clustering tmp pendiente, no bloqueante."
+  },
+  "artifacts": [],
+  "findings": [
+    {
+      "finding_type": "security_alert",
+      "severity": "critical",
+      "rule_id": "SEC-002",
+      "description": "Campo correo_electronico almacenado en texto plano en DDL ba_itc_attr_digital_profile. Aplicado AEAD.ENCRYPT en SP y campo marcado SENSITIVE en DDL.",
+      "resolved": true,
+      "auto_resolved": true
+    },
+    {
+      "finding_type": "compliance_violation",
+      "severity": "high",
+      "rule_id": "WF-002",
+      "description": "Workflow main.yaml usa interpolación '${project}: ${dataset}' con colon+space — viola sustitución de variables Cloud Workflows. Corregido a '${project}/${dataset}'.",
+      "resolved": true,
+      "auto_resolved": true
+    },
+    {
+      "finding_type": "compliance_violation",
+      "severity": "medium",
+      "rule_id": "BQ-003",
+      "description": "SP sp_carga_ba_itc_attr_digital_profile sin bloque EXCEPTION / RAISE al final. Agregado manejo de errores estándar del framework.",
+      "resolved": true,
+      "auto_resolved": true
+    },
+    {
+      "finding_type": "compliance_violation",
+      "severity": "medium",
+      "rule_id": "BQ-008",
+      "description": "Tabla m_cliente_digital referenciada en SP sin hash iden_party en DDL. Agregado campo iden_party_hash STRING al DDL.",
+      "resolved": true,
+      "auto_resolved": true
+    },
+    {
+      "finding_type": "observation",
+      "severity": "info",
+      "rule_id": null,
+      "description": "tmp_base_digital sin CLUSTER BY — observación proveniente de stage CODING. Pendiente decision de arquitectura.",
+      "resolved": false,
+      "auto_resolved": false
+    }
+  ]
+}</pre>
+    </div>
+  </div>
+
+  <!-- Example D -->
+  <div class="example-block">
+    <div class="example-header">
+      <span class="example-title">D — project_closed (fin del stage RELEASE)</span>
+      <div class="example-meta">
+        <span class="chip chip-low">Proyecto completado</span>
+        <span class="chip chip-neutral">Totales agregados del ciclo completo</span>
+      </div>
+    </div>
+    <div class="code-wrap"><div class="code-lang">JSON</div>
+<pre class="json">{
+  "event": "project_closed",
+  "execution": {
+    "stage": "RELEASE",
+    "stage_order": 9,
+    "status": "completed",
+    "skill_used": "infraops-configurator",
+    "model_id": "claude-sonnet-4-6",
+    "operator": "amoreno@inside.com.pe",
+    "started_at": "2026-06-29T14:50:00",
+    "completed_at": "2026-06-29T15:22:17",
+    "duration_seconds": 1937,
+    "tokens_input_estimated": 28000,
+    "tokens_output_estimated": 5200,
+    "tokens_input": 29341,
+    "tokens_output": 4918,
+    "loc_sql": 0,
+    "loc_yaml": 92,
+    "loc_python": 0,
+    "files_created": 3,
+    "files_modified": 2,
+    "findings_count": 0,
+    "findings_resolved": 0,
+    "human_corrections": 0,
+    "tool_calls": 7,
+    "retries": 0,
+    "cost_usd_estimated": 0.1614,
+    "git_commit_sha": "e1a2b3c4d5f6e7a8",
+    "compliance_score_pct": null,
+    "spec_coverage_pct": null,
+    "blocking_issues": 0,
+    "validation_bq_rows_checked": null,
+    "spec_fields_autofilled": 0,
+    "patterns_referenced": 2,
+    "stage_attempt_number": 1,
+    "parent_execution_id": null,
+    "notes": "infra_dev.json, infra_prd.json generados. YAMLs de SA e IAM en infra/. Backup versionado creado en deploy/backup/."
+  },
+  "artifacts": [
+    {
+      "artifact_path": "deploy/infra_dev.json",
+      "artifact_type": "infra_json",
+      "lines_added": 48,
+      "lines_removed": 0,
+      "is_new": true
+    },
+    {
+      "artifact_path": "deploy/infra_prd.json",
+      "artifact_type": "infra_json",
+      "lines_added": 48,
+      "lines_removed": 0,
+      "is_new": true
+    },
+    {
+      "artifact_path": "infra/service_accounts/dev-itc-ba-digital-profile-job.yaml",
+      "artifact_type": "image_yaml",
+      "lines_added": 18,
+      "lines_removed": 0,
+      "is_new": true
+    },
+    {
+      "artifact_path": "deploy/deploy_dev.json",
+      "artifact_type": "deploy_json",
+      "lines_added": 12,
+      "lines_removed": 4,
+      "is_new": false
+    },
+    {
+      "artifact_path": "deploy/deploy_prd.json",
+      "artifact_type": "deploy_json",
+      "lines_added": 12,
+      "lines_removed": 4,
+      "is_new": false
+    }
+  ],
+  "findings": [],
+  "project_update": {
+    "status": "completed",
+    "etapa_actual": "RELEASE",
+    "etapas_completadas": 9,
+    "completed_at": "2026-06-29T15:22:17",
+    "total_duration_seconds": 28940,
+    "total_tokens_input_estimated": 298000,
+    "total_tokens_output_estimated": 74000,
+    "total_tokens_input": 312847,
+    "total_tokens_output": 71432,
+    "total_loc_generated": 589,
+    "total_files_created": 17,
+    "total_findings": 11,
+    "total_findings_resolved": 9,
+    "compliance_score_pct": 96.4,
+    "cost_usd_estimated": 2.2074
+  }
+}</pre>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── §6 DDL ───────────────────────────────────────────────── -->
+<section class="doc-section" id="ddl">
+  <div class="section-label">§6</div>
+  <h2>DDL — PostgreSQL</h2>
+  <p>Las tablas se crean en la base de datos del mismo sistema de metadata API que usa el framework de control de procesos (Cloud SQL PostgreSQL). Ejecutar en orden para respetar las FK.</p>
+
+  <div class="code-wrap"><div class="code-lang">SQL — PostgreSQL</div>
+<pre>
+-- 1. Tabla cabecera de proyecto
+CREATE TABLE dp_factory_dev_project (
+    project_id                    SERIAL PRIMARY KEY,
+    spec_id                       VARCHAR(100) NOT NULL UNIQUE,
+    repo_name                     VARCHAR(200),
+    module_id                     VARCHAR(100),
+    module_type                   VARCHAR(50)
+        CHECK (module_type IN ('bq_pipeline','cloud_run_api','vertex_ml','cloud_function')),
+    tipo_flujo                    VARCHAR(50),
+    empresa                       VARCHAR(10),
+    equipo                        VARCHAR(50),
+    autor                         VARCHAR(100),
+    aprobador                     VARCHAR(100),
+    status                        VARCHAR(20) NOT NULL DEFAULT 'in_progress'
+        CHECK (status IN ('in_progress','completed','failed','paused')),
+    etapa_actual                  VARCHAR(30),
+    etapas_total                  INTEGER,
+    etapas_completadas            INTEGER NOT NULL DEFAULT 0,
+    created_at                    TIMESTAMP NOT NULL DEFAULT NOW(),
+    completed_at                  TIMESTAMP,
+    total_duration_seconds        INTEGER,
+    total_tokens_input_estimated  BIGINT,
+    total_tokens_output_estimated BIGINT,
+    total_tokens_input            BIGINT,
+    total_tokens_output           BIGINT,
+    total_loc_generated           INTEGER,
+    total_files_created           INTEGER,
+    total_findings                INTEGER NOT NULL DEFAULT 0,
+    total_findings_resolved       INTEGER NOT NULL DEFAULT 0,
+    compliance_score_pct          NUMERIC(5,2),
+    cost_usd_estimated            NUMERIC(10,4)
+);
+
+-- 2. Tabla de ejecuciones por stage
+CREATE TABLE dp_factory_dev_execution (
+    execution_id                  SERIAL PRIMARY KEY,
+    project_id                    INTEGER NOT NULL
+        REFERENCES dp_factory_dev_project(project_id),
+    spec_id                       VARCHAR(100),
+    module_id                     VARCHAR(100),
+    stage                         VARCHAR(30) NOT NULL,
+    stage_order                   INTEGER,
+    stage_attempt_number          INTEGER NOT NULL DEFAULT 1,
+    parent_execution_id           INTEGER
+        REFERENCES dp_factory_dev_execution(execution_id),
+    status                        VARCHAR(20) NOT NULL
+        CHECK (status IN ('completed','failed','in_progress','skipped')),
+    skill_used                    VARCHAR(100),
+    model_id                      VARCHAR(80),
+    operator                      VARCHAR(100),
+    started_at                    TIMESTAMP,
+    completed_at                  TIMESTAMP,
+    duration_seconds              INTEGER,
+    tokens_input_estimated        INTEGER,
+    tokens_output_estimated       INTEGER,
+    tokens_input                  INTEGER,
+    tokens_output                 INTEGER,
+    loc_sql                       INTEGER NOT NULL DEFAULT 0,
+    loc_yaml                      INTEGER NOT NULL DEFAULT 0,
+    loc_python                    INTEGER NOT NULL DEFAULT 0,
+    files_created                 INTEGER NOT NULL DEFAULT 0,
+    files_modified                INTEGER NOT NULL DEFAULT 0,
+    findings_count                INTEGER NOT NULL DEFAULT 0,
+    findings_resolved             INTEGER NOT NULL DEFAULT 0,
+    human_corrections             INTEGER NOT NULL DEFAULT 0,
+    tool_calls                    INTEGER,
+    retries                       INTEGER NOT NULL DEFAULT 0,
+    cost_usd_estimated            NUMERIC(10,4),
+    git_commit_sha                VARCHAR(40),
+    compliance_score_pct          NUMERIC(5,2),
+    spec_coverage_pct             NUMERIC(5,2),
+    blocking_issues               INTEGER NOT NULL DEFAULT 0,
+    validation_bq_rows_checked    INTEGER,
+    spec_fields_autofilled        INTEGER NOT NULL DEFAULT 0,
+    patterns_referenced           INTEGER NOT NULL DEFAULT 0,
+    notes                         TEXT,
+    CONSTRAINT chk_blocking_status
+        CHECK (NOT (blocking_issues > 0 AND status = 'completed'))
+);
+
+-- 3. Tabla de artefactos
+CREATE TABLE dp_factory_dev_artifacts (
+    execution_id                  INTEGER NOT NULL
+        REFERENCES dp_factory_dev_execution(execution_id),
+    artifact_path                 VARCHAR(500) NOT NULL,
+    artifact_type                 VARCHAR(30)
+        CHECK (artifact_type IN (
+            'ddl','sp','dml','workflow','image_yaml',
+            'deploy_json','env_json','infra_json','spec','python'
+        )),
+    lines_added                   INTEGER NOT NULL DEFAULT 0,
+    lines_removed                 INTEGER NOT NULL DEFAULT 0,
+    is_new                        BOOLEAN NOT NULL,
+    PRIMARY KEY (execution_id, artifact_path)
+);
+
+-- 4. Tabla de findings
+CREATE TABLE dp_factory_dev_findings (
+    id                            SERIAL PRIMARY KEY,
+    execution_id                  INTEGER NOT NULL
+        REFERENCES dp_factory_dev_execution(execution_id),
+    finding_type                  VARCHAR(50) NOT NULL
+        CHECK (finding_type IN (
+            'compliance_violation','security_alert',
+            'consistency_issue','observation'
+        )),
+    severity                      VARCHAR(10) NOT NULL
+        CHECK (severity IN ('critical','high','medium','low','info')),
+    rule_id                       VARCHAR(30),
+    description                   TEXT NOT NULL,
+    resolved                      BOOLEAN NOT NULL DEFAULT FALSE,
+    auto_resolved                 BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+-- Índices recomendados
+CREATE INDEX idx_execution_project ON dp_factory_dev_execution(project_id);
+CREATE INDEX idx_execution_stage   ON dp_factory_dev_execution(stage, status);
+CREATE INDEX idx_artifacts_exec    ON dp_factory_dev_artifacts(execution_id);
+CREATE INDEX idx_findings_exec     ON dp_factory_dev_findings(execution_id);
+CREATE INDEX idx_findings_sev      ON dp_factory_dev_findings(severity, resolved);
+CREATE INDEX idx_project_status    ON dp_factory_dev_project(status, created_at DESC);
+</pre>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── §7 QUERIES ───────────────────────────────────────────── -->
+<section class="doc-section" id="queries">
+  <div class="section-label">§7</div>
+  <h2>Queries de Gestión</h2>
+
+  <h3>Dashboard de Proyectos Activos</h3>
+  <div class="code-wrap"><div class="code-lang">SQL</div>
+<pre>
+-- Resumen de proyectos en curso con avance y costo acumulado
+SELECT
+    p.spec_id,
+    p.module_type,
+    p.empresa,
+    p.autor,
+    p.status,
+    p.etapa_actual,
+    p.etapas_completadas || ' / ' || p.etapas_total AS avance,
+    ROUND(
+        EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 3600, 1
+    ) AS horas_transcurridas,
+    COALESCE(SUM(e.cost_usd_estimated), 0)::NUMERIC(10,4) AS costo_acumulado_usd,
+    COALESCE(SUM(e.human_corrections), 0) AS correcciones_humanas_total,
+    COALESCE(SUM(e.findings_count), 0)    AS findings_total,
+    COALESCE(SUM(e.findings_resolved), 0) AS findings_resueltos
+FROM dp_factory_dev_project p
+LEFT JOIN dp_factory_dev_execution e ON e.project_id = p.project_id
+WHERE p.status IN ('in_progress', 'paused')
+GROUP BY p.project_id
+ORDER BY p.created_at DESC;
+</pre>
+  </div>
+
+  <h3>Historial de Stages de un Módulo</h3>
+  <div class="code-wrap"><div class="code-lang">SQL</div>
+<pre>
+-- Todos los stages de un spec_id con sus métricas (incluyendo reintentos)
+SELECT
+    e.stage,
+    e.stage_attempt_number                  AS intento,
+    e.status,
+    e.skill_used,
+    e.duration_seconds / 60                 AS minutos,
+    e.tokens_input + e.tokens_output        AS tokens_total,
+    e.cost_usd_estimated,
+    e.files_created,
+    e.loc_sql + e.loc_yaml + e.loc_python   AS loc_total,
+    e.findings_count,
+    e.human_corrections,
+    e.compliance_score_pct,
+    e.spec_coverage_pct,
+    e.git_commit_sha
+FROM dp_factory_dev_execution e
+JOIN dp_factory_dev_project p ON p.project_id = e.project_id
+WHERE p.spec_id = 'spec-itc-20260628-ba-digital-profile'
+ORDER BY e.stage_order, e.stage_attempt_number;
+</pre>
+  </div>
+
+  <h3>Findings no Resueltos (Vista de Deuda)</h3>
+  <div class="code-wrap"><div class="code-lang">SQL</div>
+<pre>
+-- Findings abiertos agrupados por severidad, para todos los proyectos activos
+SELECT
+    p.spec_id,
+    p.module_type,
+    f.finding_type,
+    f.severity,
+    f.rule_id,
+    f.description,
+    e.stage,
+    e.completed_at::DATE AS detectado_en
+FROM dp_factory_dev_findings f
+JOIN dp_factory_dev_execution e ON e.execution_id = f.execution_id
+JOIN dp_factory_dev_project p   ON p.project_id = e.project_id
+WHERE f.resolved = FALSE
+  AND p.status IN ('in_progress', 'paused')
+ORDER BY
+    CASE f.severity
+        WHEN 'critical' THEN 1
+        WHEN 'high'     THEN 2
+        WHEN 'medium'   THEN 3
+        WHEN 'low'      THEN 4
+        ELSE 5
+    END,
+    p.spec_id;
+</pre>
+  </div>
+
+  <h3>Comparativa de Costo por Tipo de Módulo</h3>
+  <div class="code-wrap"><div class="code-lang">SQL</div>
+<pre>
+-- Promedio de costo, duración y LOC por tipo de módulo (solo proyectos completados)
+SELECT
+    p.module_type,
+    COUNT(DISTINCT p.project_id)                            AS proyectos,
+    ROUND(AVG(p.total_duration_seconds / 3600.0), 1)       AS horas_promedio,
+    ROUND(AVG(p.cost_usd_estimated), 4)                     AS costo_usd_promedio,
+    ROUND(AVG(p.total_loc_generated))                       AS loc_promedio,
+    ROUND(AVG(p.total_files_created))                       AS archivos_promedio,
+    ROUND(AVG(p.total_findings))                            AS findings_promedio,
+    ROUND(AVG(p.compliance_score_pct), 1)                   AS compliance_score_promedio,
+    SUM(p.total_tokens_input + p.total_tokens_output)       AS tokens_total_acumulados
+FROM dp_factory_dev_project p
+WHERE p.status = 'completed'
+GROUP BY p.module_type
+ORDER BY costo_usd_promedio DESC;
+</pre>
+  </div>
+
+  <h3>Artefactos Generados por Stage (auditoría)</h3>
+  <div class="code-wrap"><div class="code-lang">SQL</div>
+<pre>
+-- Lista de artefactos de un proyecto con su stage de origen
+SELECT
+    e.stage,
+    a.artifact_type,
+    a.artifact_path,
+    a.lines_added,
+    a.lines_removed,
+    CASE WHEN a.is_new THEN 'NUEVO' ELSE 'MODIFICADO' END AS tipo_cambio
+FROM dp_factory_dev_artifacts a
+JOIN dp_factory_dev_execution e ON e.execution_id = a.execution_id
+JOIN dp_factory_dev_project p   ON p.project_id = e.project_id
+WHERE p.spec_id = 'spec-itc-20260628-ba-digital-profile'
+ORDER BY e.stage_order, a.artifact_type, a.artifact_path;
+</pre>
+  </div>
+</section>
+
+</main>
+
+<footer class="doc-footer">
+  dp_factory_dev v1.0 · Data Platform ITCM · Generado 2026-06-30
+</footer>

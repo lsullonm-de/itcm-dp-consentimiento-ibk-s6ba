@@ -1,0 +1,8 @@
+# Ejemplo de Image config para Artifact Registry
+# Fuente: itcm-inca-audience-campaign-loader-api/image/dataops-artifacts
+# Este es el PATRÓN CANÓNICO correcto
+
+dockerfile: service/cloud_run/itc-campaign-loader-api/Dockerfile
+repo: dataops-artifacts
+region: us-central1
+description: "Imagen para cloudrun campaign loader OK"

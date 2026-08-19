@@ -1,0 +1,264 @@
+<mxfile host="app.diagrams.net" modified="2026-04-06T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram name="Arquetipo de Carpetas" id="arquetipo-carpetas">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- TÍTULO -->
+        <mxCell id="2" value="Arquetipo de Estructura de Carpetas — Repos DataOps ITC" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="15" width="1300" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Generado por /init-repo a partir del spec.yaml · Las carpetas marcadas con ★ aplican según el type del módulo" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="30" y="40" width="1300" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- LEYENDA -->
+        <!-- ======================================================== -->
+        <mxCell id="L1" value="Carpeta común (todos los types)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="65" width="210" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="L2" value="★ Solo bq_pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="96" width="210" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="L3" value="★ Solo vertex_ml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="127" width="210" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="L4" value="★ Solo cloud_run_api" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="158" width="210" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="L5" value="★ Solo cloud_function" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6d5;strokeColor=#d79b00;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="189" width="210" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="L6" value="Archivo skeleton generado" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="220" width="210" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- RAÍZ DEL REPO -->
+        <!-- ======================================================== -->
+        <mxCell id="ROOT" value="[repo-name]/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e3a5f;fontColor=#ffffff;strokeColor=#1e3a5f;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="65" width="180" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- docs/ -->
+        <!-- ======================================================== -->
+        <mxCell id="D0" value="docs/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="135" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D1" value="specs/spec.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="55" y="175" width="155" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="D2" value="TODO.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="55" y="202" width="155" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="D3" value="architecture/  ★ context · data-flow · component · sequence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="55" y="229" width="155" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- deploy/ -->
+        <!-- ======================================================== -->
+        <mxCell id="DEP0" value="deploy/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="240" y="135" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="DEP1" value="deploy_dev.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="265" y="175" width="145" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="DEP2" value="deploy_qa.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="265" y="202" width="145" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="DEP3" value="deploy_prd.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="265" y="229" width="145" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="DEP4" value="env_dev.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="265" y="256" width="145" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="DEP5" value="env_prd.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="265" y="283" width="145" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- data/bigquery/ (bq_pipeline + vertex_ml) -->
+        <!-- ======================================================== -->
+        <mxCell id="BQ0" value="data/bigquery/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="450" y="135" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="BQ0s" value="★ bq_pipeline · vertex_ml" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="450" y="165" width="160" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="BQ1" value="ddl/  ← CREATE TABLE IF NOT EXISTS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="475" y="183" width="195" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="BQ2" value="sp/   ← CREATE OR REPLACE PROCEDURE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="475" y="210" width="195" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="BQ3" value="dml/  ← si incremental / DQ config" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="475" y="237" width="195" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="BQ4" value="test/ ← test_sp_*.sql (unit tests)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="475" y="264" width="195" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- pipeline/ -->
+        <!-- ======================================================== -->
+        <mxCell id="PL0" value="pipeline/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="690" y="135" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="PL0s" value="si orquestacion = true" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="690" y="165" width="130" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="PL1" value="workflow/  wf-{nombre}.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="715" y="183" width="175" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="PL2" value="scheduler/ cs-{nombre}.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="715" y="210" width="175" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- service/vertex/ (vertex_ml) -->
+        <!-- ======================================================== -->
+        <mxCell id="VX0" value="service/vertex/{nombre}/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="360" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="VX0s" value="★ vertex_ml" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="30" y="390" width="200" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="VX1" value="src/__init__.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="55" y="408" width="190" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="VX2" value="src/components.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="55" y="435" width="190" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="VX3" value="src/pipeline_inference.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="55" y="462" width="190" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="VX4" value="notebook/pipeline-inference.ipynb  ⚠ obligatorio" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="55" y="489" width="190" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="VX5" value="requirements.txt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="55" y="516" width="190" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="VX6" value="deploy_config.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="55" y="543" width="190" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- service/cloud_run/ (cloud_run_api) -->
+        <!-- ======================================================== -->
+        <mxCell id="CR0" value="service/cloud_run/{nombre}/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="360" width="205" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="CR0s" value="★ cloud_run_api" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="270" y="390" width="205" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="CR1" value="main.py  (FastAPI app)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="295" y="408" width="195" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="CR2" value="router/  function/  datasource/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="295" y="435" width="195" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="CR3" value="requirements.txt · Dockerfile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="295" y="462" width="195" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="CR4" value="cloudbuild.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="295" y="489" width="195" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- service/cloud_function/ (cloud_function) -->
+        <!-- ======================================================== -->
+        <mxCell id="CF0" value="service/cloud_function/{nombre}/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6d5;strokeColor=#d79b00;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="510" y="360" width="215" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="CF0s" value="★ cloud_function" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="510" y="390" width="215" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="CF1" value="main.py  (entry point + handler)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="535" y="408" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="CF2" value="requirements.txt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="535" y="435" width="200" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- image/ (vertex_ml / si componente image) -->
+        <!-- ======================================================== -->
+        <mxCell id="IMG0" value="image/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="760" y="360" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="IMG0s" value="★ vertex_ml · si componente image" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="760" y="390" width="170" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="IMG1" value="Dockerfile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="785" y="408" width="160" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="IMG2" value="cloudbuild.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="785" y="435" width="160" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- ORDEN DE EJECUCIÓN DATAOPS -->
+        <!-- ======================================================== -->
+        <mxCell id="ORD" value="&lt;b&gt;Orden de despliegue Dataops:&lt;/b&gt;&lt;br&gt;DDL → SP → Bucket → Image → Cloud Run → Vertex Pipeline → Cloud Function → Pub/Sub → Workflow → Cloud Scheduler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#d6b656;fontSize=9;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="620" width="930" height="38" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- LÍNEAS DESDE RAÍZ -->
+        <!-- ======================================================== -->
+        <mxCell id="e1" value="" style="endArrow=open;endFill=0;strokeColor=#6c8ebf;strokeWidth=1;" edge="1" parent="1" source="ROOT" target="D0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" style="endArrow=open;endFill=0;strokeColor=#6c8ebf;strokeWidth=1;" edge="1" parent="1" source="ROOT" target="DEP0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" style="endArrow=open;endFill=0;strokeColor=#82b366;strokeWidth=1;" edge="1" parent="1" source="ROOT" target="BQ0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" style="endArrow=open;endFill=0;strokeColor=#6c8ebf;strokeWidth=1;" edge="1" parent="1" source="ROOT" target="PL0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" style="endArrow=open;endFill=0;strokeColor=#9673a6;strokeWidth=1;" edge="1" parent="1" source="ROOT" target="VX0">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="120" y="99" />
+              <mxPoint x="120" y="375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" value="" style="endArrow=open;endFill=0;strokeColor=#d6b656;strokeWidth=1;" edge="1" parent="1" source="ROOT" target="CR0">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="120" y="99" />
+              <mxPoint x="120" y="375" />
+              <mxPoint x="372" y="375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="" style="endArrow=open;endFill=0;strokeColor=#d79b00;strokeWidth=1;" edge="1" parent="1" source="ROOT" target="CF0">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="120" y="99" />
+              <mxPoint x="120" y="375" />
+              <mxPoint x="617" y="375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="" style="endArrow=open;endFill=0;strokeColor=#9673a6;strokeWidth=1;" edge="1" parent="1" source="ROOT" target="IMG0">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="120" y="99" />
+              <mxPoint x="120" y="375" />
+              <mxPoint x="825" y="375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,17 @@
+{
+  "code": "${env}-t-consent-transaction-ibk",
+  "parent_code": null,
+  "zone_code": "master",
+  "company_id": "000",
+  "company_code": "IBK",
+  "business_name": "Centralización de Consentimientos LPDP Interbank",
+  "technical_name": "${env}-t-consent-transaction-ibk",
+  "execution_date": null,
+  "flag_active": "1",
+  "flag_reprocess": "0",
+  "interval_months": null,
+  "last_status_code": null,
+  "execution_user": null,
+  "creation_user": "dataops-deploy",
+  "flag_scheduler": "1"
+}

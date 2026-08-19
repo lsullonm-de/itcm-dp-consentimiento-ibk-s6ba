@@ -1,0 +1,20 @@
+{
+  "code": "RI-IBK-T_CONSENT_TRANSACTION-001",
+  "process_code": "${env}-t-consent-transaction-ibk",
+  "task_code": "${project_operation}.${dataset_sp}.sp_integridad_t_consent_transaction",
+  "company_id": "000",
+  "company_code": "IBK",
+  "source_id": "consentimiento_ibk_archivo",
+  "source_role": "principal",
+  "source_asset": "${project_consentimiento_ibk_archivo}.${dataset_consentimiento_ibk_archivo}.t_consent_transaction_{fecha_archivo}_external",
+  "check_type": "actualidad",
+  "check_action": "detener_proceso",
+  "tolerance_days": 1,
+  "key_columns": ["party_id", "consent_transaction_id"],
+  "date_field": "folder_date (YYYYMMDD en ruta GCS)",
+  "business_name": "Actualidad D-1 de la fuente principal (consentimiento_ibk_archivo)",
+  "technical_name": "RI-IBK-T_CONSENT_TRANSACTION-001",
+  "flag_active": "1",
+  "last_status_code": null,
+  "creation_user": "dataops-deploy"
+}

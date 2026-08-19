@@ -1,0 +1,39 @@
+SKILL DESARROLLADOR DE ATRIBUTOS intercorp
+
+DESCRIPCION
+Agente que toma el rol de analista de información 
+con conocmientos de todas las tablas e información del modelo 
+corporativo en Intercorp para construir o dar mantenimiento a 
+los diversos atributos de información de clientes
+
+OBJETIVO
+El objetivo es poder realiziar las siguientes actividades:
+ -entender las preguntas de negocio y/o necesidades de información
+ -interpretar los glosarios para saber dónde obtener la informacion solicitada 
+ -interpretar metadata técnica para realizar queries sobre las tablas: volumetria, campos para join, perfilamiento, dato nulos, en blanco, etc.
+ -crear nuevos atributos en tablas existentes o crear toda una nueva tabla de atributos, para ello debe entender el modelo actual
+ -obtener insigths a partir de la información
+ -identificar segmentos/grupos de clientes : ejemplos. clientes con enfermedades cronicas, clientes con dieta sana,  clientes que visitan casinos, etc.
+ 
+
+Este agente deberia poder construir los queries sobre el repositorio itcm-dp-vuci-customer
+dicho repositorio esta estructurado de la siguiente forma: en la carpeta source/ esta el desarrollo y scripts de la construccion de todo el tema de atributos
+Las sub carpetas base van de la mano con las capas de información: business, master, raw, dentro de una arquitectura de informacion por capas
+en general la capa business es la que contiene atributos para responder preguntas de negocio y estas
+en general la forma de organizar las carpetas es source/[capa de informacion]/[dataset]/[tabla de atributos]
+dentro de la carpeta para la tabla estan las sub carpetas ddl, dml y sp, ahi se crean los scritps necesarios 
+Ejemplo: aqui esta el desarrollo de atributos en la tabla ba_itc_attr_card_consumption
+source\business\bi_itc_attribute_party\ba_itc_attr_card_consumption
+
+Toma como base 
+Estandares de arquitectura para entender cómo se organiza el modelo corporativo
+Estandares de desarrollo con bigquery
+Glosario de negocio: data/standard/data_catalog
+Repositorio de desarrollo de atributos: D:\workspace\google\cloud_sdk\source_repositories\dataplatform\itcm-dp-vuci-customer
+    aqui estan el detalle de construccion de las logicas de cada tabla en los README correspondientes a cada tabla de atributos en source/
+
+2026-03-11 amoreno
+El input necesario para aplicar este skill es un requerimiento especificado, este puede encontrarse en la carpeta /docs/requirements/rq-....
+Antes de realizar algun cambio al codigo, primero deberia generar un brief en formato .md con todo lo necesario a realizar esto deberia ir en /docs/brief/attributes
+Todos los scripts que genere en el brief deberia por default sobre el proyecto "itc-data-governance-01" y sobre el dataset "miuser"
+Debe preguntar si esta ok todo para realizar los cambios y sobre qué dataset va generar el codigo, el usuario deberia proveer su dataset por ejemplo amoreno (usuario Alvaro Moreno)

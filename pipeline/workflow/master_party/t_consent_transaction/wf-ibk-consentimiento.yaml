@@ -1,0 +1,925 @@
+source:
+  main:
+    params: [args]
+    steps:
+
+      # ============================================================
+      # 1. INICIALIZACIÓN DE VARIABLES
+      # ============================================================
+      - set_vars:
+          assign:
+            # Proyecto de billing BigQuery (OBLIGATORIO)
+            - v_billing_project: ${project_operation}
+
+            # Stored Procedures (path completo — nunca hardcodeado)
+            - var_sp_t_consent_transaction: ${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk
+            - var_sp_integridad_tct: ${project_operation}.${dataset_sp}.sp_integridad_t_consent_transaction
+            - var_sp_ba_customer_consent_group: ${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk
+            - var_sp_dq_tct: ${project_operation}.${dataset_sp}.sp_dq_t_consent_transaction
+            - var_sp_dq_bccg: ${project_operation}.${dataset_sp}.sp_dq_ba_customer_consent_group
+
+            # DATA QUALITY [etapas.data_quality: true]
+            - var_dataset_dq: ${dataset_dq}
+
+            # Fuente: consentimiento_ibk_archivo (tabla externa dinámica)
+            - var_project_archivo: ${project_consentimiento_ibk_archivo}
+            - var_dataset_archivo: ${dataset_consentimiento_ibk_archivo}
+
+            # Fuente: iden_party (iden_itc_party_prd)
+            - var_project_iden_party: ${project_iden_party}
+            - var_dataset_iden_party: ${dataset_iden_party}
+            - var_table_iden_party: ${table_iden_party}
+
+            # Output 1: t_consent_transaction
+            - var_project_tct: ${project_t_consent_transaction}
+            - var_dataset_tct: ${dataset_t_consent_transaction}
+            - var_table_tct: ${table_t_consent_transaction}
+
+            # Output 2: ba_customer_consent_group
+            - var_project_bccg: ${project_ba_customer_consent_group}
+            - var_dataset_bccg: ${dataset_ba_customer_consent_group}
+            - var_table_bccg: ${table_ba_customer_consent_group}
+
+            # Stage compartido entre los 2 SPs (tablas tmp_*)
+            - var_dataset_stage: ${dataset_stage}
+
+            # Contador de fechas procesadas (para el mail de éxito) y checkpoint de reanudación
+            - var_fechas_procesadas: 0
+            - var_ultima_fecha_intentada: ""
+
+            # --- MONITORING [etapas.monitoring: true] ---
+            - var_METADATA_API_URL: ${METADATA_API_URL}
+            - var_process_code: ${sys.get_env("GOOGLE_CLOUD_WORKFLOW_ID")}
+            - var_execution_id: ${sys.get_env("GOOGLE_CLOUD_WORKFLOW_EXECUTION_ID")}
+            - var_execution_date: ${text.substring(time.format(sys.now(), "America/Lima"), 0, 10)}
+            - var_user: ${sys.get_env("GOOGLE_CLOUD_SERVICE_ACCOUNT_NAME")}
+            - var_process_flag_active: "1"
+            - var_process_flag_reprocess: "0"
+            - var_process_flag_scheduler: "1"
+            - var_execution_type: "NORMAL"
+            - execution_data_read: 0
+            - execution_data_write: 0
+            - object_last_load_date: null
+            - var_dq_fails: 0
+
+            # Email body — inicializar siempre
+            - email_body: {}
+
+      # ============================================================
+      # 2. DETERMINAR MODO DE EJECUCIÓN [RN-IBK-009]
+      # ============================================================
+      # normal    → sin argumentos: usa la fecha de sistema ACTUAL (no "ayer" — a diferencia del
+      #             default estándar del framework. El offset de 1 día ya lo aplica el SP sobre
+      #             process_date para calcular folder_date [RN-IBK-002], así que aquí process_date
+      #             debe ser HOY, no ayer)
+      # manual    → args.process_date con una fecha específica
+      # reproceso → args.process_date_init + args.process_date_fin (rango, ambos inclusive)
+      - normalizar_args:
+          assign:
+            - _param_fecha: ${text.replace_all(string(map.get(args, "process_date")), " ", "")}
+            - _param_init: ${text.replace_all(string(map.get(args, "process_date_init")), " ", "")}
+            - _param_fin: ${text.replace_all(string(map.get(args, "process_date_fin")), " ", "")}
+
+      - decidir_modo:
+          switch:
+            - condition: ${_param_init != "" and _param_init != "null" and _param_fin != "" and _param_fin != "null"}
+              next: modo_reproceso
+            - condition: ${_param_fecha != "" and _param_fecha != "null"}
+              next: modo_manual
+            - condition: ${true}
+              next: modo_normal
+
+      # ---- Modo normal: fecha de sistema actual (America/Lima) ----
+      - modo_normal:
+          call: googleapis.bigquery.v2.jobs.query
+          args:
+            projectId: ${v_billing_project}
+            body:
+              useLegacySql: false
+              query: "SELECT FORMAT_DATE('%F', CURRENT_DATE('America/Lima')) AS fecha"
+          result: bqFechaHoy
+          next: set_fecha_normal
+
+      - set_fecha_normal:
+          assign:
+            - var_modo: "normal"
+            - var_process_dates: [ '${bqFechaHoy.rows[0].f[0].v}' ]
+          next: log_modo
+
+      # ---- Modo manual: una sola fecha indicada por el usuario ----
+      - modo_manual:
+          assign:
+            - var_modo: "manual"
+            - var_process_dates: [ '${_param_fecha}' ]
+          next: log_modo
+
+      # ---- Modo reproceso: rango [process_date_init, process_date_fin] ----
+      - modo_reproceso:
+          call: googleapis.bigquery.v2.jobs.query
+          args:
+            projectId: ${v_billing_project}
+            body:
+              useLegacySql: false
+              query: ${"SELECT fecha FROM UNNEST(GENERATE_DATE_ARRAY(DATE '" + _param_init + "', DATE '" + _param_fin + "')) AS fecha ORDER BY fecha"}
+          result: bqRangoFechas
+          next: set_fechas_reproceso
+
+      - set_fechas_reproceso:
+          assign:
+            - var_modo: "reproceso"
+            - var_process_dates: ${map.get(bqRangoFechas, "rows")}
+          next: extraer_fechas_reproceso
+
+      # bqRangoFechas.rows viene como [{f: [{v: "2026-01-01"}]}, ...] — se aplana a una lista simple
+      - extraer_fechas_reproceso:
+          assign:
+            - _fechas_planas: []
+      - construir_lista_fechas:
+          for:
+            value: _fila
+            in: ${var_process_dates}
+            steps:
+              - agregar_fecha:
+                  assign:
+                    - _fechas_planas: ${list.concat(_fechas_planas, _fila.f[0].v)}
+      - set_fechas_planas:
+          assign:
+            - var_process_dates: ${_fechas_planas}
+          next: log_modo
+
+      - log_modo:
+          call: sys.log
+          args:
+            json:
+              modo: ${var_modo}
+              cantidad_fechas: ${len(var_process_dates)}
+              fechas: ${var_process_dates}
+            severity: INFO
+
+      # execution_type para monitoring: refleja el modo real de esta corrida (no solo "NORMAL")
+      - set_execution_type:
+          assign:
+            - var_execution_type: ${text.to_upper(var_modo)}
+
+      # ============================================================
+      # 3. EJECUCIÓN — un ciclo [SP1 → SP2] por cada fecha en var_process_dates
+      # ============================================================
+      # NOTA: las dos SP se llaman SIEMPRE en secuencia estricta, nunca en paralelo — SP2
+      # depende de la tabla de scope (tmp_t_consent_transaction_ibk) que deja SP1 y es quien
+      # la elimina al terminar (ver cabecera de ambos SPs en data/bigquery/.../sp/).
+      # Si una fecha del rango falla, el except detiene el resto del reproceso — las fechas
+      # anteriores ya quedaron confirmadas (cada SP hace su propio DELETE+INSERT transaccional).
+      - ejecutar:
+          try:
+            steps:
+              - iterar_fechas:
+                  for:
+                    value: fecha_actual
+                    in: ${var_process_dates}
+                    steps:
+
+                      - log_inicio_fecha:
+                          call: sys.log
+                          args:
+                            text: ${"[INFO] Procesando process_date = " + fecha_actual}
+                            severity: INFO
+
+                      # Checkpoint: si falla en esta fecha, el except abajo sabe exactamente
+                      # dónde se quedó — permite reanudar el reproceso desde aquí.
+                      - set_checkpoint_fecha:
+                          assign:
+                            - var_ultima_fecha_intentada: ${fecha_actual}
+
+                      # -------- GATE DE INTEGRIDAD [etapas.integridad: true] --------
+                      # Actualidad D-1 de la fuente principal (consentimiento_ibk_archivo).
+                      # El SP no escribe nada en BigQuery — decide con o_flag_detener si se continúa.
+                      # registro_resultados: true → el resultado se matricula en metadata_operational
+                      # vía registrar_resultado_integridad, más abajo.
+                      - build_sql_integridad_p1:
+                          assign:
+                            # p_process_date_ini = p_process_date_end = fecha_actual — este SP
+                            # siempre evalúa una única fecha (data/rules/bigquery.md).
+                            - sql_integridad_p1: ${"DECLARE v_flag_detener INT64 DEFAULT 0; "
+                                + "DECLARE v_motivo_detencion STRING DEFAULT ''; "
+                                + "DECLARE v_resultado_json STRING DEFAULT '[]'; "
+                                + "CALL `" + var_sp_integridad_tct + "`("
+                                + "DATE '" + fecha_actual + "'"
+                                + ", DATE '" + fecha_actual + "'"
+                                + ", '" + var_project_archivo + "'"
+                                + ", '" + var_dataset_archivo + "'"}
+
+                      - build_sql_integridad_p2:
+                          assign:
+                            - sql_integridad_p2: ${", v_flag_detener, v_motivo_detencion, v_resultado_json); "
+                                + "SELECT v_flag_detener AS flag_detener"
+                                + ", v_motivo_detencion AS motivo_detencion"
+                                + ", v_resultado_json AS resultado_json"}
+
+                      - build_sql_integridad:
+                          assign:
+                            - query_integridad: ${sql_integridad_p1 + sql_integridad_p2}
+
+                      - log_query_integridad:
+                          call: sys.log
+                          args:
+                            text: ${"[BUILD] query_integridad = " + query_integridad}
+                            severity: INFO
+
+                      - ejecutar_validacion_integridad:
+                          call: SyncBigQueryJobWithResults
+                          args:
+                            query: ${query_integridad}
+                            project_id: ${v_billing_project}
+                          result: resultado_integridad
+
+                      - extraer_resultado_integridad:
+                          assign:
+                            - integridad_flag_detener: ${int(resultado_integridad.rows[0].f[0].v)}
+                            - integridad_motivo: ${resultado_integridad.rows[0].f[1].v}
+                            - integridad_resultados: ${json.decode(resultado_integridad.rows[0].f[2].v)}
+
+                      - log_resultado_integridad:
+                          call: sys.log
+                          args:
+                            json:
+                              fecha: ${fecha_actual}
+                              flag_detener: ${integridad_flag_detener}
+                              motivo: ${integridad_motivo}
+                            severity: INFO
+
+                      # Histórico — corre SIEMPRE, antes del punto de corte (incluida la corrida
+                      # que se detiene). registro_resultados: true (etapas.monitoring habilitado).
+                      - registrar_resultado_integridad:
+                          call: RegisterIntegrityResults
+                          args:
+                            api_url: ${var_METADATA_API_URL}
+                            process_code: ${var_process_code}
+                            execution_id: ${var_execution_id}
+                            task_code: ${var_sp_integridad_tct}
+                            process_date: ${fecha_actual}
+                            flag_detener: ${integridad_flag_detener}
+                            motivo_detencion: ${integridad_motivo}
+                            resultados: ${integridad_resultados}
+                            user: ${var_user}
+                          result: integridad_registro_response
+
+                      - evaluar_integridad:
+                          switch:
+                            - condition: ${integridad_flag_detener == 1}
+                              raise: ${"[INTEGRIDAD] " + integridad_motivo}
+                            - condition: ${true}
+                              next: build_sql_tct_p1
+
+                      # -------- SP 1: sp_t_consent_transaction_ibk --------
+                      - build_sql_tct_p1:
+                          assign:
+                            # p_process_date_ini = p_process_date_end = fecha_actual — este SP
+                            # siempre procesa una única fecha (data/rules/bigquery.md).
+                            - sql_tct_p1: ${"DECLARE v_read INT64 DEFAULT 0; "
+                                + "DECLARE v_write INT64 DEFAULT 0; "
+                                + "CALL `" + var_sp_t_consent_transaction + "`("
+                                + "DATE '" + fecha_actual + "'"
+                                + ", DATE '" + fecha_actual + "'"
+                                + ", '" + var_project_archivo + "'"
+                                + ", '" + var_dataset_archivo + "'"
+                                + ", '" + var_project_iden_party + "'"
+                                + ", '" + var_dataset_iden_party + "'"
+                                + ", '" + var_table_iden_party + "'"}
+
+                      - build_sql_tct_p2:
+                          assign:
+                            - sql_tct_p2: ${", '" + var_project_tct + "'"
+                                + ", '" + var_dataset_tct + "'"
+                                + ", '" + var_table_tct + "'"
+                                + ", '" + var_dataset_stage + "'"
+                                + ", v_read, v_write); "
+                                + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
+
+                      - build_sql_tct:
+                          assign:
+                            - query_tct: ${sql_tct_p1 + sql_tct_p2}
+
+                      - log_query_tct:
+                          call: sys.log
+                          args:
+                            text: ${"[BUILD] query_tct = " + query_tct}
+                            severity: INFO
+
+                      - invoque_sp_tct:
+                          call: TrackedBigQueryJobWithResults
+                          args:
+                            api_url: ${var_METADATA_API_URL}
+                            process_code: ${var_process_code}
+                            execution_id: ${var_execution_id}
+                            task_code: ${var_sp_t_consent_transaction}
+                            execution_type: ${var_execution_type}
+                            process_date_init: ${fecha_actual}
+                            process_date_end: ${fecha_actual}
+                            user: ${var_user}
+                            query: ${query_tct}
+                            project_id: ${v_billing_project}
+                          result: tracked_result_tct
+
+                      - set_metricas_tct:
+                          assign:
+                            - execution_data_read: ${tracked_result_tct.execution_data_read}
+                            - execution_data_write: ${tracked_result_tct.execution_data_write}
+                            - object_last_load_date: ${tracked_result_tct.object_last_load_date}
+
+                      # -------- DQ: sp_dq_t_consent_transaction [etapas.data_quality: true] --------
+                      - build_sql_dq_tct:
+                          assign:
+                            - query_dq_tct: ${"CALL `" + var_sp_dq_tct + "`("
+                                + "'" + var_project_tct + "'"
+                                + ", '" + var_dataset_tct + "'"
+                                + ", '" + var_table_tct + "'"
+                                + ", DATE '" + fecha_actual + "')"}
+
+                      - log_query_dq_tct:
+                          call: sys.log
+                          args:
+                            text: ${"[BUILD] query_dq_tct = " + query_dq_tct}
+                            severity: INFO
+
+                      - ejecutar_dq_tct:
+                          call: SyncBigQueryJob
+                          args:
+                            query: ${query_dq_tct}
+                            project_id: ${v_billing_project}
+                          result: resultado_dq_tct
+
+                      # -------- SP 2: sp_ba_customer_consent_group_ibk --------
+                      - build_sql_bccg_p1:
+                          assign:
+                            - sql_bccg_p1: ${"DECLARE v_read INT64 DEFAULT 0; "
+                                + "DECLARE v_write INT64 DEFAULT 0; "
+                                + "CALL `" + var_sp_ba_customer_consent_group + "`("
+                                + "'" + var_project_bccg + "'"
+                                + ", '" + var_dataset_bccg + "'"
+                                + ", '" + var_table_bccg + "'"
+                                + ", '" + var_project_tct + "'"
+                                + ", '" + var_dataset_tct + "'"
+                                + ", '" + var_table_tct + "'"}
+
+                      - build_sql_bccg_p2:
+                          assign:
+                            - sql_bccg_p2: ${", '" + var_dataset_stage + "'"
+                                + ", v_read, v_write); "
+                                + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
+
+                      - build_sql_bccg:
+                          assign:
+                            - query_bccg: ${sql_bccg_p1 + sql_bccg_p2}
+
+                      - log_query_bccg:
+                          call: sys.log
+                          args:
+                            text: ${"[BUILD] query_bccg = " + query_bccg}
+                            severity: INFO
+
+                      - invoque_sp_bccg:
+                          call: TrackedBigQueryJobWithResults
+                          args:
+                            api_url: ${var_METADATA_API_URL}
+                            process_code: ${var_process_code}
+                            execution_id: ${var_execution_id}
+                            task_code: ${var_sp_ba_customer_consent_group}
+                            execution_type: ${var_execution_type}
+                            process_date_init: ${fecha_actual}
+                            process_date_end: ${fecha_actual}
+                            user: ${var_user}
+                            query: ${query_bccg}
+                            project_id: ${v_billing_project}
+                          result: tracked_result_bccg
+
+                      - set_metricas_bccg:
+                          assign:
+                            - execution_data_read: ${tracked_result_bccg.execution_data_read}
+                            - execution_data_write: ${tracked_result_bccg.execution_data_write}
+                            - object_last_load_date: ${tracked_result_bccg.object_last_load_date}
+
+                      # -------- DQ: sp_dq_ba_customer_consent_group [etapas.data_quality: true] --------
+                      - build_sql_dq_bccg:
+                          assign:
+                            - query_dq_bccg: ${"CALL `" + var_sp_dq_bccg + "`("
+                                + "'" + var_project_bccg + "'"
+                                + ", '" + var_dataset_bccg + "'"
+                                + ", '" + var_table_bccg + "'"
+                                + ", DATE '" + fecha_actual + "')"}
+
+                      - log_query_dq_bccg:
+                          call: sys.log
+                          args:
+                            text: ${"[BUILD] query_dq_bccg = " + query_dq_bccg}
+                            severity: INFO
+
+                      - ejecutar_dq_bccg:
+                          call: SyncBigQueryJob
+                          args:
+                            query: ${query_dq_bccg}
+                            project_id: ${v_billing_project}
+                          result: resultado_dq_bccg
+
+                      - log_fin_fecha:
+                          assign:
+                            - var_fechas_procesadas: ${var_fechas_procesadas + 1}
+
+              # DQ: verificar si alguna regla crítica falló en la corrida de hoy (agregado — no
+              # detiene el pipeline, solo se informa en el mail de éxito). LIMITACIÓN CONOCIDA:
+              # dq_control.execution_date no distingue por execution_id — si se corre más de una
+              # vez el mismo día (ej. normal + un reproceso manual), este conteo mezcla ambas.
+              - build_sql_validar_dq:
+                  assign:
+                    - query_validar_dq: ${"SELECT COUNT(*) AS fails FROM `" + v_billing_project + "."
+                        + var_dataset_dq + ".dq_control` WHERE execution_date = CURRENT_DATE() AND dq_status = 'fail'"}
+
+              - validar_dq_criticas:
+                  call: SyncBigQueryJobWithResults
+                  args:
+                    query: ${query_validar_dq}
+                    project_id: ${v_billing_project}
+                  result: resultado_dq_criticas
+
+              - extraer_dq_fails:
+                  assign:
+                    - var_dq_fails: ${int(resultado_dq_criticas.rows[0].f[0].v)}
+
+              - log_dq_fails:
+                  call: sys.log
+                  args:
+                    json:
+                      dq_fails_hoy: ${var_dq_fails}
+                    severity: INFO
+
+              # MONITORING: marca el proceso como SUCCESS una vez procesadas todas las fechas
+              - update_process_success:
+                  call: UpdateProcessStatus
+                  args:
+                    api_url: ${var_METADATA_API_URL}
+                    process_code: ${var_process_code}
+                    execution_date: ${var_execution_date}
+                    status: "SUCCESS"
+                    user: ${var_user}
+                    flag_active: ${var_process_flag_active}
+                    flag_reprocess: ${var_process_flag_reprocess}
+                    flag_scheduler: ${var_process_flag_scheduler}
+                  result: process_success_response
+
+          except:
+            as: e
+            steps:
+              # Checkpoint impreso en logs: en qué fecha se quedó, para reanudar desde ahí
+              # (no re-ejecutar todo el rango de nuevo — las fechas previas ya están confirmadas).
+              - log_error:
+                  call: sys.log
+                  args:
+                    json:
+                      status: FAILED
+                      modo: ${var_modo}
+                      fechas_procesadas_antes_del_error: ${var_fechas_procesadas}
+                      checkpoint_ultima_fecha_intentada: ${var_ultima_fecha_intentada}
+                      error: ${e}
+                    severity: ERROR
+
+              # MONITORING: marca el proceso como FAILED — no debe romper el pipeline por sí mismo,
+              # pero aquí no hace falta try/except propio porque ya estamos en el except principal
+              - update_process_failed:
+                  call: UpdateProcessStatus
+                  args:
+                    api_url: ${var_METADATA_API_URL}
+                    process_code: ${var_process_code}
+                    execution_date: ${var_execution_date}
+                    status: "FAILED"
+                    user: ${var_user}
+                    flag_active: ${var_process_flag_active}
+                    flag_reprocess: ${var_process_flag_reprocess}
+                    flag_scheduler: ${var_process_flag_scheduler}
+                  result: process_failed_response
+
+              - armar_sugerencia_reanudacion:
+                  switch:
+                    - condition: ${var_modo == "reproceso"}
+                      next: sugerencia_reproceso
+                    - condition: ${true}
+                      next: sugerencia_simple
+
+              - sugerencia_reproceso:
+                  assign:
+                    - var_sugerencia_reanudacion: ${"Para continuar el reproceso desde donde se quedó, ejecutar nuevamente con process_date_init - "
+                        + var_ultima_fecha_intentada + " y process_date_fin - " + _param_fin + "."}
+                  next: handle_error
+
+              - sugerencia_simple:
+                  assign:
+                    - var_sugerencia_reanudacion: ${"Reintentar manualmente con process_date - " + var_ultima_fecha_intentada + "."}
+                  next: handle_error
+
+              - handle_error:
+                  assign:
+                    - email_body:
+                        subject: "[IBK-CONSENTIMIENTO] Centralización LPDP [❌ ERROR]"
+                        content: ${"<p>Se detectó un error procesando consentimientos LPDP de Interbank (modo - "
+                            + var_modo + ").</p>"
+                            + "<p>CHECKPOINT — última fecha intentada (donde se detuvo) - " + var_ultima_fecha_intentada + "</p>"
+                            + "<p>Fechas procesadas correctamente antes del error - " + string(var_fechas_procesadas) + "</p>"
+                            + "<p>" + var_sugerencia_reanudacion + "</p>"
+                            + "<p>Detalle - " + text.decode(json.encode(e)) + "</p>"}
+                        toAddress:
+                          - "lsullonm@intercorp.com.pe"   # ⚠️ SOLO PARA PRUEBAS — reemplazar por los destinatarios reales antes de producción
+                  next: enviar_mail
+
+      # ============================================================
+      # 4. NOTIFICACIÓN OK
+      # ============================================================
+      - set_dq_subject_suffix:
+          switch:
+            - condition: ${var_dq_fails > 0}
+              assign:
+                - var_subject_ok: "[IBK-CONSENTIMIENTO] Centralización LPDP [⚠️ OK CON DQ FAILS]"
+            - condition: ${true}
+              assign:
+                - var_subject_ok: "[IBK-CONSENTIMIENTO] Centralización LPDP [✅ OK]"
+
+      - notificar_ok:
+          assign:
+            - email_body:
+                subject: ${var_subject_ok}
+                content: ${"<p>Proceso finalizado correctamente. Modo - " + var_modo
+                    + ". Fechas procesadas - " + string(var_fechas_procesadas) + "</p>"
+                    + "<p>Reglas DQ críticas en estado fail hoy - " + string(var_dq_fails)
+                    + " (ver dq_control para el detalle)</p>"}
+                toAddress:
+                  - "lsullonm@intercorp.com.pe"   # ⚠️ SOLO PARA PRUEBAS — reemplazar por los destinatarios reales antes de producción
+
+      # ============================================================
+      # 5. ENVÍO DE MAIL VÍA PUB/SUB
+      # ============================================================
+      - verificar_email_body:
+          switch:
+            - condition: ${"subject" in email_body and email_body.subject != "" and
+                          "content" in email_body and email_body.content != "" and
+                          "toAddress" in email_body and len(email_body.toAddress) > 0}
+              next: enviar_mail
+            - condition: ${true}
+              next: MainResponse
+
+      - enviar_mail:
+          call: http.post
+          args:
+            url: "https://pubsub.googleapis.com/v1/projects/${mail_pubsub_project}/topics/${mail_pubsub_topic}:publish"
+            auth:
+              type: OAuth2
+            body:
+              messages:
+                - data: ${base64.encode(json.encode(email_body))}
+          result: pubResp
+
+      - MainResponse:
+          return:
+            status: "SUCCESS"
+            mensaje: ${"Centralización de consentimientos LPDP IBK ejecutada — modo " + var_modo + ", " + string(var_fechas_procesadas) + " fecha(s) procesada(s)"}
+            process_code: ${var_process_code}
+            execution_id: ${var_execution_id}
+            modo: ${var_modo}
+            fechas_procesadas: ${var_fechas_procesadas}
+            execution_data_read: ${execution_data_read}
+            execution_data_write: ${execution_data_write}
+            object_last_load_date: ${object_last_load_date}
+
+  # ============================================================
+  # SUBWORKFLOWS REUTILIZABLES
+  # ============================================================
+  SyncBigQueryJob:
+    params: [query, project_id]
+    steps:
+      - JobQuery:
+          call: googleapis.bigquery.v2.jobs.query
+          args:
+            projectId: ${project_id}
+            body:
+              query: ${query}
+              useLegacySql: false
+          result: jobQueryResponse
+
+      - JobWait:
+          call: BigQueryJobState
+          args:
+            job_id: ${jobQueryResponse.jobReference.jobId}
+            project_id: ${project_id}
+          result: jobGetResponse
+
+      - Return:
+          return: ${jobGetResponse}
+
+  # Versión extendida de SyncBigQueryJob que retorna los resultados del query — usada por el
+  # gate de integridad para leer los OUT del SP (etapas.integridad: true)
+  SyncBigQueryJobWithResults:
+    params: [query, project_id]
+    steps:
+      - JobQuery:
+          call: googleapis.bigquery.v2.jobs.query
+          args:
+            projectId: ${project_id}
+            body:
+              query: ${query}
+              useLegacySql: false
+              timeoutMs: 1000
+          result: jobQueryResponse
+
+      - JobWait:
+          call: BigQueryJobState
+          args:
+            job_id: ${jobQueryResponse.jobReference.jobId}
+            project_id: ${project_id}
+          result: jobGetResponse
+
+      - GetResults:
+          call: googleapis.bigquery.v2.jobs.getQueryResults
+          args:
+            projectId: ${project_id}
+            jobId: ${jobQueryResponse.jobReference.jobId}
+            maxResults: 10
+          result: queryResults
+
+      - Return:
+          return: ${queryResults}
+
+  # MONITORING [etapas.monitoring: true] — encapsula crear ejecución (RUNNING) → ejecutar SP →
+  # actualizar ejecución (SUCCESS/FAILED). Usado por invoque_sp_tct / invoque_sp_bccg.
+  TrackedBigQueryJobWithResults:
+    params:
+      - api_url
+      - process_code
+      - execution_id
+      - task_code
+      - execution_type
+      - process_date_init
+      - process_date_end
+      - user
+      - query
+      - project_id
+    steps:
+      - create_execution_running:
+          call: CreateExecution
+          args:
+            api_url: ${api_url}
+            process_code: ${process_code}
+            execution_id: ${execution_id}
+            task_code: ${task_code}
+            execution_type: ${execution_type}
+            execution_status_code: "RUNNING"
+            execution_data_read: 0
+            execution_data_write: 0
+            process_date_init: ${process_date_init}
+            process_date_end: ${process_date_end}
+            user: ${user}
+          result: create_execution_response
+
+      - ejecutar_bigquery:
+          try:
+            steps:
+              - execute_query:
+                  call: SyncBigQueryJobWithResults
+                  args:
+                    query: ${query}
+                    project_id: ${project_id}
+                  result: sp_result
+
+              - set_metrics:
+                  assign:
+                    - execution_data_read: ${int(sp_result.rows[0].f[0].v)}
+                    - execution_data_write: ${int(sp_result.rows[0].f[1].v)}
+                    - object_last_load_date: ${text.substring(time.format(sys.now(), "America/Lima"), 0, 19)}
+
+              - update_execution_success:
+                  call: UpdateExecution
+                  args:
+                    api_url: ${api_url}
+                    process_code: ${process_code}
+                    execution_id: ${execution_id}
+                    task_code: ${task_code}
+                    object_last_load_date: ${object_last_load_date}
+                    execution_type: ${execution_type}
+                    execution_status_code: "SUCCESS"
+                    execution_data_read: ${execution_data_read}
+                    execution_data_write: ${execution_data_write}
+                    process_date_init: ${process_date_init}
+                    process_date_end: ${process_date_end}
+                    user: ${user}
+                  result: update_execution_success_response
+
+              - return_success:
+                  return:
+                    status: "SUCCESS"
+                    execution_data_read: ${execution_data_read}
+                    execution_data_write: ${execution_data_write}
+                    object_last_load_date: ${object_last_load_date}
+                    bq_result: ${sp_result}
+
+          except:
+            as: e
+            steps:
+              - update_execution_failed:
+                  call: UpdateExecution
+                  args:
+                    api_url: ${api_url}
+                    process_code: ${process_code}
+                    execution_id: ${execution_id}
+                    task_code: ${task_code}
+                    object_last_load_date: null
+                    execution_type: ${execution_type}
+                    execution_status_code: "FAILED"
+                    execution_data_read: 0
+                    execution_data_write: 0
+                    process_date_init: ${process_date_init}
+                    process_date_end: ${process_date_end}
+                    user: ${user}
+                  result: update_execution_failed_response
+
+              - raise_error:
+                  raise: ${e}
+
+  CreateExecution:
+    params:
+      - api_url
+      - process_code
+      - execution_id
+      - task_code
+      - execution_type
+      - execution_status_code
+      - execution_data_read
+      - execution_data_write
+      - process_date_init
+      - process_date_end
+      - user
+    steps:
+      - call_api:
+          call: http.post
+          args:
+            url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/task-execution/creation"}
+            auth:
+              type: OIDC
+              audience: ${api_url}
+            body:
+              execution_id: ${execution_id}
+              process_code: ${process_code}
+              task_code: ${task_code}
+              object_last_load_date: null
+              execution_type: ${execution_type}
+              execution_status_code: ${execution_status_code}
+              execution_data_read: ${execution_data_read}
+              execution_data_write: ${execution_data_write}
+              creation_user: ${user}
+              process_date_init: ${process_date_init}
+              process_date_end: ${process_date_end}
+          result: api_response
+
+      - return_response:
+          return: ${api_response.body}
+
+  UpdateExecution:
+    params:
+      - api_url
+      - process_code
+      - execution_id
+      - task_code
+      - object_last_load_date
+      - execution_type
+      - execution_status_code
+      - execution_data_read
+      - execution_data_write
+      - process_date_init
+      - process_date_end
+      - user
+    steps:
+      - call_api:
+          call: http.put
+          args:
+            url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/task-execution/" + execution_id + "/" + task_code + "/update_new"}
+            auth:
+              type: OIDC
+              audience: ${api_url}
+            body:
+              execution_id: ${execution_id}
+              process_code: ${process_code}
+              task_code: ${task_code}
+              object_last_load_date: ${object_last_load_date}
+              execution_type: ${execution_type}
+              execution_status_code: ${execution_status_code}
+              execution_data_read: ${execution_data_read}
+              execution_data_write: ${execution_data_write}
+              process_date_init: ${process_date_init}
+              process_date_end: ${process_date_end}
+              update_user: ${user}
+          result: api_response
+
+      - return_response:
+          return: ${api_response.body}
+
+  UpdateProcessStatus:
+    params:
+      - api_url
+      - process_code
+      - execution_date
+      - status
+      - user
+      - flag_active
+      - flag_reprocess
+      - flag_scheduler
+    steps:
+      - call_api:
+          call: http.put
+          args:
+            url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/update"}
+            auth:
+              type: OIDC
+              audience: ${api_url}
+            body:
+              execution_date: ${execution_date}
+              flag_active: ${flag_active}
+              flag_reprocess: ${flag_reprocess}
+              last_status_code: ${status}
+              execution_user: ${user}
+              update_user: ${user}
+              flag_scheduler: ${flag_scheduler}
+          result: api_response
+
+      - return_response:
+          return: ${api_response.body}
+
+  # INTEGRIDAD [etapas.integridad: true, registro_resultados: true] — persiste el resultado del
+  # gate en metadata_operational. Nunca rompe el pipeline: atrapa su propio error y loguea WARNING.
+  RegisterIntegrityResults:
+    params:
+      - api_url
+      - process_code
+      - execution_id
+      - task_code
+      - process_date
+      - flag_detener
+      - motivo_detencion
+      - resultados
+      - user
+    steps:
+      - call_api:
+          try:
+            call: http.post
+            args:
+              url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/integrity-execution/creation"}
+              auth:
+                type: OIDC
+                audience: ${api_url}
+              body:
+                execution_id: ${execution_id}
+                task_code: ${task_code}
+                process_date: ${process_date}
+                flag_detener: ${flag_detener}
+                motivo_detencion: ${motivo_detencion}
+                resultados: ${resultados}
+                creation_user: ${user}
+            result: api_response
+          except:
+            as: e
+            steps:
+              - log_registro_fallido:
+                  call: sys.log
+                  args:
+                    text: ${"[INTEGRIDAD] No se pudo registrar el resultado - " + json.encode_to_string(e)}
+                    severity: WARNING
+              - return_error:
+                  return: null
+
+      - return_response:
+          return: ${api_response.body}
+
+  BigQueryJobState:
+    params: [job_id, project_id]
+    steps:
+      - Sleep:
+          call: sys.sleep
+          args:
+            seconds: 30
+
+      - JobInfo:
+          call: googleapis.bigquery.v2.jobs.get
+          args:
+            jobId: ${job_id}
+            projectId: ${project_id}
+          result: jobGetResponse
+
+      - CheckRunning:
+          switch:
+            - condition: ${jobGetResponse.status.state == "RUNNING"}
+              next: Sleep
+            - condition: ${jobGetResponse.status.state == "DONE"}
+              next: CheckDone
+
+      - CheckDone:
+          switch:
+            - condition: ${"errorResult" in jobGetResponse.status}
+              raise: ${jobGetResponse}
+            - condition: ${true}
+              next: Return
+
+      - Return:
+          return: ${jobGetResponse}

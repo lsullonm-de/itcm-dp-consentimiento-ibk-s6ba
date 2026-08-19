@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" version="21.0.0">
+  <diagram name="Arquitectura Agente Analytics" id="arch-ai-analytics">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============================================================ -->
+        <!-- LAYER 1: PRESENTACION                                        -->
+        <!-- ============================================================ -->
+        <mxCell id="l1" value="presentacion" style="swimlane;startSize=28;fillColor=#1a0033;strokeColor=#9900cc;strokeWidth=3;fontColor=#cc44ff;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="820" height="195" as="geometry"/>
+        </mxCell>
+
+        <!-- React UI mockup (blue rectangle) -->
+        <mxCell id="ui_box" value="" style="rounded=1;arcSize=5;fillColor=#1565C0;strokeColor=#1E88E5;" vertex="1" parent="l1">
+          <mxGeometry x="20" y="38" width="280" height="142" as="geometry"/>
+        </mxCell>
+
+        <!-- Pie chart icon -->
+        <mxCell id="chart_icon" value="🥧" style="text;fontSize=40;fillColor=none;strokeColor=none;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="l1">
+          <mxGeometry x="40" y="48" width="80" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Table widget inside UI -->
+        <mxCell id="ui_table" value="Table" style="fillColor=#ffffff;strokeColor=#555555;fontColor=#000000;fontSize=10;align=center;" vertex="1" parent="l1">
+          <mxGeometry x="145" y="105" width="100" height="38" as="geometry"/>
+        </mxCell>
+
+        <!-- chat label -->
+        <mxCell id="chat_lbl" value="chat ✛" style="text;fontSize=10;fillColor=none;strokeColor=none;fontColor=#cccccc;" vertex="1" parent="l1">
+          <mxGeometry x="28" y="155" width="70" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- Tech stack -->
+        <mxCell id="tech_stack" value="React&#xa;React - Markdown + rehype&#xa;&#xa;Graficos: Echart&#xa;Tablas: AG Grid" style="text;fontSize=14;fillColor=none;strokeColor=none;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="l1">
+          <mxGeometry x="340" y="35" width="440" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- ARROWS BETWEEN LAYERS 1 and 2                               -->
+        <!-- ============================================================ -->
+
+        <!-- Prompt (down) -->
+        <mxCell id="arr_prompt" value="Prompt" style="endArrow=block;endFill=1;strokeColor=#3355ff;strokeWidth=3;fontColor=#222222;fontSize=12;labelPosition=left;align=right;verticalLabelPosition=middle;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="380" y="220" as="sourcePoint"/>
+            <mxPoint x="380" y="268" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- JSON Answer (up) -->
+        <mxCell id="arr_json" value="JSON&#xa;Answer" style="endArrow=block;endFill=1;strokeColor=#3355ff;strokeWidth=3;fontColor=#222222;fontSize=12;labelPosition=right;align=left;verticalLabelPosition=middle;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="480" y="268" as="sourcePoint"/>
+            <mxPoint x="480" y="220" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- LAYER 2: CAPA CONVERSACIONAL / ADK / FastAPI                 -->
+        <!-- ============================================================ -->
+        <mxCell id="l2" value="Capa conversacional / Agente Orquestador ADK / FastAPI" style="swimlane;startSize=30;fillColor=#1a0033;strokeColor=#7B00D4;strokeWidth=3;fontColor=#ffffff;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="270" width="820" height="540" as="geometry"/>
+        </mxCell>
+
+        <!-- "Respuesta o charla" label -->
+        <mxCell id="resp_lbl" value="Respuesta o charla" style="text;fontSize=11;fillColor=none;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="l2">
+          <mxGeometry x="10" y="40" width="180" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- Agente Intencional -->
+        <mxCell id="ag_int" value="Agente Intencional" style="rounded=1;arcSize=15;fillColor=#c67c00;strokeColor=none;fontColor=#ffffff;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="l2">
+          <mxGeometry x="28" y="65" width="175" height="62" as="geometry"/>
+        </mxCell>
+
+        <!-- Memoria ADK -->
+        <mxCell id="mem_adk" value="Memoria ADK&#xa;&#xa;- Contexto&#xa;  Conversación&#xa;- Preferencias, Perfil&#xa;- Estados" style="rounded=1;arcSize=8;fillColor=#2a2a2a;strokeColor=#9c27b0;strokeWidth=2;fontColor=#ffffff;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="l2">
+          <mxGeometry x="265" y="48" width="200" height="138" as="geometry"/>
+        </mxCell>
+
+        <!-- Memoria Externa container -->
+        <mxCell id="mem_ext" value="Memoria Externa" style="swimlane;startSize=24;fillColor=none;strokeColor=#9900cc;strokeWidth=2;fontColor=#ffffff;fontSize=12;fontStyle=1;" vertex="1" parent="l2">
+          <mxGeometry x="520" y="38" width="278" height="228" as="geometry"/>
+        </mxCell>
+
+        <!-- Redis cache -->
+        <mxCell id="redis" value="Redis cache" style="rounded=1;arcSize=20;fillColor=#7B00D4;strokeColor=none;fontColor=#ffffff;fontSize=12;align=center;" vertex="1" parent="mem_ext">
+          <mxGeometry x="18" y="34" width="240" height="44" as="geometry"/>
+        </mxCell>
+
+        <!-- Vector Store -->
+        <mxCell id="vector" value="Vector Store" style="rounded=1;arcSize=20;fillColor=#7B00D4;strokeColor=none;fontColor=#ffffff;fontSize=12;align=center;" vertex="1" parent="mem_ext">
+          <mxGeometry x="18" y="92" width="240" height="44" as="geometry"/>
+        </mxCell>
+
+        <!-- Dashboard Store -->
+        <mxCell id="dash_store" value="Dashboard Store" style="rounded=1;arcSize=20;fillColor=#7B00D4;strokeColor=none;fontColor=#ffffff;fontSize=12;align=center;" vertex="1" parent="mem_ext">
+          <mxGeometry x="18" y="150" width="240" height="44" as="geometry"/>
+        </mxCell>
+
+        <!-- ¿Análisis? diamond -->
+        <mxCell id="analysis" value="¿Análisis?" style="rhombus;fillColor=#c67c00;strokeColor=none;fontColor=#ffffff;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="l2">
+          <mxGeometry x="52" y="175" width="130" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Agentes Especializados sub-container -->
+        <mxCell id="ag_esp" value="Agentes Especializados" style="swimlane;startSize=30;fillColor=#2e1500;strokeColor=#8B5A2B;strokeWidth=2;fontColor=#ffffff;fontSize=13;fontStyle=1;" vertex="1" parent="l2">
+          <mxGeometry x="22" y="315" width="774" height="210" as="geometry"/>
+        </mxCell>
+
+        <!-- Agente Semantico -->
+        <mxCell id="ag_sem" value="Agente Semantico&#xa;&#xa;(Templates Tablas,&#xa;columnas, metricas, KPI,&#xa;descripciones)" style="rounded=1;arcSize=10;fillColor=#c67c00;strokeColor=none;fontColor=#ffffff;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="ag_esp">
+          <mxGeometry x="18" y="40" width="225" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- Agente Insights -->
+        <mxCell id="ag_ins" value="Agente Insights&#xa;&#xa;Genera insight ejecutivos&#xa;Tendencias, Anomalis,&#xa;Responde Preguntas" style="rounded=1;arcSize=10;fillColor=#c67c00;strokeColor=none;fontColor=#ffffff;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="ag_esp">
+          <mxGeometry x="275" y="40" width="225" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- Agente Sql -->
+        <mxCell id="ag_sql" value="Agente Sql&#xa;&#xa;Usa LLM, para generar la&#xa;consulta, usando contexto&#xa;Enriquecido" style="rounded=1;arcSize=10;fillColor=#c67c00;strokeColor=none;fontColor=#ffffff;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="ag_esp">
+          <mxGeometry x="532" y="40" width="225" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- LAYER 3: TOOLS CAPA DETERMINISTICA                          -->
+        <!-- ============================================================ -->
+        <mxCell id="l3" value="Tools Capa deterministica" style="swimlane;startSize=30;fillColor=#001a00;strokeColor=#00cc00;strokeWidth=3;fontColor=#44ff44;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="830" width="820" height="340" as="geometry"/>
+        </mxCell>
+
+        <!-- SQL Query AI -->
+        <mxCell id="sql_ai" value="SQL Query AI&#xa;&#xa;Verifica si las consultas&#xa;Pueden ser ejecutadas,&#xa;estima costos / Dry Run" style="rounded=1;arcSize=10;fillColor=#00aa00;strokeColor=none;fontColor=#000000;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="l3">
+          <mxGeometry x="22" y="50" width="205" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- "Consultas" label (below SQL Query AI) -->
+        <mxCell id="consul_lbl" value="Consultas" style="text;fontSize=12;fillColor=none;strokeColor=none;fontColor=#000000;" vertex="1" parent="l3">
+          <mxGeometry x="72" y="208" width="90" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Cache Resultados diamond -->
+        <mxCell id="cache_res" value="Cache&#xa;Resultados" style="rhombus;fillColor=#005500;strokeColor=none;fontColor=#ffffff;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="l3">
+          <mxGeometry x="290" y="50" width="148" height="118" as="geometry"/>
+        </mxCell>
+
+        <!-- "Si" label -->
+        <mxCell id="si_lbl" value="Si" style="text;fontSize=13;fillColor=none;strokeColor=none;fontColor=#000000;fontStyle=1;" vertex="1" parent="l3">
+          <mxGeometry x="446" y="98" width="28" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Selector Visualization -->
+        <mxCell id="sel_viz" value="Selector Visualization&#xa;&#xa;Selecciona tipo Gráfico,&#xa;Especificaciones,&#xa;Configurar interactividad" style="rounded=1;arcSize=10;fillColor=#00aa00;strokeColor=none;fontColor=#000000;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="l3">
+          <mxGeometry x="580" y="50" width="215" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- "No" label -->
+        <mxCell id="no_lbl" value="No" style="text;fontSize=13;fillColor=none;strokeColor=none;fontColor=#000000;fontStyle=1;" vertex="1" parent="l3">
+          <mxGeometry x="354" y="174" width="28" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- BIGQuery Tool -->
+        <mxCell id="bq_tool" value="BIGQuery Tool&#xa;Ejecuta consulta" style="rounded=1;arcSize=10;fillColor=#00aa00;strokeColor=none;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="l3">
+          <mxGeometry x="290" y="220" width="175" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- "Data JSON" label -->
+        <mxCell id="data_json_lbl" value="Data&#xa;JSON" style="text;fontSize=12;fillColor=none;strokeColor=none;fontColor=#000000;" vertex="1" parent="l3">
+          <mxGeometry x="474" y="230" width="60" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- Result Processor Tool -->
+        <mxCell id="res_proc" value="Result Processor Tool&#xa;Transforma resultados" style="rounded=1;arcSize=10;fillColor=#00aa00;strokeColor=none;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="l3">
+          <mxGeometry x="290" y="285" width="175" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- CONNECTIONS DENTRO DE L2                                     -->
+        <!-- ============================================================ -->
+
+        <!-- Agente Intencional <-> Memoria ADK (bidireccional) -->
+        <mxCell id="c_int_adk" style="endArrow=block;endFill=1;startArrow=block;startFill=1;strokeColor=#ffffff;strokeWidth=2;" edge="1" parent="l2" source="ag_int" target="mem_adk">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Memoria ADK <-> Memoria Externa (bidireccional) -->
+        <mxCell id="c_adk_ext" style="endArrow=block;endFill=1;startArrow=block;startFill=1;strokeColor=#ffffff;strokeWidth=2;" edge="1" parent="l2" source="mem_adk" target="mem_ext">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Agente Intencional -> ¿Análisis? -->
+        <mxCell id="c_int_ana" style="endArrow=block;endFill=1;strokeColor=#ffffff;strokeWidth=2;" edge="1" parent="l2" source="ag_int" target="analysis">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ¿Análisis? -> Agentes Especializados -->
+        <mxCell id="c_ana_agesp" style="endArrow=block;endFill=1;strokeColor=#ffffff;strokeWidth=2;" edge="1" parent="l2" source="analysis" target="ag_esp">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- CONNECTIONS DENTRO DE L3                                     -->
+        <!-- ============================================================ -->
+
+        <!-- SQL Query AI -> Cache Resultados -->
+        <mxCell id="c_sql_cache" style="endArrow=block;endFill=1;strokeColor=#000000;strokeWidth=2;" edge="1" parent="l3" source="sql_ai" target="cache_res">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Cache Resultados -> Selector Visualization (Si) -->
+        <mxCell id="c_cache_viz" style="endArrow=block;endFill=1;strokeColor=#000000;strokeWidth=2;" edge="1" parent="l3" source="cache_res" target="sel_viz">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Cache Resultados -> BIGQuery Tool (No) -->
+        <mxCell id="c_cache_bq" style="endArrow=block;endFill=1;strokeColor=#000000;strokeWidth=2;" edge="1" parent="l3" source="cache_res" target="bq_tool">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- BIGQuery Tool -> Result Processor -->
+        <mxCell id="c_bq_rp" style="endArrow=block;endFill=1;strokeColor=#000000;strokeWidth=2;" edge="1" parent="l3" source="bq_tool" target="res_proc">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Result Processor -> Selector Visualization (Data JSON, curva por abajo) -->
+        <mxCell id="c_rp_viz" style="endArrow=block;endFill=1;strokeColor=#000000;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="l3" source="res_proc" target="sel_viz">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="550" y="310"/>
+              <mxPoint x="688" y="310"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- CONNECTIONS CROSS-LAYER                                      -->
+        <!-- ============================================================ -->
+
+        <!-- L2 Agentes Esp -> L3 (flecha de bajada al centro) -->
+        <mxCell id="c_l2_l3" style="endArrow=open;endFill=0;strokeColor=#888888;strokeWidth=2;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="805" as="sourcePoint"/>
+            <mxPoint x="440" y="835" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- L3 Selector Visualization -> L2 (retroalimentación, lado derecho) -->
+        <mxCell id="c_l3_l2" style="endArrow=open;endFill=0;strokeColor=#888888;strokeWidth=2;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="860" y="830" as="sourcePoint"/>
+            <mxPoint x="860" y="268" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Dashboard Store -> l3 (línea bajando por el lado derecho) -->
+        <mxCell id="c_dash_l3" style="endArrow=open;endFill=0;strokeColor=#888888;strokeWidth=2;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="858" y="502" as="sourcePoint"/>
+            <mxPoint x="858" y="830" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

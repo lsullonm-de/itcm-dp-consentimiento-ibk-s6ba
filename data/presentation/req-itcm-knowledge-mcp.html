@@ -1,0 +1,578 @@
+<title>REQ · Módulo Knowledge MCP — ITCM Data Platform</title>
+<style>
+  :root {
+    --ground:#F4F6F9;--surface:#FFFFFF;--surface-2:#F0F2F6;--ink:#1A1F2E;--ink-2:#4E5A6E;--ink-3:#7B8699;
+    --accent:#0052CC;--accent-bg:#E8F0FF;--border:#D8DCE6;--border-2:#EAECF2;
+    --chip-new:#E3F4EA;--chip-new-ink:#1A6632;--chip-draft:#FFF4E0;--chip-draft-ink:#7A4800;
+    --code-bg:#161C26;--code-ink:#C9D3E8;--code-comment:#5C6E8A;--code-key:#7EC8E3;--code-str:#A8D8A0;--code-num:#F0A060;
+    --tag-cloud:#E3EEFF;--tag-cloud-ink:#0052CC;--tag-gcs:#E6F4F0;--tag-gcs-ink:#1A6B52;
+    --tag-iam:#FEF0E0;--tag-iam-ink:#7A4200;--tag-mcp:#F0E8FF;--tag-mcp-ink:#5200A8;
+    --tag-orch:#FFF0F5;--tag-orch-ink:#880044;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#0D1117;--surface:#161B22;--surface-2:#1F2631;--ink:#E6EAF4;--ink-2:#9AA5BC;--ink-3:#5C6880;
+      --accent:#4D8EF8;--accent-bg:#0D2040;--border:#252E3E;--border-2:#1D2535;
+      --chip-new:#0D2A18;--chip-new-ink:#5DD98A;--chip-draft:#2A1E00;--chip-draft-ink:#F0C060;
+      --tag-cloud:#0D2040;--tag-cloud-ink:#6AABFF;--tag-gcs:#0A2218;--tag-gcs-ink:#4DCCA8;
+      --tag-iam:#2A1600;--tag-iam-ink:#F0A050;--tag-mcp:#1A0A30;--tag-mcp-ink:#C090FF;
+      --tag-orch:#2A0015;--tag-orch-ink:#FF80B0;
+    }
+  }
+  :root[data-theme="light"] { --ground:#F4F6F9;--surface:#FFFFFF;--surface-2:#F0F2F6;--ink:#1A1F2E;--ink-2:#4E5A6E;--ink-3:#7B8699;--accent:#0052CC;--accent-bg:#E8F0FF;--border:#D8DCE6;--border-2:#EAECF2; }
+  :root[data-theme="dark"] { --ground:#0D1117;--surface:#161B22;--surface-2:#1F2631;--ink:#E6EAF4;--ink-2:#9AA5BC;--ink-3:#5C6880;--accent:#4D8EF8;--accent-bg:#0D2040;--border:#252E3E;--border-2:#1D2535; }
+
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--ground);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.65;min-height:100vh;}
+
+  .page{display:grid;grid-template-columns:220px 1fr;grid-template-rows:auto 1fr;max-width:1100px;margin:0 auto;min-height:100vh;}
+  .doc-header{grid-column:1/-1;background:var(--surface);border-bottom:1px solid var(--border);padding:24px 32px 20px;}
+  .toc{grid-column:1;padding:28px 0 28px 28px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .content{grid-column:2;padding:32px 40px 64px 32px;min-width:0;}
+  @media(max-width:780px){.page{grid-template-columns:1fr;}.toc{display:none;}.content{grid-column:1;padding:24px 20px 48px;}.doc-header{padding:20px;}}
+
+  .breadcrumb{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;}
+  .breadcrumb span{color:var(--accent);}
+  .doc-title{font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.2;margin-bottom:12px;}
+  .meta-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
+  .chip-new{background:var(--chip-new);color:var(--chip-new-ink);}
+  .chip-v2{background:var(--accent-bg);color:var(--accent);}
+  .meta-text{font-size:12px;color:var(--ink-3);}
+
+  .toc-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;}
+  .toc-list{list-style:none;display:flex;flex-direction:column;gap:1px;}
+  .toc-list a{display:block;padding:5px 10px;border-radius:5px;font-size:12.5px;color:var(--ink-2);text-decoration:none;transition:background .12s,color .12s;}
+  .toc-list a:hover{background:var(--surface);color:var(--accent);}
+  .toc-list .toc-sub a{font-size:11.5px;padding-left:20px;color:var(--ink-3);}
+
+  .section{margin-bottom:44px;}
+  .section-eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+  h2{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.25;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border-2);}
+  h3{font-size:13.5px;font-weight:700;color:var(--ink);margin:20px 0 8px;letter-spacing:-.01em;}
+  p{color:var(--ink-2);max-width:68ch;margin-bottom:10px;}
+  ul,ol{padding-left:18px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+  li{max-width:68ch;}
+  strong{color:var(--ink);font-weight:600;}
+
+  .tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:10.5px;font-weight:600;letter-spacing:.03em;vertical-align:middle;}
+  .tag-cloud{background:var(--tag-cloud);color:var(--tag-cloud-ink);}
+  .tag-gcs{background:var(--tag-gcs);color:var(--tag-gcs-ink);}
+  .tag-iam{background:var(--tag-iam);color:var(--tag-iam-ink);}
+  .tag-mcp{background:var(--tag-mcp);color:var(--tag-mcp-ink);}
+  .tag-orch{background:var(--tag-orch);color:var(--tag-orch-ink);}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:7px;padding:16px 18px;font-family:'Cascadia Code',Consolas,'Courier New',monospace;font-size:12.5px;line-height:1.6;overflow-x:auto;margin:10px 0 14px;border:1px solid #252E3E;}
+  code{font-family:'Cascadia Code',Consolas,'Courier New',monospace;font-size:12px;background:var(--surface-2);color:var(--accent);padding:1px 5px;border-radius:3px;}
+  pre code{background:none;color:inherit;padding:0;border-radius:0;font-size:inherit;}
+  .hl-key{color:var(--code-key);} .hl-str{color:var(--code-str);} .hl-num{color:var(--code-num);} .hl-cmt{color:var(--code-comment);font-style:italic;}
+
+  .table-wrap{overflow-x:auto;margin:10px 0 16px;border-radius:7px;border:1px solid var(--border);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{background:var(--surface-2);color:var(--ink);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);}
+  tbody td{padding:9px 14px;color:var(--ink-2);border-bottom:1px solid var(--border-2);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:nth-child(odd) td{background:var(--surface);}
+  tbody tr:nth-child(even) td{background:var(--ground);}
+
+  .tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin:12px 0;}
+  .tool-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+  .tool-card-name{font-family:'Cascadia Code',Consolas,monospace;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:4px;}
+  .tool-card-desc{font-size:12px;color:var(--ink-2);margin-bottom:8px;}
+  .tool-card-io{font-size:11px;color:var(--ink-3);display:flex;flex-direction:column;gap:2px;}
+  .tool-card-io span{font-weight:600;color:var(--ink-2);}
+
+  .arch-diagram{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin:12px 0;display:flex;flex-direction:column;gap:0;font-size:12px;font-family:'Cascadia Code',Consolas,monospace;}
+  .arch-row{display:flex;align-items:center;gap:0;}
+  .arch-box{padding:8px 14px;border-radius:6px;font-size:11.5px;font-weight:600;text-align:center;white-space:nowrap;}
+  .arch-down{text-align:center;color:var(--ink-3);font-size:16px;padding:2px 0;}
+  .arch-consumers{display:flex;gap:10px;flex-wrap:wrap;}
+
+  /* Orchestration levels */
+  .orch-levels{display:flex;flex-direction:column;gap:0;margin:12px 0;}
+  .orch-level{display:grid;grid-template-columns:80px 1fr;align-items:stretch;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;}
+  .orch-level-label{background:var(--surface-2);display:flex;align-items:center;justify-content:center;padding:16px 12px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-align:center;border-right:1px solid var(--border);}
+  .orch-level-body{padding:14px 16px;background:var(--surface);}
+  .orch-level-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+  .orch-level-path{font-family:'Cascadia Code',Consolas,monospace;font-size:11.5px;color:var(--accent);margin-bottom:6px;}
+  .orch-level-desc{font-size:12px;color:var(--ink-2);}
+  .orch-arrow{text-align:center;color:var(--ink-3);font-size:18px;margin:-4px 0;}
+
+  .estimate-grid{display:grid;grid-template-columns:1fr auto;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:10px 0;}
+  .est-row{display:contents;}
+  .est-row>div{padding:9px 16px;border-bottom:1px solid var(--border-2);font-size:13px;color:var(--ink-2);}
+  .est-row:last-child>div{border-bottom:none;}
+  .est-row .est-days{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;}
+  .est-total>div{background:var(--accent-bg);color:var(--accent);font-weight:700;}
+
+  .notice{background:var(--accent-bg);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px;margin:10px 0;font-size:13px;color:var(--ink-2);}
+  .notice strong{color:var(--accent);}
+</style>
+
+<div class="page">
+
+  <header class="doc-header">
+    <div class="breadcrumb">ITCM Data Platform · <span>Gobierno y Metadata</span> · Nuevo Módulo</div>
+    <div class="doc-title">Módulo <code style="font-size:inherit;background:var(--accent-bg);color:var(--accent)">itcm-knowledge-mcp</code> — Servidor MCP de Base de Conocimiento</div>
+    <div class="meta-row">
+      <span class="chip chip-new">Nuevo</span>
+      <span class="chip chip-v2">v1.1 — actualizado</span>
+      <span class="meta-text" style="color:var(--ink-3)">·</span>
+      <span class="meta-text">Dominio: Gobierno · Autor: Data Platform · 2026-07-14</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-label">Contenido</div>
+    <ul class="toc-list">
+      <li><a href="#resumen">Resumen</a></li>
+      <li><a href="#contexto">Contexto y Motivación</a></li>
+      <li><a href="#alcance">Alcance</a></li>
+      <li><a href="#arquitectura">Arquitectura</a></li>
+      <li><a href="#orquestacion">Capa de Orquestación</a>
+        <ul class="toc-sub">
+          <li><a href="#orch-niveles">3 Niveles</a></li>
+          <li><a href="#orch-flujo">Flujo de activación</a></li>
+          <li><a href="#orch-claude">CLAUDE.md — punto de entrada</a></li>
+        </ul>
+      </li>
+      <li><a href="#componentes">Componentes</a>
+        <ul class="toc-sub">
+          <li><a href="#comp-api">Cloud Run API</a></li>
+          <li><a href="#comp-gcs">Bucket GCS</a></li>
+          <li><a href="#comp-sync">Sync PowerShell</a></li>
+          <li><a href="#comp-iam">SA e IAM</a></li>
+        </ul>
+      </li>
+      <li><a href="#tools">MCP Tools</a></li>
+      <li><a href="#estructura-bucket">Estructura del Bucket</a></li>
+      <li><a href="#estructura-repo">Estructura en el Repo</a></li>
+      <li><a href="#config">Configuración y Variables</a></li>
+      <li><a href="#dataops">Configuración Dataops</a></li>
+      <li><a href="#criterios">Criterios de Aceptación</a></li>
+      <li><a href="#estimacion">Estimación</a></li>
+    </ul>
+  </nav>
+
+  <main class="content">
+
+    <!-- Resumen -->
+    <section class="section" id="resumen">
+      <div class="section-eyebrow">Resumen</div>
+      <h2>¿Qué es este módulo?</h2>
+      <p>
+        <strong>itcm-knowledge-mcp</strong> es un servidor <strong>Model Context Protocol (MCP)</strong> que expone la base de conocimiento del área Data &amp; Analytics de ITCM como herramientas invocables por agentes IA. Permite que Claude Code, Cursor, y agentes Vertex AI puedan acceder a skills, estándares, reglas de compliance y catálogos de datos directamente desde GCS, sin clonar repositorios ni usar VPN.
+      </p>
+      <p>
+        Incluye una <strong>capa de orquestación</strong> que permite activar el flujo de fábrica completo con lenguaje natural — sin slash commands explícitos. El agente detecta la intención, carga el workflow correcto del bucket, y ejecuta las instrucciones actualizadas.
+      </p>
+    </section>
+
+    <!-- Contexto -->
+    <section class="section" id="contexto">
+      <div class="section-eyebrow">Contexto</div>
+      <h2>Motivación</h2>
+      <p>Los skills y estándares del repositorio <code>itcm-dp-knowledge-base</code> hoy solo funcionan si el desarrollador tiene el repo clonado localmente. El equipo necesita:</p>
+      <ul>
+        <li>Acceso centralizado desde cualquier herramienta IA (Claude, Gemini, Cursor)</li>
+        <li>Un único punto de verdad siempre actualizado — sin sincronización manual</li>
+        <li>Activación por intención natural — sin memorizar slash commands</li>
+        <li>Sin VPN ni dependencias locales de repositorios</li>
+        <li>Compatible con múltiples modelos (Claude, Gemini, GPT-4 vía Cursor)</li>
+      </ul>
+      <div class="notice">
+        <strong>Patrón adoptado:</strong> Cloud Run con autenticación OIDC (IAM) — mismo patrón que la Metadata API. Sin VPN, consumible desde cualquier agente con las credenciales adecuadas.
+      </div>
+    </section>
+
+    <!-- Alcance -->
+    <section class="section" id="alcance">
+      <div class="section-eyebrow">Alcance</div>
+      <h2>Qué incluye este módulo</h2>
+      <h3>En alcance — MVP</h3>
+      <ul>
+        <li>Servidor MCP en Cloud Run (FastAPI + MCP SDK Python)</li>
+        <li>Lectura de <code>.md</code> desde bucket GCS <code>itcm-dp-knowledge-base</code></li>
+        <li>6 herramientas MCP: <code>list_skills</code>, <code>get_skill</code>, <code>list_standards</code>, <code>get_standard</code>, <code>get_catalog</code>, <code>search</code></li>
+        <li><strong>Capa de orquestación de 3 niveles</strong>: router → domain index → comando específico</li>
+        <li>Sync PowerShell por carpetas explícitas al bucket — sin regex de exclusión</li>
+        <li>Service Account, IAM bindings, configuración Dataops/Infraops</li>
+        <li>Instrucción CLAUDE.md para cada repo del ecosistema (punto de entrada)</li>
+      </ul>
+      <h3>Fuera de alcance — fases futuras</h3>
+      <ul>
+        <li>Búsqueda semántica con embeddings / pgvector — Fase 2</li>
+        <li>Sync automático vía Cloud Build trigger — Fase 2 (hoy es manual con <code>sync_to_gcs.ps1</code>)</li>
+        <li>Ingesta de fuentes adicionales (Confluence, Notion) — Fase 2</li>
+        <li>Interfaz web de exploración — Fase 3</li>
+      </ul>
+    </section>
+
+    <!-- Arquitectura -->
+    <section class="section" id="arquitectura">
+      <div class="section-eyebrow">Arquitectura</div>
+      <h2>Diagrama de componentes</h2>
+      <div class="arch-diagram">
+        <div class="arch-row">
+          <span class="arch-consumers">
+            <span class="arch-box" style="background:var(--tag-mcp);color:var(--tag-mcp-ink)">Claude Code</span>
+            <span class="arch-box" style="background:var(--tag-mcp);color:var(--tag-mcp-ink)">Cursor</span>
+            <span class="arch-box" style="background:var(--tag-mcp);color:var(--tag-mcp-ink)">Vertex AI Agent</span>
+          </span>
+        </div>
+        <div class="arch-down">↓ MCP Protocol (HTTPS + OIDC)</div>
+        <div class="arch-row">
+          <span class="arch-box" style="background:var(--tag-cloud);color:var(--tag-cloud-ink);flex:1;text-align:center">
+            Cloud Run · <strong>itcm-knowledge-mcp</strong><br>
+            <span style="font-weight:400;font-size:10.5px">FastAPI + MCP SDK Python · tools: list_skills, get_skill, list_standards, get_standard, get_catalog, search</span>
+          </span>
+        </div>
+        <div class="arch-down">↓ google-cloud-storage</div>
+        <div class="arch-row">
+          <span class="arch-box" style="background:var(--tag-gcs);color:var(--tag-gcs-ink);flex:1;text-align:center">
+            GCS · <strong>itcm-dp-knowledge-base / knowledge/</strong><br>
+            <span style="font-weight:400;font-size:10.5px">orchestration/ · commands/data/ · commands/apps/ · data/ · apps/ · ai/ · ml/ · infra/</span>
+          </span>
+        </div>
+        <div class="arch-down">↑ sync_to_gcs.ps1 (manual) · Cloud Build trigger (Fase 2)</div>
+        <div class="arch-row">
+          <span class="arch-box" style="background:var(--surface-2);color:var(--ink);flex:1;text-align:center">
+            GitHub repo · <strong>itcm-dp-knowledge-base</strong><br>
+            <span style="font-weight:400;font-size:10.5px">Source of truth — ~140 archivos .md organizados por dominio</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Orquestación -->
+    <section class="section" id="orquestacion">
+      <div class="section-eyebrow">Orquestación</div>
+      <h2>Capa de Orquestación — 3 Niveles <span class="tag tag-orch">NUEVO</span></h2>
+      <p>Los archivos <code>.md</code> del bucket no son solo documentación — son instrucciones ejecutables. La capa de orquestación permite que el agente navegue del intent del usuario al workflow correcto sin slash commands.</p>
+
+      <h3 id="orch-niveles">Los 3 niveles</h3>
+      <div class="orch-levels">
+        <div class="orch-level">
+          <div class="orch-level-label">Nivel 1<br>Router</div>
+          <div class="orch-level-body">
+            <div class="orch-level-title">Orquestador principal</div>
+            <div class="orch-level-path">orchestration/router.md</div>
+            <div class="orch-level-desc">Detecta si el trabajo es sobre DATA (BigQuery, pipelines, atributos) o APPS (APIs, frontends, microservicios). Explica la línea de desarrollo PLAN→DESIGN→BUILD→VERIFY→RELEASE. Carga el índice del dominio correspondiente.</div>
+          </div>
+        </div>
+        <div class="orch-arrow">↓</div>
+        <div class="orch-level">
+          <div class="orch-level-label">Nivel 2<br>Domain Index</div>
+          <div class="orch-level-body">
+            <div class="orch-level-title">Índice por dominio</div>
+            <div class="orch-level-path">commands/data/_index.md &nbsp;·&nbsp; commands/apps/_index.md</div>
+            <div class="orch-level-desc">Tabla de intenciones → comando a ejecutar. Distingue entre comandos bulk (bloque completo de etapas) y atómicos (etapa individual). Carga el comando específico con <code>get_skill()</code>.</div>
+          </div>
+        </div>
+        <div class="orch-arrow">↓</div>
+        <div class="orch-level">
+          <div class="orch-level-label">Nivel 3<br>Comando</div>
+          <div class="orch-level-body">
+            <div class="orch-level-title">Workflow específico</div>
+            <div class="orch-level-path">commands/data/bulk-plan.md &nbsp;·&nbsp; commands/data/spec-create.md &nbsp;·&nbsp; ...</div>
+            <div class="orch-level-desc">Instrucciones detalladas del workflow: qué preguntar, qué generar, qué estándares aplicar, qué herramientas usar. Se descarga siempre fresco del bucket — nunca de caché local.</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 id="orch-flujo">Flujo de activación</h3>
+      <pre><code>Usuario:  "inicia el flujo de fábrica con este requerimiento:
+           atributo de recencia para segmento Farmacias"
+
+Claude:   get_skill("orchestration/router")         <span class="hl-cmt">← nivel 1: detecta DATA</span>
+          get_skill("commands/data/_index")          <span class="hl-cmt">← nivel 2: detecta bulk-plan</span>
+          get_skill("commands/data/bulk-plan")       <span class="hl-cmt">← nivel 3: carga el workflow</span>
+
+          "Entendido. Para crear el spec necesito confirmar:
+           1. ¿Cuál es la tabla destino en BigQuery?
+           2. ¿Las fuentes son master o raw?"
+
+          → genera spec.yaml + project.manifest.yaml</code></pre>
+
+      <h3 id="orch-claude">CLAUDE.md — punto de entrada</h3>
+      <p>El agente no busca el router por sí solo. El <strong>CLAUDE.md de cada repo del ecosistema</strong> le indica que lo cargue al iniciar. Esta línea debe agregarse en cada repo donde se quiera usar el MCP:</p>
+      <pre><code><span class="hl-cmt">## MCP Knowledge</span>
+<span class="hl-cmt">Servidor MCP conectado: `itcm-knowledge-mcp`</span>
+
+<span class="hl-str">Al iniciar cualquier sesión de desarrollo, ejecuta:</span>
+get_skill("orchestration/router")
+
+<span class="hl-str">Ese skill define los dominios disponibles y cómo navegar</span>
+<span class="hl-str">al comando correcto según la intención del usuario.</span>
+<span class="hl-str">Siempre descarga los skills frescos — nunca uses caché.</span></code></pre>
+    </section>
+
+    <!-- Componentes -->
+    <section class="section" id="componentes">
+      <div class="section-eyebrow">Implementación</div>
+      <h2>Componentes a implementar</h2>
+
+      <h3 id="comp-api">Cloud Run API <span class="tag tag-cloud">CLOUD RUN</span> <span class="tag tag-mcp">MCP</span></h3>
+      <p>Servicio FastAPI que implementa el protocolo MCP. Expone las 6 herramientas de acceso al conocimiento como endpoints invocables por cualquier cliente MCP compatible.</p>
+      <ul>
+        <li>Runtime: <strong>Python 3.12</strong></li>
+        <li>Framework: <strong>FastAPI</strong> con <code>mcp[server]</code> SDK</li>
+        <li>Autenticación: <strong>OIDC</strong> vía IAM — mismo patrón que Metadata API</li>
+        <li>Sin estado — cada request lee de GCS directamente</li>
+        <li>Nombre del servicio: <code>dev-itcm-knowledge-mcp-run-usct1</code></li>
+      </ul>
+
+      <h3 id="comp-gcs">Bucket GCS <span class="tag tag-gcs">GCS</span></h3>
+      <p>Bucket <code>itcm-dp-knowledge-base</code> en proyecto <code>dev-intercorp-data-storage</code>. El servicio lee los archivos <code>.md</code> del prefijo <code>knowledge/</code>. Ya creado.</p>
+      <ul>
+        <li>No público — acceso solo vía SA con <code>roles/storage.objectViewer</code></li>
+        <li>Estructura espeja las carpetas del repo (ver sección Estructura del Bucket)</li>
+      </ul>
+
+      <h3 id="comp-sync">Sync al bucket <span class="tag tag-cloud">POWERSHELL</span></h3>
+      <p>Script <code>tools/sync_to_gcs.ps1</code> que sincroniza carpetas explícitas — sin regex de exclusión (incompatible con PowerShell). Se ejecuta manualmente al hacer cambios al knowledge base.</p>
+      <pre><code><span class="hl-cmt"># Carpetas sincronizadas al bucket</span>
+$folders = @(
+  "data\skills", "data\standard", "data\rules",
+  "apps\skills",
+  "commands\data", "commands\apps",
+  "orchestration",
+  "ai\skills", "ai\standard",
+  "ml\skills", "ml\standard",
+  "infra\skills", "infra\standard"
+)
+
+<span class="hl-cmt"># NO se sincronizan:</span>
+<span class="hl-cmt"># .git/  .claude/  context/docs/  presentation/</span>
+<span class="hl-cmt"># tools/  temporal/  briefs/  service/  binarios</span></code></pre>
+      <p>Ejecución:</p>
+      <pre><code>.\tools\sync_to_gcs.ps1 -DryRun   <span class="hl-cmt"># ver qué subiría</span>
+.\tools\sync_to_gcs.ps1            <span class="hl-cmt"># sync real</span></code></pre>
+
+      <h3 id="comp-iam">Service Account e IAM <span class="tag tag-iam">IAM</span></h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>SA</th><th>Rol</th><th>Sobre</th></tr></thead>
+          <tbody>
+            <tr><td><code>dev-itcm-knowledge-mcp-app@dev-itc-customer-services.iam.gserviceaccount.com</code></td><td><code>roles/storage.objectViewer</code></td><td>Bucket <code>itcm-dp-knowledge-base</code></td></tr>
+            <tr><td>SA de agentes consumidores (Claude Code, Vertex AI)</td><td><code>roles/run.invoker</code></td><td>Cloud Run <code>itcm-knowledge-mcp</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MCP Tools -->
+    <section class="section" id="tools">
+      <div class="section-eyebrow">API</div>
+      <h2>MCP Tools — especificación</h2>
+      <p><code>get_skill</code> es el tool central — lo usa la capa de orquestación para cargar el router, los índices y los comandos específicos.</p>
+      <div class="tool-grid">
+
+        <div class="tool-card">
+          <div class="tool-card-name">get_skill</div>
+          <div class="tool-card-desc">Retorna el contenido completo de un skill, comando u orquestador. Tool principal — usado por la capa de orquestación.</div>
+          <div class="tool-card-io">
+            <div><span>Input:</span> <code>path: string</code></div>
+            <div><span>Output:</span> <code>{ path, content, size_bytes }</code></div>
+            <div><span>Ejemplos:</span> <code>get_skill("orchestration/router")</code><br><code>get_skill("commands/data/_index")</code><br><code>get_skill("commands/data/bulk-plan")</code></div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-card-name">list_skills</div>
+          <div class="tool-card-desc">Lista todos los skills disponibles con metadata extraída del frontmatter YAML.</div>
+          <div class="tool-card-io">
+            <div><span>Input:</span> <code>domain?</code>, <code>category?</code></div>
+            <div><span>Output:</span> array de <code>{ id, path, domain, category, description, triggers }</code></div>
+            <div><span>Ejemplo:</span> <code>list_skills(domain="data")</code></div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-card-name">get_standard</div>
+          <div class="tool-card-desc">Retorna el contenido de un estándar técnico.</div>
+          <div class="tool-card-io">
+            <div><span>Input:</span> <code>path: string</code></div>
+            <div><span>Output:</span> <code>{ path, content, size_bytes }</code></div>
+            <div><span>Ejemplo:</span> <code>get_standard("data/standard/bigquery/development.md")</code></div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-card-name">list_standards</div>
+          <div class="tool-card-desc">Lista los estándares por dominio o área.</div>
+          <div class="tool-card-io">
+            <div><span>Input:</span> <code>domain?</code>, <code>area?</code></div>
+            <div><span>Output:</span> array de <code>{ id, path, domain, area, title }</code></div>
+            <div><span>Ejemplo:</span> <code>list_standards(area="bigquery")</code></div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-card-name">get_catalog</div>
+          <div class="tool-card-desc">Retorna el catálogo de datos de una tabla BigQuery.</div>
+          <div class="tool-card-io">
+            <div><span>Input:</span> <code>dataset: string</code>, <code>table: string</code></div>
+            <div><span>Output:</span> <code>{ path, content, size_bytes }</code></div>
+            <div><span>Ejemplo:</span> <code>get_catalog("bi_itcm_agent", "dv_agente_analisis_datos")</code></div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-card-name">search</div>
+          <div class="tool-card-desc">Búsqueda por palabras clave en todo el contenido del bucket.</div>
+          <div class="tool-card-io">
+            <div><span>Input:</span> <code>query</code>, <code>type?</code>, <code>domain?</code></div>
+            <div><span>Output:</span> array de <code>{ path, type, excerpt, score }</code></div>
+            <div><span>Impl MVP:</span> regex match sobre contenido descargado</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Estructura bucket -->
+    <section class="section" id="estructura-bucket">
+      <div class="section-eyebrow">GCS</div>
+      <h2>Estructura del Bucket</h2>
+      <p>Solo se sincronizan carpetas explícitas — sin archivos de configuración, binarios ni contextos de IA.</p>
+<pre><code>gs://itcm-dp-knowledge-base/
+└── knowledge/
+    ├── orchestration/                        <span class="hl-cmt">← Nivel 1: router principal</span>
+    │   └── router.md
+    ├── commands/
+    │   ├── data/                             <span class="hl-cmt">← Niveles 2 y 3: domain index + workflows DATA</span>
+    │   │   ├── _index.md
+    │   │   ├── bulk-plan.md
+    │   │   ├── bulk-design.md
+    │   │   ├── bulk-build.md
+    │   │   ├── spec-create.md
+    │   │   ├── implement-stage.md
+    │   │   ├── discovery.md
+    │   │   ├── rules-check.md
+    │   │   └── sync-todo.md  (+ otros)
+    │   └── apps/                             <span class="hl-cmt">← Niveles 2 y 3: domain index + workflows APPS</span>
+    │       ├── _index.md
+    │       ├── spec-create.md
+    │       ├── spec-code.md
+    │       ├── bulk-spec.md
+    │       └── rules-check.md  (+ otros)
+    ├── data/
+    │   ├── skills/                           <span class="hl-cmt">← Skills especializados DATA (~25)</span>
+    │   ├── standard/                         <span class="hl-cmt">← Estándares BigQuery, services, factory</span>
+    │   │   └── data_catalog/                 <span class="hl-cmt">← Catálogos bi_itcm_agent, bi_vuc_insight</span>
+    │   └── rules/                            <span class="hl-cmt">← Reglas de compliance</span>
+    ├── apps/
+    │   └── skills/                           <span class="hl-cmt">← Skills especializados APPS (~15)</span>
+    ├── ai/skills/
+    ├── ml/skills/
+    └── infra/skills/</code></pre>
+    </section>
+
+    <!-- Estructura repo -->
+    <section class="section" id="estructura-repo">
+      <div class="section-eyebrow">Repositorio</div>
+      <h2>Estructura en el Repo de Gobierno</h2>
+<pre><code>[repo-gobierno-metadata]/
+└── modules/
+    ├── dataquality/          <span class="hl-cmt"># módulos existentes</span>
+    ├── lineage/
+    ├── metadata/
+    └── knowledge/            <span class="hl-cmt"># NUEVO</span>
+        ├── src/
+        │   ├── main.py       <span class="hl-cmt"># FastAPI app + MCP server</span>
+        │   ├── config.py     <span class="hl-cmt"># env vars + settings</span>
+        │   ├── tools/
+        │   │   ├── skills.py      <span class="hl-cmt"># list_skills, get_skill</span>
+        │   │   ├── standards.py   <span class="hl-cmt"># list_standards, get_standard</span>
+        │   │   ├── catalog.py     <span class="hl-cmt"># get_catalog</span>
+        │   │   └── search.py      <span class="hl-cmt"># search</span>
+        │   └── storage/
+        │       └── gcs.py    <span class="hl-cmt"># wrapper google-cloud-storage</span>
+        ├── tests/
+        │   └── test_tools.py
+        ├── Dockerfile
+        ├── requirements.txt
+        └── deploy/
+            ├── deploy_dev.json
+            └── env_dev.json</code></pre>
+    </section>
+
+    <!-- Config -->
+    <section class="section" id="config">
+      <div class="section-eyebrow">Configuración</div>
+      <h2>Variables de Entorno</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Variable</th><th>dev</th><th>prd</th><th>Fuente</th></tr></thead>
+          <tbody>
+            <tr><td><code>KNOWLEDGE_BUCKET_NAME</code></td><td>itcm-dp-knowledge-base</td><td>itcm-dp-knowledge-base</td><td>env_dev.json</td></tr>
+            <tr><td><code>KNOWLEDGE_BUCKET_PREFIX</code></td><td>knowledge</td><td>knowledge</td><td>env_dev.json</td></tr>
+            <tr><td><code>GCP_PROJECT</code></td><td>dev-intercorp-data-storage</td><td>intercorp-data-storage</td><td>env_dev.json</td></tr>
+            <tr><td><code>ENV</code></td><td>dev</td><td>prd</td><td>inyectada por framework</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Dependencias Python</h3>
+<pre><code>fastapi>=0.111
+uvicorn[standard]>=0.29
+mcp[server]>=1.0          <span class="hl-cmt"># MCP SDK Python</span>
+google-cloud-storage>=2.16
+pydantic>=2.7
+PyYAML>=6.0               <span class="hl-cmt"># parseo de frontmatter para list_skills</span></code></pre>
+    </section>
+
+    <!-- Dataops -->
+    <section class="section" id="dataops">
+      <div class="section-eyebrow">Despliegue</div>
+      <h2>Configuración Dataops</h2>
+<pre><code>{
+  <span class="hl-key">"image"</span>: { <span class="hl-key">"name"</span>: <span class="hl-str">"itcm-knowledge-mcp"</span> },
+  <span class="hl-key">"cloud_run"</span>: {
+    <span class="hl-key">"name"</span>: <span class="hl-str">"dev-itcm-knowledge-mcp-run-usct1"</span>,
+    <span class="hl-key">"region"</span>: <span class="hl-str">"us-central1"</span>,
+    <span class="hl-key">"service_account"</span>: <span class="hl-str">"_DATAOPS_VARIABLES.service_account_app"</span>,
+    <span class="hl-key">"allow_unauthenticated"</span>: <span class="hl-num">false</span>
+  }
+}</code></pre>
+    </section>
+
+    <!-- Criterios -->
+    <section class="section" id="criterios">
+      <div class="section-eyebrow">QA</div>
+      <h2>Criterios de Aceptación</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Criterio</th><th>Verificación</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>El servidor responde al handshake MCP</td><td>Test de integración con <code>mcp-client</code></td></tr>
+            <tr><td>2</td><td><code>get_skill("orchestration/router")</code> retorna el router completo</td><td>Assert content contiene "DATA" y "APPS"</td></tr>
+            <tr><td>3</td><td><code>get_skill("commands/data/_index")</code> retorna la tabla de intenciones</td><td>Assert content contiene "bulk-plan" y "spec-create"</td></tr>
+            <tr><td>4</td><td>Al describir "nuevo requerimiento de datos", Claude activa <code>bulk-plan</code> sin slash command</td><td>Test manual — verificar que Claude llama <code>get_skill("commands/data/bulk-plan")</code></td></tr>
+            <tr><td>5</td><td><code>list_skills()</code> retorna al menos 20 skills con path y descripción</td><td>Assert count ≥ 20</td></tr>
+            <tr><td>6</td><td><code>get_catalog("bi_itcm_agent","dv_agente_analisis_datos")</code> resuelve correctamente</td><td>Assert content contiene "HLL_COUNT"</td></tr>
+            <tr><td>7</td><td><code>search("bigquery")</code> retorna resultados de múltiples dominios</td><td>Assert len(results) ≥ 5</td></tr>
+            <tr><td>8</td><td>Requests sin token OIDC válido reciben <code>403</code></td><td>Test con token inválido</td></tr>
+            <tr><td>9</td><td><code>sync_to_gcs.ps1</code> sube solo las carpetas definidas — sin <code>.git/</code> ni <code>.claude/</code></td><td>Verificar <code>gsutil ls</code> — no debe aparecer ningún objeto de esas rutas</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Estimación -->
+    <section class="section" id="estimacion">
+      <div class="section-eyebrow">Planificación</div>
+      <h2>Estimación</h2>
+      <div class="estimate-grid">
+        <div class="est-row"><div>Setup: SA, IAM bindings, bucket permisos (Infraops)</div><div class="est-days">0.5 días</div></div>
+        <div class="est-row"><div>MCP Server base: FastAPI app, GCS client, estructura del proyecto</div><div class="est-days">1 día</div></div>
+        <div class="est-row"><div>Tools: <code>get_skill</code>, <code>list_skills</code> con parseo de frontmatter YAML</div><div class="est-days">1 día</div></div>
+        <div class="est-row"><div>Tools: <code>get_standard</code>, <code>list_standards</code>, <code>get_catalog</code>, <code>search</code></div><div class="est-days">0.5 días</div></div>
+        <div class="est-row"><div>Dockerfile, <code>deploy_dev.json</code>, tests unitarios, primer deploy a Cloud Run</div><div class="est-days">1 día</div></div>
+        <div class="est-row"><div>Validación end-to-end: Claude Code + Cursor + instrucción CLAUDE.md en repo piloto</div><div class="est-days">0.5 días</div></div>
+        <div class="est-row est-total"><div>Total estimado</div><div class="est-days">~4.5 días</div></div>
+      </div>
+    </section>
+
+  </main>
+</div>

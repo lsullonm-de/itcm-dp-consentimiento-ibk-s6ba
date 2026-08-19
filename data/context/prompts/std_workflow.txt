@@ -1,0 +1,108 @@
+######################################################################################
+#este texto se uso para generar el md docs\standard\standard_workflow_development.md
+#Si se va agregar más reglas y definiciones seria sobre este contenido
+######################################################################################
+Ahora quiero que armes un md que contenga los standares de desarrollo para workflows tomando como ejemplos
+ los yamls de low workflows en este proyecto ya que estan hecho con las buenas practicas y 
+ lineamientos recomendados para desarrollo de workflows
+- las referencias a proyectos, dataset, tablas, apis, stored procedures (sps), se manejan con variables definidas al inicio en un primer step 
+"- set_vars:"
+- Generalmente los wf trabajan con un parametro process_date, si este no es proveido como parametro, se debe tomar por default la fecha de hoy -1
+- Los steps que contienen la logica de lo que se va realizar debe esta dentro de un try except para manejar errores
+- Segun el resultado de la ejecucion del bloque try (OK o Error), se debe notificar con envio de correo haciendo uso del 
+pubsub ${"https://pubsub.googleapis.com/v1/projects/${mail_pubsub_project}/topics/${mail_pubsub_topic}:publish"}. Donde las 
+variables de despliegue tiene los valores en desarrollo> mail_pubsub_project=central-data-governance-260223, mail_pubsub_topic=itcm-mail
+y en produccion> mail_pubsub_project=stalwart-motif-270218, mail_pubsub_topic=itcm-inca-mail
+-[2026-03-31 modificado] Toda invocacion de stored procedures debe ser realizada utilizando los bloques SyncBigQueryJob y BigQueryJobState
+ estos bloques siempre deben ir para steps que invocan sp's u otros workflows
+
+# ============================================
+  # Subworkflow genérico para ejecución BigQuery
+  # ============================================
+  Subworkflow_EsperarWorkflow:
+    params: [project, location, workflow, execution_id]
+    steps:
+      - obtener_estado:
+          call: http.get
+          args:
+            url: ${"https://workflowexecutions.googleapis.com/v1/projects/" + project + "/locations/" + location + "/workflows/" + workflow + "/executions/" + execution_id}
+            auth:
+              type: OAuth2
+          result: status
+
+      - revisar_estado:
+          switch:
+            - condition: ${status.body.state == "SUCCEEDED" or status.body.state == "FAILED" or status.body.state == "CANCELLED"}
+              next: devolver_status
+            - condition: ${true}
+              next: esperar_y_reintentar
+
+      - esperar_y_reintentar:
+          call: sys.sleep
+          args:
+            seconds: 30
+          next: obtener_estado
+
+      - devolver_status:
+          return: ${status.body}
+
+  SyncBigQueryJob:
+    params: [query, project_id]
+    steps:
+      - JobQuery:
+          call: googleapis.bigquery.v2.jobs.query
+          args:
+            projectId: ${project_id}
+            body:
+              query: ${query}
+              useLegacySql: false
+          result: jobQueryResponse
+      - JobWait:
+          call: BigQueryJobState
+          args:
+            job_id: ${jobQueryResponse.jobReference.jobId}
+            project_id: ${project_id}
+          result: jobStateResponse
+      - SyncBigQueryJobResponse:
+          return: ${jobStateResponse}
+
+  BigQueryJobState:
+    params: [job_id, project_id]
+    steps:
+      - Sleep:
+          call: sys.sleep
+          args:
+            seconds: 30
+      - JobInfo:
+          call: googleapis.bigquery.v2.jobs.get
+          args:
+            jobId: ${job_id}
+            projectId: ${project_id}
+          result: jobGetResponse
+      - JobRunningCheck:
+          switch:
+            - condition: ${jobGetResponse.status.state == "RUNNING"}
+              next: Sleep
+            - condition: ${jobGetResponse.status.state == "DONE"}
+              next: WorkflowDone
+      - WorkflowDone:
+          switch:
+            - condition: ${"errorResult" in jobGetResponse.status}
+              raise: ${jobGetResponse}
+      - BigQueryJobStateResponse:
+          return: ${jobGetResponse}
+
+
+- El armado de los call para invocar sps debe ser dinamica, mediante la concatenación del nombre del sp y los inputs cuyos 
+valores deben estar definidos en el bloque inicial "set_vars"
+- El call armado debe escribirse en el log para saber cómo se estan escribiendo sus valores y luego darle seguimiento
+- Ojo que si el armado del call es muy extenso se deben dividir en partes, por ejemplo sql_part1, sql_part2 y sql_part3 
+los cuales cada uno no deberia pasar de concatenar 7 variables (var_ ), ya el call final deberia ser la 
+concatenacion de sql_part1+sql_part2+sql_part3
+- Para el desarrollo del yaml workflow es suficiente que solo contenga el cuerpo "source:", 
+no los flags cabecera (pro como manda el framework dataops, esto ya se agregará en una posterior adecuación con el agente del framework ya que durante el desarrollo se requerirá desplegar y probar el wf.
+
+2026-03-31
+-Es necesario que como lineamiento se defina siempre una variable para el proyecto 
+ sobre el cual va realiar el billing para bigquery "v_billing_project", este debe ser definido al inicio
+ en el bloque de variables

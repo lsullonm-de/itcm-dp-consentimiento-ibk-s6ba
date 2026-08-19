@@ -1,0 +1,226 @@
+<mxfile host="app.diagrams.net" modified="2026-05-29T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram name="Capas de Conocimiento" id="knowledge-layers">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="770" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- TÍTULO -->
+        <mxCell id="2" value="Arquitectura de Conocimiento — Data Platform ITC" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="15" width="1300" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Tres capas complementarias: STANDARDS define el qué · SKILLS define el cómo · COMMANDS orquesta el cuándo y el orden" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=2;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="50" y="46" width="1300" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CAPA 1: COMMANDS -->
+        <!-- ======================================================== -->
+        <mxCell id="10" value="COMMANDS — &lt;i&gt;el cuándo y el orden&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e3a5f;fontColor=#ffffff;strokeColor=#1e3a5f;fontSize=13;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="75" width="1300" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="11" value="&lt;b&gt;implement-stage.md&lt;/b&gt;&lt;br&gt;Orquesta el flujo completo de fábrica&lt;br&gt;PLAN → DESIGN → BUILD → VERIFY → RELEASE&lt;br&gt;Paso 0: verifica scaffold (init-project auto)&lt;br&gt;Invoca skill correcto por etapa y tipo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eef7;strokeColor=#1e3a5f;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="55" y="125" width="305" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="&lt;b&gt;spec-create.md&lt;/b&gt;&lt;br&gt;Genera spec.yaml scaffoldeado&lt;br&gt;type: bq_pipeline · cloud_run_api · vertex_ml · cloud_function&lt;br&gt;Etapas activadas según tipo_flujo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eef7;strokeColor=#1e3a5f;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="370" y="125" width="305" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="&lt;b&gt;bulk-plan.md&lt;/b&gt;&lt;br&gt;spec-create → spec-validate (loop) → init-project automático&lt;br&gt;&lt;br&gt;&lt;b&gt;rules-check.md · sync-todo.md&lt;/b&gt;&lt;br&gt;Verificación de reglas · sincronización TODO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eef7;strokeColor=#1e3a5f;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="685" y="125" width="305" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="&lt;b&gt;init-project.md&lt;/b&gt;&lt;br&gt;Scaffold inicial del repo&lt;br&gt;Crea carpetas · skeletons&lt;br&gt;deploy/env_dev.json · TODO.md&lt;br&gt;(ejecutado auto desde implement-stage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eef7;strokeColor=#1e3a5f;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="125" width="345" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CAPA 2: SKILLS -->
+        <!-- ======================================================== -->
+        <mxCell id="20" value="SKILLS — &lt;i&gt;el cómo&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d6a4f;fontColor=#ffffff;strokeColor=#2d6a4f;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="255" width="960" height="35" as="geometry" />
+        </mxCell>
+
+        <!-- Col 1: DESIGN + ANALYSIS -->
+        <mxCell id="21" value="DESIGN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="55" y="298" width="180" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="intercorp-data-architect" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="55" y="325" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="intercorp-data-enablement" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="55" y="349" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="architecture-diagrams" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="55" y="373" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="24b" value="ANALYSIS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="55" y="401" width="180" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="24c" value="bigquery-table-profiler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="55" y="428" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="24d" value="matillion-pipeline-mapper" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="55" y="452" width="180" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Col 2: BUILD Coding -->
+        <mxCell id="25" value="BUILD — Coding" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="248" y="298" width="180" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="bigquery-pipeline-developer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="248" y="325" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="mlops-framework-developer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="248" y="349" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="28" value="customer-attributes-developer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="248" y="373" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="29h" value="BUILD — Orchestration + DQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="248" y="401" width="180" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="29" value="workflow-orchestration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="248" y="428" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="dataquality-assistant" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="248" y="452" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="30b" value="dataops-configurator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="248" y="476" width="180" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Col 3: BUILD Monitoring + Lineage (NUEVO) -->
+        <mxCell id="31h" value="BUILD — Monitoring ✦" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2d6a4f;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="441" y="298" width="195" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="31a" value="process-monitor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#43a047;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="441" y="325" width="195" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="31b" value="Matrícula proceso+tareas vía API (OIDC)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#2d6a4f;align=center;" vertex="1" parent="1">
+          <mxGeometry x="441" y="345" width="195" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="31c" value="TrackedBigQueryJobWithResults" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#2d6a4f;align=center;" vertex="1" parent="1">
+          <mxGeometry x="441" y="360" width="195" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="31d" value="SP: 2 OUT (read · write)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#2d6a4f;align=center;" vertex="1" parent="1">
+          <mxGeometry x="441" y="375" width="195" height="15" as="geometry" />
+        </mxCell>
+
+        <mxCell id="32h" value="BUILD — Lineage ✦" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2d6a4f;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="441" y="400" width="195" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="32a" value="lineage-configurator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#43a047;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="441" y="427" width="195" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="32b" value="Nodos · aristas · trazabilidad columnar" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#2d6a4f;align=center;" vertex="1" parent="1">
+          <mxGeometry x="441" y="447" width="195" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="32c" value="/lineage/nodes · /edges · /columns" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#2d6a4f;align=center;" vertex="1" parent="1">
+          <mxGeometry x="441" y="462" width="195" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="32d" value="409 idempotente · orden FK-safe" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#2d6a4f;align=center;" vertex="1" parent="1">
+          <mxGeometry x="441" y="477" width="195" height="15" as="geometry" />
+        </mxCell>
+
+        <!-- Col 4: VERIFY + RELEASE -->
+        <mxCell id="33h" value="VERIFY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="648" y="298" width="185" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="33a" value="compliance-reviewer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="648" y="325" width="185" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="33b" value="bigquery-mcp-validator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="648" y="349" width="185" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="34h" value="RELEASE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="648" y="381" width="185" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="34a" value="infraops-configurator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="648" y="408" width="185" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="34b" value="SAs · roles IAM · permisos GCP" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#2d6a4f;align=center;" vertex="1" parent="1">
+          <mxGeometry x="648" y="430" width="185" height="15" as="geometry" />
+        </mxCell>
+
+        <!-- Flujo BUILD banner -->
+        <mxCell id="35" value="&lt;b&gt;Flujo BUILD:&lt;/b&gt;  CODING → ORCHESTRATION → MONITORING → DATA_QUALITY → LINEAGE → DATAOPS" style="text;html=1;strokeColor=#2d6a4f;fillColor=#f0fff4;fontSize=9;align=left;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="55" y="510" width="955" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- RULES -->
+        <!-- ======================================================== -->
+        <mxCell id="40" value="RULES — &lt;i&gt;restricciones estáticas&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b5451b;fontColor=#ffffff;strokeColor=#b5451b;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="255" width="320" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="41" value="bigquery.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f0;strokeColor=#d79b00;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1035" y="298" width="150" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="42" value="security.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f0;strokeColor=#d79b00;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="298" width="150" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="43" value="workflow.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f0;strokeColor=#d79b00;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1035" y="324" width="150" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="44" value="dataops.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f0;strokeColor=#d79b00;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="324" width="150" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="45" value="general.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f0;strokeColor=#d79b00;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1035" y="350" width="310" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="45b" value="&lt;b&gt;Reglas 2026:&lt;/b&gt; DECLARE antes de SET · process_date_ini/end · tablas m_* sin TRUNCATE · strings sin &amp;quot;: &amp;quot; en workflows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#d79b00;fontSize=8;align=left;" vertex="1" parent="1">
+          <mxGeometry x="1035" y="376" width="310" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="46" value="Usadas por compliance-reviewer (etapa COMPLIANCE)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=8;fontStyle=2;fontColor=#b5451b;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1035" y="420" width="310" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- STANDARDS — 2 filas -->
+        <!-- ======================================================== -->
+        <mxCell id="50" value="STANDARDS — &lt;i&gt;el qué&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e3a5f;fontColor=#ffffff;strokeColor=#1e3a5f;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="548" width="1300" height="35" as="geometry" />
+        </mxCell>
+
+        <!-- Fila 1 -->
+        <mxCell id="51" value="&lt;b&gt;bigquery/&lt;/b&gt;&lt;br&gt;development.md · nomenclatura-retail.md&lt;br&gt;§16 m_* hash-diff · §4.1 process_date_ini/end" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="55" y="593" width="410" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="52" value="&lt;b&gt;services/&lt;/b&gt;&lt;br&gt;workflow.md · service-accounts.md · cloud-run.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="480" y="593" width="410" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="53" value="&lt;b&gt;architecture/&lt;/b&gt;&lt;br&gt;data-platform-layers.md · gcp-organization.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="905" y="593" width="440" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Fila 2 -->
+        <mxCell id="54" value="&lt;b&gt;data-quality.md&lt;/b&gt;&lt;br&gt;Dimensiones DQ · Tipos de reglas · Modelo DQ / roles" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="55" y="663" width="410" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="56" value="&lt;b&gt;factory/ ✦ nuevo&lt;/b&gt;&lt;br&gt;monitoring.md · lineage.md · spec-manifest.md · discovery.md&lt;br&gt;spec-types/: cloud-run-api · vertex-ml · cloud-function" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#43a047;fontSize=9;align=center;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="480" y="663" width="410" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="55" value="&lt;b&gt;data_catalog/&lt;/b&gt;&lt;br&gt;Diccionarios de tablas · ba_itc_attr_* · master_transaction_*&lt;br&gt;Catálogos generados por bigquery-table-profiler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="905" y="663" width="440" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- FLECHAS -->
+        <!-- ======================================================== -->
+        <mxCell id="c60" value="invoca skill por etapa" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2d6a4f;strokeWidth=2;fontColor=#2d6a4f;fontSize=9;fontStyle=2;" edge="1" parent="1" source="10" target="20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c61" value="audita con" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#b5451b;strokeWidth=2;fontColor=#b5451b;fontSize=9;fontStyle=2;" edge="1" parent="1" source="10" target="40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c62" value="referencia @data/standard/..." style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6c8ebf;strokeWidth=2;fontColor=#6c8ebf;fontSize=9;fontStyle=2;" edge="1" parent="1" source="20" target="50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c63" value="derivan de" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#d79b00;strokeWidth=1;fontColor=#d79b00;fontSize=9;fontStyle=2;dashed=1;" edge="1" parent="1" source="40" target="50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

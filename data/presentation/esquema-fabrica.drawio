@@ -1,0 +1,537 @@
+<mxfile host="app.diagrams.net" modified="2026-04-08T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram name="Esquema Fábrica" id="esquema-fabrica">
+    <mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="560" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== FONDO ===== -->
+        <mxCell id="bg" value="" style="rounded=0;fillColor=#F2F4F8;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1654" height="560" as="geometry" />
+        </mxCell>
+
+        <!-- ===== BARRA SUPERIOR ===== -->
+        <mxCell id="tbar" value="" style="rounded=0;fillColor=#00389A;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1654" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="tstripe" value="" style="rounded=0;fillColor=#0097A7;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="0" y="80" width="1654" height="5" as="geometry" />
+        </mxCell>
+        <mxCell id="ttitle" value="&lt;b&gt;Esquema de Fábrica — Modelo Incremental&lt;/b&gt;"
+          style="text;html=1;align=center;fontSize=22;fontFamily=Montserrat;fontColor=#FFFFFF;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="0" y="10" width="1654" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="tsub" value="Cada bloque de trabajo entrega un incremento verificado y desplegado de la solución"
+          style="text;html=1;align=center;fontSize=12;fontColor=#B3D1F7;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="0" y="50" width="1654" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ===== ETIQUETAS DE SECCIÓN ===== -->
+        <mxCell id="lbl_anat" value="&lt;b&gt;Anatomía del Bloque&lt;/b&gt;"
+          style="text;html=1;align=left;fontSize=12;fontColor=#00389A;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="66" y="91" width="220" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_exec" value="&lt;b&gt;Ejecución Incremental&lt;/b&gt;"
+          style="text;html=1;align=left;fontSize=12;fontColor=#00389A;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="556" y="91" width="240" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- Divisor vertical -->
+        <mxCell id="vdiv" value=""
+          style="shape=line;strokeColor=#BDBDBD;strokeWidth=1;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="530" y="88" width="2" height="395" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================
+             ANATOMÍA DEL BLOQUE (izquierda, x=62, y=108, w=416)
+             ============================================================ -->
+
+        <!-- Marco exterior -->
+        <mxCell id="abox" value=""
+          style="rounded=1;arcSize=3;fillColor=#FFFFFF;strokeColor=#00389A;strokeWidth=2;"
+          vertex="1" parent="1">
+          <mxGeometry x="62" y="108" width="416" height="370" as="geometry" />
+        </mxCell>
+
+        <!-- Header BLOQUE -->
+        <mxCell id="ahdr" value="BLOQUE"
+          style="rounded=0;fillColor=#00389A;strokeColor=none;fontColor=#FFFFFF;fontSize=16;fontStyle=1;fontFamily=Montserrat;align=center;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="110" width="412" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- PLAN header -->
+        <mxCell id="aph" value="◆  PLAN"
+          style="rounded=0;fillColor=#0097A7;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;align=left;spacingLeft=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="152" width="412" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="apa1" value="/brief-review — Revisión del brief funcional"
+          style="rounded=0;fillColor=#E0F7FA;strokeColor=#B2EBF2;fontSize=10;align=left;spacingLeft=14;fontColor=#004D40;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="178" width="412" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="apa2" value="/spec-create — Genera spec.yaml a partir del brief funcional"
+          style="rounded=0;fillColor=#E0F7FA;strokeColor=#B2EBF2;fontSize=10;align=left;spacingLeft=14;fontColor=#004D40;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="202" width="412" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- IMPLEMENT header -->
+        <mxCell id="aih" value="◆  IMPLEMENT"
+          style="rounded=0;fillColor=#1565C0;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;align=left;spacingLeft=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="232" width="412" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="aia1" value="/implement — Genera artefactos: DDL, SP, Image, Cloud Run, Workflow, Vertex"
+          style="rounded=0;fillColor=#E3F2FD;strokeColor=#BBDEFB;fontSize=10;align=left;spacingLeft=14;fontColor=#0D47A1;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="258" width="412" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="aia2" value="/update-diagrams — Actualiza diagramas C4 (L1–L4) y secuencia"
+          style="rounded=0;fillColor=#E3F2FD;strokeColor=#BBDEFB;fontSize=10;align=left;spacingLeft=14;fontColor=#0D47A1;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="282" width="412" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- VERIFY header -->
+        <mxCell id="avh" value="◆  VERIFY"
+          style="rounded=0;fillColor=#F57C00;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;align=left;spacingLeft=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="312" width="412" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ava1" value="/compliance-review — Auditoría estática de estándares y convenciones"
+          style="rounded=0;fillColor=#FFF3E0;strokeColor=#FFE0B2;fontSize=10;align=left;spacingLeft=14;fontColor=#BF360C;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="338" width="412" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="ava2" value="/test-validate — Validación dinámica en BigQuery dev"
+          style="rounded=0;fillColor=#FFF3E0;strokeColor=#FFE0B2;fontSize=10;align=left;spacingLeft=14;fontColor=#BF360C;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="362" width="412" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- RELEASE header -->
+        <mxCell id="arh" value="◆  RELEASE"
+          style="rounded=0;fillColor=#2E7D32;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;align=left;spacingLeft=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="392" width="412" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ara1" value="/infraops-config — Configura service accounts e IAM en GCP"
+          style="rounded=0;fillColor=#E8F5E9;strokeColor=#C8E6C9;fontSize=10;align=left;spacingLeft=14;fontColor=#1B5E20;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="418" width="412" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="ara2" value="/deploy-pr — Crea pull request de despliegue a producción"
+          style="rounded=0;fillColor=#E8F5E9;strokeColor=#C8E6C9;fontSize=10;align=left;spacingLeft=14;fontColor=#1B5E20;"
+          vertex="1" parent="1">
+          <mxGeometry x="64" y="442" width="412" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================
+             EJECUCIÓN INCREMENTAL — 4 bloques compactos (derecha)
+             B1: x=550  B2: x=820  B3: x=1090  BN: x=1360
+             ============================================================ -->
+
+        <!-- ===== BLOQUE 1 ===== -->
+        <mxCell id="B1" value=""
+          style="rounded=1;arcSize=4;fillColor=#FFFFFF;strokeColor=#00389A;strokeWidth=2;"
+          vertex="1" parent="1">
+          <mxGeometry x="550" y="108" width="228" height="228" as="geometry" />
+        </mxCell>
+        <mxCell id="B1h" value="BLOQUE 1"
+          style="rounded=0;fillColor=#00389A;strokeColor=none;fontColor=#FFFFFF;fontSize=13;fontStyle=1;align=center;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="110" width="224" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="B1ph" value="PLAN"
+          style="rounded=0;fillColor=#0097A7;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="144" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B1pb" value="/brief-review · /spec-create"
+          style="rounded=0;fillColor=#E0F7FA;strokeColor=#B2EBF2;fontSize=9;align=left;spacingLeft=8;fontColor=#004D40;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="164" width="224" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="B1ih" value="IMPLEMENT"
+          style="rounded=0;fillColor=#1565C0;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="190" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B1ib" value="/implement · /update-diagrams"
+          style="rounded=0;fillColor=#E3F2FD;strokeColor=#BBDEFB;fontSize=9;align=left;spacingLeft=8;fontColor=#0D47A1;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="210" width="224" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="B1vh" value="VERIFY"
+          style="rounded=0;fillColor=#F57C00;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="236" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B1vb" value="/compliance-review · /test-validate"
+          style="rounded=0;fillColor=#FFF3E0;strokeColor=#FFE0B2;fontSize=9;align=left;spacingLeft=8;fontColor=#BF360C;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="256" width="224" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="B1rh" value="RELEASE"
+          style="rounded=0;fillColor=#2E7D32;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="282" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B1rb" value="/infraops-config · /deploy-pr"
+          style="rounded=0;fillColor=#E8F5E9;strokeColor=#C8E6C9;fontSize=9;align=left;spacingLeft=8;fontColor=#1B5E20;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="302" width="224" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- Flecha B1 → B2 -->
+        <mxCell id="arr1" value=""
+          style="endArrow=block;endFill=1;strokeColor=#00389A;strokeWidth=2.5;fillColor=#00389A;"
+          edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="782" y="222" as="sourcePoint" />
+            <mxPoint x="818" y="222" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ===== BLOQUE 2 ===== -->
+        <mxCell id="B2" value=""
+          style="rounded=1;arcSize=4;fillColor=#FFFFFF;strokeColor=#00389A;strokeWidth=2;"
+          vertex="1" parent="1">
+          <mxGeometry x="820" y="108" width="228" height="228" as="geometry" />
+        </mxCell>
+        <mxCell id="B2h" value="BLOQUE 2"
+          style="rounded=0;fillColor=#00389A;strokeColor=none;fontColor=#FFFFFF;fontSize=13;fontStyle=1;align=center;"
+          vertex="1" parent="1">
+          <mxGeometry x="822" y="110" width="224" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="B2ph" value="PLAN"
+          style="rounded=0;fillColor=#0097A7;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="822" y="144" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B2pb" value="/brief-review · /spec-create"
+          style="rounded=0;fillColor=#E0F7FA;strokeColor=#B2EBF2;fontSize=9;align=left;spacingLeft=8;fontColor=#004D40;"
+          vertex="1" parent="1">
+          <mxGeometry x="822" y="164" width="224" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="B2ih" value="IMPLEMENT"
+          style="rounded=0;fillColor=#1565C0;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="822" y="190" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B2ib" value="/implement · /update-diagrams"
+          style="rounded=0;fillColor=#E3F2FD;strokeColor=#BBDEFB;fontSize=9;align=left;spacingLeft=8;fontColor=#0D47A1;"
+          vertex="1" parent="1">
+          <mxGeometry x="822" y="210" width="224" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="B2vh" value="VERIFY"
+          style="rounded=0;fillColor=#F57C00;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="822" y="236" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B2vb" value="/compliance-review · /test-validate"
+          style="rounded=0;fillColor=#FFF3E0;strokeColor=#FFE0B2;fontSize=9;align=left;spacingLeft=8;fontColor=#BF360C;"
+          vertex="1" parent="1">
+          <mxGeometry x="822" y="256" width="224" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="B2rh" value="RELEASE"
+          style="rounded=0;fillColor=#2E7D32;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="822" y="282" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B2rb" value="/infraops-config · /deploy-pr"
+          style="rounded=0;fillColor=#E8F5E9;strokeColor=#C8E6C9;fontSize=9;align=left;spacingLeft=8;fontColor=#1B5E20;"
+          vertex="1" parent="1">
+          <mxGeometry x="822" y="302" width="224" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- Flecha B2 → B3 (punteada: indica más bloques en el medio) -->
+        <mxCell id="arr2" value="· · ·"
+          style="endArrow=block;endFill=1;strokeColor=#00389A;strokeWidth=2.5;fillColor=#00389A;dashed=1;dashPattern=4 3;fontSize=16;fontColor=#00389A;labelBackgroundColor=none;align=center;verticalAlign=top;labelPosition=center;"
+          edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1052" y="222" as="sourcePoint" />
+            <mxPoint x="1088" y="222" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ===== BLOQUE N ===== -->
+        <mxCell id="B3" value=""
+          style="rounded=1;arcSize=4;fillColor=#FFFFFF;strokeColor=#00389A;strokeWidth=2;"
+          vertex="1" parent="1">
+          <mxGeometry x="1090" y="108" width="228" height="228" as="geometry" />
+        </mxCell>
+        <mxCell id="B3h" value="BLOQUE N"
+          style="rounded=0;fillColor=#00389A;strokeColor=none;fontColor=#FFFFFF;fontSize=13;fontStyle=1;align=center;"
+          vertex="1" parent="1">
+          <mxGeometry x="1092" y="110" width="224" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="B3ph" value="PLAN"
+          style="rounded=0;fillColor=#0097A7;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="1092" y="144" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B3pb" value="/brief-review · /spec-create"
+          style="rounded=0;fillColor=#E0F7FA;strokeColor=#B2EBF2;fontSize=9;align=left;spacingLeft=8;fontColor=#004D40;"
+          vertex="1" parent="1">
+          <mxGeometry x="1092" y="164" width="224" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="B3ih" value="IMPLEMENT"
+          style="rounded=0;fillColor=#1565C0;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="1092" y="190" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B3ib" value="/implement · /update-diagrams"
+          style="rounded=0;fillColor=#E3F2FD;strokeColor=#BBDEFB;fontSize=9;align=left;spacingLeft=8;fontColor=#0D47A1;"
+          vertex="1" parent="1">
+          <mxGeometry x="1092" y="210" width="224" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="B3vh" value="VERIFY"
+          style="rounded=0;fillColor=#F57C00;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="1092" y="236" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B3vb" value="/compliance-review · /test-validate"
+          style="rounded=0;fillColor=#FFF3E0;strokeColor=#FFE0B2;fontSize=9;align=left;spacingLeft=8;fontColor=#BF360C;"
+          vertex="1" parent="1">
+          <mxGeometry x="1092" y="256" width="224" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="B3rh" value="RELEASE"
+          style="rounded=0;fillColor=#2E7D32;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          vertex="1" parent="1">
+          <mxGeometry x="1092" y="282" width="224" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="B3rb" value="/infraops-config · /deploy-pr"
+          style="rounded=0;fillColor=#E8F5E9;strokeColor=#C8E6C9;fontSize=9;align=left;spacingLeft=8;fontColor=#1B5E20;"
+          vertex="1" parent="1">
+          <mxGeometry x="1092" y="302" width="224" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- Flecha BN → Solución Completa -->
+        <mxCell id="arr3" value=""
+          style="endArrow=block;endFill=1;strokeColor=#2E7D32;strokeWidth=2.5;fillColor=#2E7D32;"
+          edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1322" y="222" as="sourcePoint" />
+            <mxPoint x="1360" y="222" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ===== SOLUCIÓN COMPLETA (caja final) ===== -->
+        <mxCell id="sol_box" value=""
+          style="rounded=1;arcSize=10;fillColor=#1B5E20;strokeColor=#1B5E20;strokeWidth=2;"
+          vertex="1" parent="1">
+          <mxGeometry x="1362" y="145" width="224" height="154" as="geometry" />
+        </mxCell>
+        <mxCell id="sol_check" value="✓"
+          style="text;html=1;align=center;fontSize=40;fontColor=#FFFFFF;strokeColor=none;fillColor=none;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="1362" y="152" width="224" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="sol_txt" value="&lt;b&gt;SOLUCIÓN&lt;br&gt;COMPLETA&lt;/b&gt;"
+          style="text;html=1;align=center;fontSize=14;fontColor=#FFFFFF;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="1362" y="205" width="224" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="sol_sub" value="Todos los bloques entregados"
+          style="text;html=1;align=center;fontSize=9;fontColor=#A5D6A7;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="1362" y="250" width="224" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================
+             INCREMENTO DE SOLUCIÓN — grillas debajo de cada bloque
+             Grilla 3×2 celdas, cada celda 22×22, gap 2px
+             Grid width=70 → centered en bloque w=228 → offset=79
+             ============================================================ -->
+
+        <!-- Etiqueta sección incremento -->
+        <mxCell id="lbl_sol" value="Solución entregada al cierre de cada bloque:"
+          style="text;html=1;align=left;fontSize=11;fontStyle=2;fontColor=#434343;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="552" y="348" width="420" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- Flechas bloque → grilla -->
+        <mxCell id="ag1" value=""
+          style="endArrow=open;endSize=4;strokeColor=#9E9E9E;strokeWidth=1.5;"
+          edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="664" y="338" as="sourcePoint" />
+            <mxPoint x="664" y="368" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ag2" value=""
+          style="endArrow=open;endSize=4;strokeColor=#9E9E9E;strokeWidth=1.5;"
+          edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="934" y="338" as="sourcePoint" />
+            <mxPoint x="934" y="368" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ag3" value=""
+          style="endArrow=open;endSize=4;strokeColor=#9E9E9E;strokeWidth=1.5;"
+          edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1204" y="338" as="sourcePoint" />
+            <mxPoint x="1204" y="368" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- === GRILLA 1 (BLOQUE 1): 2/6 celdas llenas — columna izq ===
+             Posición: x=629 (550+79), y=370 -->
+        <!-- Fondo grilla -->
+        <mxCell id="g1bg" value="" style="rounded=1;arcSize=8;fillColor=#EEEEEE;strokeColor=#BDBDBD;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="623" y="368" width="82" height="56" as="geometry" />
+        </mxCell>
+        <!-- Fila 0 -->
+        <mxCell id="g1r0c0" value="" style="rounded=2;fillColor=#4CAF50;strokeColor=#388E3C;" vertex="1" parent="1">
+          <mxGeometry x="627" y="372" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g1r0c1" value="" style="rounded=2;fillColor=#FFFFFF;strokeColor=#BDBDBD;" vertex="1" parent="1">
+          <mxGeometry x="651" y="372" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g1r0c2" value="" style="rounded=2;fillColor=#FFFFFF;strokeColor=#BDBDBD;" vertex="1" parent="1">
+          <mxGeometry x="675" y="372" width="22" height="22" as="geometry" />
+        </mxCell>
+        <!-- Fila 1 -->
+        <mxCell id="g1r1c0" value="" style="rounded=2;fillColor=#4CAF50;strokeColor=#388E3C;" vertex="1" parent="1">
+          <mxGeometry x="627" y="396" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g1r1c1" value="" style="rounded=2;fillColor=#FFFFFF;strokeColor=#BDBDBD;" vertex="1" parent="1">
+          <mxGeometry x="651" y="396" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g1r1c2" value="" style="rounded=2;fillColor=#FFFFFF;strokeColor=#BDBDBD;" vertex="1" parent="1">
+          <mxGeometry x="675" y="396" width="22" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- === GRILLA 2 (BLOQUE 2): 4/6 celdas llenas — 2 columnas izq ===
+             Posición: x=899 (820+79) -->
+        <mxCell id="g2bg" value="" style="rounded=1;arcSize=8;fillColor=#EEEEEE;strokeColor=#BDBDBD;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="893" y="368" width="82" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="g2r0c0" value="" style="rounded=2;fillColor=#4CAF50;strokeColor=#388E3C;" vertex="1" parent="1">
+          <mxGeometry x="897" y="372" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g2r0c1" value="" style="rounded=2;fillColor=#4CAF50;strokeColor=#388E3C;" vertex="1" parent="1">
+          <mxGeometry x="921" y="372" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g2r0c2" value="" style="rounded=2;fillColor=#FFFFFF;strokeColor=#BDBDBD;" vertex="1" parent="1">
+          <mxGeometry x="945" y="372" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g2r1c0" value="" style="rounded=2;fillColor=#4CAF50;strokeColor=#388E3C;" vertex="1" parent="1">
+          <mxGeometry x="897" y="396" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g2r1c1" value="" style="rounded=2;fillColor=#4CAF50;strokeColor=#388E3C;" vertex="1" parent="1">
+          <mxGeometry x="921" y="396" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g2r1c2" value="" style="rounded=2;fillColor=#FFFFFF;strokeColor=#BDBDBD;" vertex="1" parent="1">
+          <mxGeometry x="945" y="396" width="22" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- === GRILLA 3 (BLOQUE N): 6/6 celdas llenas — completo ===
+             Posición: x=1169 (1090+79) -->
+        <mxCell id="g3bg" value="" style="rounded=1;arcSize=8;fillColor=#C8E6C9;strokeColor=#388E3C;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="1163" y="368" width="82" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="g3r0c0" value="" style="rounded=2;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1">
+          <mxGeometry x="1167" y="372" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g3r0c1" value="" style="rounded=2;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1">
+          <mxGeometry x="1191" y="372" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g3r0c2" value="" style="rounded=2;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1">
+          <mxGeometry x="1215" y="372" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g3r1c0" value="" style="rounded=2;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1">
+          <mxGeometry x="1167" y="396" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g3r1c1" value="" style="rounded=2;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1">
+          <mxGeometry x="1191" y="396" width="22" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="g3r1c2" value="" style="rounded=2;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1">
+          <mxGeometry x="1215" y="396" width="22" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ===== ETIQUETAS DE INCREMENTO ===== -->
+        <mxCell id="lbl_i1" value="Incremento 1"
+          style="text;html=1;align=center;fontSize=10;fontColor=#434343;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="550" y="432" width="228" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_i2" value="Incremento 2"
+          style="text;html=1;align=center;fontSize=10;fontColor=#434343;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="820" y="432" width="228" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_in" value="&lt;b&gt;Solución Completa&lt;/b&gt;"
+          style="text;html=1;align=center;fontSize=10;fontColor=#2E7D32;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="1090" y="432" width="228" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- ===== LEYENDA (parte inferior) ===== -->
+        <mxCell id="leg_bg" value=""
+          style="rounded=1;arcSize=6;fillColor=#FFFFFF;strokeColor=#E0E0E0;strokeWidth=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="62" y="490" width="1200" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_lbl" value="Etapas:"
+          style="text;html=1;align=left;fontSize=10;fontColor=#666666;strokeColor=none;fillColor=none;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="74" y="504" width="50" height="14" as="geometry" />
+        </mxCell>
+        <!-- PLAN color -->
+        <mxCell id="leg_p" value="" style="rounded=1;arcSize=20;fillColor=#0097A7;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="128" y="505" width="14" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_pt" value="PLAN"
+          style="text;html=1;align=left;fontSize=10;fontColor=#004D40;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="146" y="504" width="60" height="14" as="geometry" />
+        </mxCell>
+        <!-- IMPLEMENT color -->
+        <mxCell id="leg_i" value="" style="rounded=1;arcSize=20;fillColor=#1565C0;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="320" y="505" width="14" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_it" value="IMPLEMENT"
+          style="text;html=1;align=left;fontSize=10;fontColor=#0D47A1;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="338" y="504" width="80" height="14" as="geometry" />
+        </mxCell>
+        <!-- VERIFY color -->
+        <mxCell id="leg_v" value="" style="rounded=1;arcSize=20;fillColor=#F57C00;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="540" y="505" width="14" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_vt" value="VERIFY"
+          style="text;html=1;align=left;fontSize=10;fontColor=#BF360C;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="558" y="504" width="60" height="14" as="geometry" />
+        </mxCell>
+        <!-- RELEASE color -->
+        <mxCell id="leg_r" value="" style="rounded=1;arcSize=20;fillColor=#2E7D32;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="740" y="505" width="14" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_rt" value="RELEASE"
+          style="text;html=1;align=left;fontSize=10;fontColor=#1B5E20;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="758" y="504" width="70" height="14" as="geometry" />
+        </mxCell>
+        <!-- Note -->
+        <mxCell id="leg_note" value="Cada BLOQUE ejecuta siempre las 4 etapas, en el mismo orden"
+          style="text;html=1;align=right;fontSize=9;fontColor=#9E9E9E;strokeColor=none;fillColor=none;fontStyle=2;"
+          vertex="1" parent="1">
+          <mxGeometry x="900" y="504" width="350" height="14" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

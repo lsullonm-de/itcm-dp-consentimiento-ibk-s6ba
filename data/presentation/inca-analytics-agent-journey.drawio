@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" version="21.7.5">
+  <diagram name="desarrollo-journey" id="journey-v2">
+    <mxGraphModel dx="1400" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="0" arrows="0" fold="0" page="1" pageScale="1" pageWidth="1600" pageHeight="830" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Fondo -->
+        <mxCell id="bg" value="" style="rounded=0;fillColor=#F5F5F5;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1600" height="830" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- TÍTULO -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="title" value="Camino de Construcción — Agente de Análisis de Datos" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#212121;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="10" width="1560" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="sub" value="De la idea al agente en producción, evaluado con IA y documentado" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#757575;fontSize=12;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="48" width="1560" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- LÍNEA DE TIEMPO -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="tl" value="" style="endArrow=block;endFill=1;endSize=8;strokeColor=#9E9E9E;strokeWidth=3;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="28" y="132" as="sourcePoint"/>
+            <mxPoint x="1572" y="132" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- FASE 1 — EXPLORACIÓN (x=20, w=238) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="p1top" value="💡 EXPLORACIÓN" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontColor=#4527A0;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="76" width="238" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="p1dot" value="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#4527A0;strokeColor=#311B92;fontColor=#ffffff;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="36" y="116" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="p1bar" value="" style="rounded=1;fillColor=#4527A0;strokeColor=#311B92;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="20" y="158" width="238" height="6" as="geometry"/>
+        </mxCell>
+        <mxCell id="p1body" value="&lt;p style=&apos;margin:0 0 8px 0;&apos;&gt;&lt;b&gt;☑ Lluvia de ideas&lt;/b&gt;&lt;/p&gt;Definición del alcance y las preguntas de negocio que debía responder el agente.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Prototipo inicial&lt;/b&gt;&lt;/p&gt;Primera versión funcional del agente conversacional.&lt;br/&gt;&lt;br/&gt;&lt;span style=&apos;color:#7E57C2;font-weight:bold;&apos;&gt;⏱ ~2 min por respuesta&lt;/span&gt;&lt;br/&gt;Tablas grandes, contextos sin optimizar, sin cache." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE7F6;strokeColor=#B39DDB;fontColor=#311B92;fontSize=11;arcSize=4;align=left;spacingLeft=12;spacingRight=10;spacingTop=12;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="20" y="164" width="238" height="490" as="geometry"/>
+        </mxCell>
+        <!-- Team footer P1 -->
+        <mxCell id="p1team" value="👥 &lt;b&gt;Todo el equipo&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4527A0;strokeColor=#311B92;fontColor=#ffffff;fontSize=10;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="20" y="659" width="238" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- FASE 2 — APRENDIZAJE (x=267, w=238) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="p2top" value="📚 APRENDIZAJE" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontColor=#01579B;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="267" y="76" width="238" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="p2dot" value="2" style="ellipse;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0D47A1;fontColor=#ffffff;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="283" y="116" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="p2bar" value="" style="rounded=1;fillColor=#01579B;strokeColor=#0D47A1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="267" y="158" width="238" height="6" as="geometry"/>
+        </mxCell>
+        <mxCell id="p2body" value="&lt;p style=&apos;margin:0 0 8px 0;&apos;&gt;&lt;b&gt;☑ Framework Google ADK&lt;/b&gt;&lt;/p&gt;LlmAgent, SequentialAgent, ParallelAgent, callbacks, herramientas y pipeline de seguridad.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Stack y estándares INCA&lt;/b&gt;&lt;/p&gt;Cloud Run, BigQuery, Workflows, naming y estructura de repositorios según estándares del equipo.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Pruebas y error de tiempos&lt;/b&gt;&lt;/p&gt;Identificación de cuellos de botella: contextos extensos, queries sin optimizar, cold start en Cloud Run." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#90CAF9;fontColor=#01579B;fontSize=11;arcSize=4;align=left;spacingLeft=12;spacingRight=10;spacingTop=12;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="267" y="164" width="238" height="490" as="geometry"/>
+        </mxCell>
+        <!-- Team footer P2 -->
+        <mxCell id="p2team" value="👥 Christian · Frank · Julio" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0D47A1;fontColor=#ffffff;fontSize=10;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="267" y="659" width="238" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- FASE 3 — DISEÑO (x=514, w=238) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="p3top" value="🏗️ DISEÑO" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontColor=#00695C;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="514" y="76" width="238" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="p3dot" value="3" style="ellipse;whiteSpace=wrap;html=1;fillColor=#00695C;strokeColor=#004D40;fontColor=#ffffff;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="530" y="116" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="p3bar" value="" style="rounded=1;fillColor=#00695C;strokeColor=#004D40;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="514" y="158" width="238" height="6" as="geometry"/>
+        </mxCell>
+        <mxCell id="p3body" value="&lt;p style=&apos;margin:0 0 8px 0;&apos;&gt;&lt;b&gt;☑ Mejoramiento de contextos&lt;/b&gt;&lt;/p&gt;Reducción y enfoque de archivos de contexto. Primeras reglas de negocio documentadas.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Arquitectura de servicios&lt;/b&gt;&lt;/p&gt;Front (React) · Agente ADK (Cloud Run) · BFF FastAPI · Cache Redis · BigQuery.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Mockups del front&lt;/b&gt;&lt;/p&gt;ChatPanel, Dashboard, widgets de gráficos y flujo de navegación.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Stack de visualizaciones&lt;/b&gt;&lt;/p&gt;ECharts para gráficos · AG Grid para tablas de resultados." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#80CBC4;fontColor=#004D40;fontSize=11;arcSize=4;align=left;spacingLeft=12;spacingRight=10;spacingTop=12;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="514" y="164" width="238" height="490" as="geometry"/>
+        </mxCell>
+        <!-- Team footer P3 -->
+        <mxCell id="p3team" value="👥 Julio (Arq.) · Frank · Christian · Álvaro · Guille" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00695C;strokeColor=#004D40;fontColor=#ffffff;fontSize=10;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="514" y="659" width="238" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- FASE 4 — DESARROLLO (x=761, w=238) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="p4top" value="🔨 DESARROLLO" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontColor=#1B5E20;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="761" y="76" width="238" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="p4dot" value="4" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#1B5E20;fontColor=#ffffff;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="777" y="116" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="p4bar" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#1B5E20;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="761" y="158" width="238" height="6" as="geometry"/>
+        </mxCell>
+        <mxCell id="p4body" value="&lt;p style=&apos;margin:0 0 8px 0;&apos;&gt;&lt;b&gt;☑ Árbol de agentes&lt;/b&gt;&lt;/p&gt;Intent → Semántico → SQL → (Insights ‖ Chips). Pipeline multi-agente con Google ADK.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Construcción del agente&lt;/b&gt;&lt;/p&gt;Tools: search_schema · execute_analytics_query · select_visualization + SqlReadOnlyGuard.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Widgets de gráficos en el front&lt;/b&gt;&lt;/p&gt;Gráficos guardados como componentes reutilizables integrados al Dashboard.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ BFF y persistencia&lt;/b&gt;&lt;/p&gt;FastAPI + PostgreSQL: sesiones, análisis, versiones, compartidos." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#A5D6A7;fontColor=#1B5E20;fontSize=11;arcSize=4;align=left;spacingLeft=12;spacingRight=10;spacingTop=12;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="761" y="164" width="238" height="490" as="geometry"/>
+        </mxCell>
+        <!-- Team footer P4 -->
+        <mxCell id="p4team" value="👥 Frank + Julio (Front) · Christian (Agente) · Álvaro + Guille (Data)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#1B5E20;fontColor=#ffffff;fontSize=10;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="761" y="659" width="238" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- FASE 5 — OPTIMIZACIÓN (x=1008, w=238) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="p5top" value="⚡ OPTIMIZACIÓN" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontColor=#E65100;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1008" y="76" width="238" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="p5dot" value="5" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;fontColor=#ffffff;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1024" y="116" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="p5bar" value="" style="rounded=1;fillColor=#E65100;strokeColor=#BF360C;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1008" y="158" width="238" height="6" as="geometry"/>
+        </mxCell>
+        <mxCell id="p5body" value="&lt;p style=&apos;margin:0 0 8px 0;&apos;&gt;&lt;b&gt;☑ Pruebas de respuestas&lt;/b&gt;&lt;/p&gt;Validación manual de queries generados y corrección de errores del agente.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Mejora de tiempos&lt;/b&gt;&lt;/p&gt;Redis cache por SQL (SHA-256) · reducción de contexto · Dry Run antes de ejecutar en BigQuery.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Ajuste de contextos (.md)&lt;/b&gt;&lt;/p&gt;Catálogos con reglas de negocio precisas:&lt;br/&gt;• HLL para transacciones&lt;br/&gt;• Filtro de departamento obligatorio&lt;br/&gt;• Fechas dinámicas: MAX(process_date)&lt;br/&gt;• Queries de referencia por período" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBE9E7;strokeColor=#FFAB91;fontColor=#BF360C;fontSize=11;arcSize=4;align=left;spacingLeft=12;spacingRight=10;spacingTop=12;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="1008" y="164" width="238" height="490" as="geometry"/>
+        </mxCell>
+        <!-- Team footer P5 -->
+        <mxCell id="p5team" value="👥 Christian · Álvaro · Guille · Erick (seguimiento)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;fontColor=#ffffff;fontSize=10;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1008" y="659" width="238" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- FASE 6 — EVALUACIÓN (x=1255, w=310) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="p6top" value="📐 EVALUACIÓN Y RESULTADOS" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontColor=#880E4F;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="76" width="310" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="p6dot" value="6" style="ellipse;whiteSpace=wrap;html=1;fillColor=#880E4F;strokeColor=#880E4F;fontColor=#ffffff;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1271" y="116" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="p6bar" value="" style="rounded=1;fillColor=#880E4F;strokeColor=#880E4F;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="158" width="310" height="6" as="geometry"/>
+        </mxCell>
+        <mxCell id="p6body" value="&lt;p style=&apos;margin:0 0 8px 0;&apos;&gt;&lt;b&gt;☑ 33 preguntas de negocio&lt;/b&gt;&lt;/p&gt;Ground truth verificado en BigQuery: tabla correcta + query + respuesta esperada.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Juez IA con Claude&lt;/b&gt;&lt;/p&gt;Evaluación automática en 3 dimensiones:&lt;br/&gt;• Tabla usada (5%)&lt;br/&gt;• SQL generado (5%)&lt;br/&gt;• Respuesta final (90%)&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b&gt;☑ Puntuación de performance&lt;/b&gt;&lt;/p&gt;Score general · por categoría · por pregunta. Detección de regresiones.&lt;p style=&apos;margin:10px 0 8px 0;&apos;&gt;&lt;b style=&apos;color:#880E4F;&apos;&gt;✅ Reporte de resultados&lt;/b&gt;&lt;/p&gt;Publicado como artefacto interactivo en Claude con hallazgos y próximos pasos." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#F48FB1;fontColor=#880E4F;fontSize=11;arcSize=4;align=left;spacingLeft=12;spacingRight=10;spacingTop=12;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="164" width="310" height="490" as="geometry"/>
+        </mxCell>
+        <!-- Team footer P6 -->
+        <mxCell id="p6team" value="👥 Erick (funcional) · Christian · Álvaro · Guille" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#880E4F;strokeColor=#880E4F;fontColor=#ffffff;fontSize=10;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="659" width="310" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- LEYENDA DE ROLES DEL EQUIPO -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="team_bg" value="" style="rounded=1;fillColor=#ECEFF1;strokeColor=#B0BEC5;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="20" y="705" width="1560" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="team_title" value="&lt;b&gt;EQUIPO&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#37474F;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="30" y="705" width="70" height="58" as="geometry"/>
+        </mxCell>
+        <!-- chips de equipo -->
+        <mxCell id="t_julio" value="🏗️ &lt;b&gt;Julio&lt;/b&gt; — Arquitecto de Servicios + Front" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00695C;strokeColor=#004D40;fontColor=#ffffff;fontSize=10;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="105" y="716" width="265" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_frank" value="🖥️ &lt;b&gt;Frank&lt;/b&gt; — Front-end" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;strokeColor=#0D47A1;fontColor=#ffffff;fontSize=10;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="380" y="716" width="185" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_christian" value="🤖 &lt;b&gt;Christian&lt;/b&gt; — Capa Agéntica (ADK)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;fontColor=#ffffff;fontSize=10;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="575" y="716" width="255" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_alvaro" value="🗄️ &lt;b&gt;Álvaro&lt;/b&gt; — Capa Data (BigQuery)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#1B5E20;fontColor=#ffffff;fontSize=10;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="840" y="716" width="245" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_guille" value="🗄️ &lt;b&gt;Guille&lt;/b&gt; — Capa Data (BigQuery)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#1B5E20;fontColor=#ffffff;fontSize=10;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="1095" y="716" width="245" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_erick" value="📋 &lt;b&gt;Erick&lt;/b&gt; — Seguimiento y Funcional" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4527A0;strokeColor=#311B92;fontColor=#ffffff;fontSize=10;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="716" width="220" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- FOOTER -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <mxCell id="footer" value="Intercorp Management — Data &amp; Analytics · Construcción del Agente de Análisis Conversacional · Julio 2026" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#9E9E9E;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="773" width="1560" height="25" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

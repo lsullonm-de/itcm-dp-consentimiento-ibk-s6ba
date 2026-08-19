@@ -1,0 +1,15 @@
+1. Prefijo para los repositorios [abrev-empresa]-[plataforma]-[dominio]-[proceso/caso de uso]
+Ejemplo itcm-dp-customer-vuci
+    itcm por intercorp management
+    dp por pltaforma de datos, tambien hay ai por plataforma de IA
+    customer por dominio de cliente
+    vuci por vista unica de cliente
+
+2026-04-01
+en data, existen soluciones que aplica el desarrollo de apis, pero estos
+ al ser parte de un esquema transaccional, pueden trabajar con istancia de cloudsql
+ y no bigquuery por lo que tambien debe haber data/postgresql y ahi dentro igual ddl 
+ debe tener su referencia en el standar
+
+en data, quiero que ahora haya una carpeta cloudstorage para poner yamls para 
+ la creación de buckets

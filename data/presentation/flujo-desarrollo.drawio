@@ -1,0 +1,238 @@
+<mxfile host="app.diagrams.net" modified="2026-04-08T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram name="Flujo de Desarrollo" id="flujo-desarrollo">
+    <mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="880" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Fondo blanco -->
+        <mxCell id="bg" value="" style="rounded=0;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1200" height="880" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================
+             CÍRCULOS (cx, cy, r=100 → w=h=200)
+             req: cx=330 cy=220   des: cx=870 cy=220
+             ops: cx=210 cy=480   dev: cx=990 cy=480
+             dep: cx=330 cy=740   pru: cx=870 cy=740
+             ============================================================ -->
+
+        <!-- Requerimientos — azul -->
+        <mxCell id="req" value="Requerimientos"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#BDD7EE;strokeColor=#7BAED4;strokeWidth=2;fontSize=15;fontColor=#1C5A8A;fontStyle=0;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <mxGeometry x="230" y="120" width="200" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Diseño — verde -->
+        <mxCell id="des" value="Dise&#241;o"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#C2D9B8;strokeColor=#7DA868;strokeWidth=2;fontSize=15;fontColor=#2A5E1C;fontStyle=0;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <mxGeometry x="770" y="120" width="200" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Operaciones — naranja/durazno -->
+        <mxCell id="ops" value="Operaciones"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#F5C9A0;strokeColor=#D09050;strokeWidth=2;fontSize=15;fontColor=#7A3E08;fontStyle=0;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <mxGeometry x="110" y="380" width="200" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Desarrollo — amarillo -->
+        <mxCell id="dev" value="Desarrollo"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#F5EDBC;strokeColor=#C8A830;strokeWidth=2;fontSize=15;fontColor=#6B5008;fontStyle=0;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <mxGeometry x="890" y="380" width="200" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Despliegue — lavanda -->
+        <mxCell id="dep" value="Despliegue"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#D4B8D8;strokeColor=#9878B0;strokeWidth=2;fontSize=15;fontColor=#52207A;fontStyle=0;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <mxGeometry x="230" y="640" width="200" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Pruebas — rosa -->
+        <mxCell id="pru" value="Pruebas"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#F0C0BE;strokeColor=#C07878;strokeWidth=2;fontSize=15;fontColor=#7A2020;fontStyle=0;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <mxGeometry x="770" y="640" width="200" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================
+             ÍCONO CENTRAL — flechas de ciclo
+             ============================================================ -->
+        <mxCell id="center_icon" value="&#8635;"
+          style="text;html=1;align=center;fontSize=90;fontColor=#CCCCCC;strokeColor=none;fillColor=none;"
+          vertex="1" parent="1">
+          <mxGeometry x="475" y="390" width="250" height="180" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================
+             CAJAS DE NOTAS
+             shape=note → fold en esquina superior derecha
+             ============================================================ -->
+
+        <!-- Nota Requerimientos (arriba-izquierda) -->
+        <mxCell id="req_note"
+          value="&#8226; Recolecci&#243;n de Necesidades&lt;br/&gt;&#8226; Definici&#243;n de requisitos&lt;br/&gt;&#8226; Requisitos no funcionales"
+          style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#F9F9F9;strokeColor=#C8C8C8;strokeWidth=1;fontSize=10;align=left;verticalAlign=top;spacingLeft=6;spacingTop=6;fontColor=#444444;"
+          vertex="1" parent="1">
+          <mxGeometry x="28" y="20" width="192" height="82" as="geometry" />
+        </mxCell>
+
+        <!-- Nota Diseño (arriba-derecha) -->
+        <mxCell id="des_note"
+          value="&#8226; Arquitectura&lt;br/&gt;&#8226; Base de Datos&lt;br/&gt;&#8226; Flujos"
+          style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#F9F9F9;strokeColor=#C8C8C8;strokeWidth=1;fontSize=10;align=left;verticalAlign=top;spacingLeft=6;spacingTop=6;fontColor=#444444;"
+          vertex="1" parent="1">
+          <mxGeometry x="980" y="20" width="172" height="72" as="geometry" />
+        </mxCell>
+
+        <!-- Nota Operaciones (izquierda) -->
+        <mxCell id="ops_note"
+          value="&#8226; Monitoreo&lt;br/&gt;&#8226; Escalabilidad&lt;br/&gt;&#8226; Trazabilidad"
+          style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#F9F9F9;strokeColor=#C8C8C8;strokeWidth=1;fontSize=10;align=left;verticalAlign=top;spacingLeft=6;spacingTop=6;fontColor=#444444;"
+          vertex="1" parent="1">
+          <mxGeometry x="8" y="442" width="162" height="72" as="geometry" />
+        </mxCell>
+
+        <!-- Nota Desarrollo (derecha, ligeramente arriba del centro) -->
+        <mxCell id="dev_note"
+          value="&#8226; Implementaci&#243;n&lt;br/&gt;&#8226; Integraci&#243;n&lt;br/&gt;&#8226; Control de versiones"
+          style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#F9F9F9;strokeColor=#C8C8C8;strokeWidth=1;fontSize=10;align=left;verticalAlign=top;spacingLeft=6;spacingTop=6;fontColor=#444444;"
+          vertex="1" parent="1">
+          <mxGeometry x="1030" y="400" width="162" height="72" as="geometry" />
+        </mxCell>
+
+        <!-- Nota Despliegue (abajo-izquierda) -->
+        <mxCell id="dep_note"
+          value="&#8226; Infraestructura&lt;br/&gt;&#8226; CI/CD"
+          style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#F9F9F9;strokeColor=#C8C8C8;strokeWidth=1;fontSize=10;align=left;verticalAlign=top;spacingLeft=6;spacingTop=6;fontColor=#444444;"
+          vertex="1" parent="1">
+          <mxGeometry x="20" y="692" width="162" height="58" as="geometry" />
+        </mxCell>
+
+        <!-- Nota Pruebas (abajo-derecha) -->
+        <mxCell id="pru_note"
+          value="&#8226; Pruebas unitarias&lt;br/&gt;&#8226; Pruebas de integraci&#243;n&lt;br/&gt;&#8226; Pruebas E2E&lt;br/&gt;&#8226; Pruebas de usuario"
+          style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#F9F9F9;strokeColor=#C8C8C8;strokeWidth=1;fontSize=10;align=left;verticalAlign=top;spacingLeft=6;spacingTop=6;fontColor=#444444;"
+          vertex="1" parent="1">
+          <mxGeometry x="1010" y="648" width="172" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================
+             LÍNEAS DE CONEXIÓN nota → círculo (sin flechas, gris claro)
+             ============================================================ -->
+
+        <mxCell id="l_req" value=""
+          style="endArrow=none;strokeColor=#C0C0C0;strokeWidth=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="req_note" target="req">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l_des" value=""
+          style="endArrow=none;strokeColor=#C0C0C0;strokeWidth=1;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="des_note" target="des">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l_ops" value=""
+          style="endArrow=none;strokeColor=#C0C0C0;strokeWidth=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="ops_note" target="ops">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l_dev" value=""
+          style="endArrow=none;strokeColor=#C0C0C0;strokeWidth=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="dev_note" target="dev">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l_dep" value=""
+          style="endArrow=none;strokeColor=#C0C0C0;strokeWidth=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="dep_note" target="dep">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l_pru" value=""
+          style="endArrow=none;strokeColor=#C0C0C0;strokeWidth=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="pru_note" target="pru">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================
+             FLECHAS DE CICLO entre círculos (gris claro, curvas, sentido horario)
+             req → des → dev → pru → dep → ops → req
+             ============================================================ -->
+
+        <!-- req → des  (superior, izq a der) -->
+        <mxCell id="a_rd" value=""
+          style="curved=1;endArrow=open;endSize=8;endFill=0;strokeColor=#BBBBBB;strokeWidth=1.5;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="req" target="des">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="60" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- des → dev  (derecha, arriba a abajo) -->
+        <mxCell id="a_dv" value=""
+          style="curved=1;endArrow=open;endSize=8;endFill=0;strokeColor=#BBBBBB;strokeWidth=1.5;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="des" target="dev">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1140" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- dev → pru  (derecha, arriba a abajo) -->
+        <mxCell id="a_vp" value=""
+          style="curved=1;endArrow=open;endSize=8;endFill=0;strokeColor=#BBBBBB;strokeWidth=1.5;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="dev" target="pru">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1140" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- pru → dep  (inferior, der a izq) -->
+        <mxCell id="a_pd" value=""
+          style="curved=1;endArrow=open;endSize=8;endFill=0;strokeColor=#BBBBBB;strokeWidth=1.5;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=1;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="pru" target="dep">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="875" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- dep → ops  (izquierda, abajo a arriba) -->
+        <mxCell id="a_do" value=""
+          style="curved=1;endArrow=open;endSize=8;endFill=0;strokeColor=#BBBBBB;strokeWidth=1.5;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="dep" target="ops">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="60" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ops → req  (izquierda, abajo a arriba) -->
+        <mxCell id="a_or" value=""
+          style="curved=1;endArrow=open;endSize=8;endFill=0;strokeColor=#BBBBBB;strokeWidth=1.5;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="ops" target="req">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="60" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

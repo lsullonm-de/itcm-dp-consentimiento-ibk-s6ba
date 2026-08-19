@@ -1,0 +1,20 @@
+{
+  "code": "RI-IBK-T_CONSENT_TRANSACTION-004",
+  "process_code": "${env}-t-consent-transaction-ibk",
+  "task_code": "${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk",
+  "company_id": "000",
+  "company_code": "IBK",
+  "source_id": "iden_party",
+  "source_role": "secundaria",
+  "source_asset": "${project_iden_party}.${dataset_iden_party}.${table_iden_party}",
+  "check_type": "duplicados",
+  "check_action": "excluir_registros",
+  "tolerance_days": null,
+  "key_columns": ["party_id", "itc_company_id"],
+  "date_field": "process_date",
+  "business_name": "Excluir duplicados de la fuente secundaria (iden_party)",
+  "technical_name": "RI-IBK-T_CONSENT_TRANSACTION-004",
+  "flag_active": "1",
+  "last_status_code": null,
+  "creation_user": "dataops-deploy"
+}

@@ -1,0 +1,471 @@
+# ============================================================
+# MANIFEST DE ESPECIFICACIÓN — Data Platform ITC
+# Estándar: data/standard/factory/spec-manifest.md
+# Generado por: fac-data-spec-create (a partir de BRIEF-IBK-20260819-001)
+# ============================================================
+
+id: spec-ibk-20260819-001
+version: "1.0"
+status: draft
+type: bq_pipeline
+empresa: ibk
+equipo: data-platform
+fecha: "2026-08-19"
+autor: lsullon
+aprobador: lmorales
+
+# ------------------------------------------------------------
+# 1. CONTEXTO
+# ------------------------------------------------------------
+contexto:
+  nombre: "Centralización de Consentimientos LPDP Interbank (IBK)"
+  tipo_flujo: etl
+  descripcion: >
+    Centraliza diariamente los eventos de consentimiento/rechazo de tratamiento de datos
+    personales (LPDP) de clientes Interbank: lee el archivo GCS vía tabla externa temporal,
+    resuelve el identificador unificado ITC contra iden_itc_party y carga t_consent_transaction
+    (delete+insert por itc_company_id + consent_date). Deriva de allí ba_customer_consent_group
+    con los consentimientos CP_2 otorgados vigentes.
+  objetivo_negocio: Registra cuando un individuo otorgando o revoca un consentimiento para un propósito específico.   # completar: impacto en cumplimiento normativo LPDP / auditoría
+  data_owner: lmorales         # completar: línea LPDP / Consentimiento Interbank
+  business_steward: lmorales
+  kpis: []
+
+# ------------------------------------------------------------
+# 2. ETAPAS APLICABLES
+# ------------------------------------------------------------
+etapas:
+  plan: true
+  design: true
+  coding: true
+  orchestration: true
+  integridad: true   # evaluar activarlo: gate de actualidad sobre el archivo diario IBK
+  monitoring: true
+  data_quality: true    # activado (2026-08-19) — las 5 reglas ya estaban definidas desde CODING
+  dataops: true
+  compliance: true
+  testing: true       # activar solo después de correr InfraOps + Dataops en dev
+  infraops: true
+  security: true
+  documentation: true
+
+# ------------------------------------------------------------
+# 3. FUENTES DE DATOS
+# ------------------------------------------------------------
+fuentes:
+  - id: consentimiento_ibk_archivo
+    descripcion: >
+      Archivo diario .txt.gz de eventos de consentimiento LPDP de clientes IBK en GCS,
+      leído vía tabla externa temporal (TTL 2 días). DDL de referencia: input/ddl_table_external.txt
+    proyecto: dev-intercorp-data-storage
+    dataset: raw_ibk_dlk          # confirmado por el equipo — reemplaza al dataset personal "lsullon" del DDL de referencia original
+    tabla: "t_consent_transaction_{fecha_archivo}_external"   # confirmado: 1 tabla externa NUEVA por fecha, no una tabla estática reemplazada
+    volumetria: 60000              # por confirmar con Interbank
+    particion: "consent_date"                # tabla externa, sin partición BQ
+    pii: true
+    tipo_fuente: archivo
+    campo_fecha: "{YYYYMMDD} en ruta GCS gs://p-ibkbi-rdp-stg-dlk-us-suoh/data/m_consent/current/{YYYYMMDD}/{UUID}/"
+    rol: principal               # universo del proceso — activado con etapas.integridad: true (2026-08-19)
+    llave: [party_id, consent_transaction_id]
+
+    # ── Campos agregados por DISCOVERY (2026-08-19) ────────────────
+    tabla_canonica: "dev-intercorp-data-storage.raw_ibk_dlk.t_consent_transaction_{fecha_archivo}_external"
+    tabla_profiling: no_aplica
+    glosario_status: no_aplica   # fuente tipo archivo — no hay tabla BQ que perfilar todavía
+    glosario_path: ~
+    campos_join_clave: [party_id, consent_transaction_id]
+    empresas_cubiertas: ["000", "1000"]   # filtro de negocio declarado en RN-IBK-003/006 — confirmado: ambos códigos pertenecen a Interbank (ver RN-IBK-003)
+    observaciones: >
+      Sin acceso BigQuery desde esta sesión al proyecto dev-intercorp-data-storage
+      (mcp.tools.call denegado) — no se pudo confirmar en vivo la creación de la tabla externa.
+      Confirmado por el equipo (2026-08-19): la tabla externa se crea como
+      `{proyecto}.{dataset}.t_consent_transaction_{fecha_archivo}_external` — una tabla NUEVA
+      por cada fecha procesada (no una tabla estática reemplazada con CREATE OR REPLACE).
+      En un reproceso histórico (rango de fechas) coexisten varias de estas tablas temporales
+      simultáneamente, una por cada `fecha_archivo` del rango — el SP/Workflow debe limpiarlas
+      (TTL 2 días o DROP explícito) para no acumular objetos huérfanos en `raw_ibk_dlk`.
+
+  - id: iden_party
+    descripcion: >
+      Identidad unificada de persona a nivel Grupo Intercorp — resuelve el campo `id`
+      cruzando por party_id, filtrado a itc_company_id IN ('000','1000')
+    proyecto: dev-intercorp-data-operation   # corregido: "dev-intercorp-data_operation" con guión bajo es un Project ID inválido — confirmado por error de la API de BigQuery ("Invalid project ID")
+    dataset: matillion_dev
+    tabla: iden_itc_party_prd
+    volumetria: 40000000
+    particion: ~
+    pii: true
+    tipo_fuente: tabla
+    rol: secundaria
+    llave: [party_id, itc_company_id]
+    campo_fecha: process_date   # según glosario de referencia: "usar MAX(process_date) para el estado actual"
+
+    # ── Campos agregados por DISCOVERY (2026-08-19) ────────────────
+    tabla_canonica: "dev-intercorp-data-operation.matillion_dev.iden_itc_party_prd"   # sin verificar — sin acceso BQ desde esta sesión
+    tabla_profiling: sin_acceso
+    glosario_status: sin_acceso   # no existe glosario de "iden_itc_party_prd" en data/data_catalog/; se usó como referencia un glosario de una tabla relacionada (ver observaciones)
+    glosario_path: "data/data_catalog/master_party/iden-itc-party.md"   # tabla de REFERENCIA, no la misma físicamente — ver observaciones
+    particion: "Sin partición (según tabla de referencia) — filtrar siempre por process_date/itc_company_id"
+    volumetria: "~467.7M filas en la tabla de referencia intercorp-data-storage-pv.master_party.iden_itc_party (2026-03-10) — NO confirmado para iden_itc_party_prd"
+    campos_join_clave: [party_id, id, itc_company_id]
+    empresas_cubiertas: ["000 (Interbank, ~5.4M filas — confirmado en c_itc_company)", "1000 (~26.9M filas — confirmado por Data Owner: segundo itc_company_id registrado también para Interbank)"]
+    observaciones: >
+      Intento de acceso vía BigQuery MCP a dev-intercorp-data-operation.matillion_dev.iden_itc_party_prd
+      denegado (mcp.tools.call). El proyecto dev-intercorp-data_operation (guión bajo, tal como
+      venía en el requerimiento original) fue RECHAZADO por la API de BigQuery como Project ID
+      inválido — confirma que el valor correcto debe llevar guión, no guión bajo.
+      No existe glosario propio de "iden_itc_party_prd" en data/data_catalog/. Se usó como
+      referencia el glosario de intercorp-data-storage-pv.master_party.iden_itc_party (467.7M filas,
+      22 empresas, sin partición, campos id/party_id/itc_company_id/process_date/load_date/party_type_id).
+      Confirmado por el equipo (2026-08-19):
+      (1) '000' y '1000' son ambos itc_company_id de Interbank — la empresa está registrada con
+      2 códigos en el modelo, por eso el filtro siempre incluye los dos juntos (no son entidades
+      distintas ni un código "holding" separado, como se especulaba antes de confirmar).
+      (2) iden_itc_party_prd tiene la misma estructura que la tabla de referencia iden_itc_party
+      (id, party_id, itc_company_id, process_date, load_date, party_type_id) — confirmado por el
+      equipo, aunque sigue sin poder verificarse en vivo desde esta sesión (sin acceso BQ).
+      Pendiente aún: confirmar si también carece de partición (impacto en costo de la SP, dado que
+      la tabla de referencia tiene 467.7M filas y full-scan sin filtro es costoso).
+
+# ------------------------------------------------------------
+# 3b. REGLAS DE INTEGRIDAD (etapas.integridad: true, activado 2026-08-19)
+# ------------------------------------------------------------
+reglas_integridad:
+  fuente_principal: consentimiento_ibk_archivo
+  dias_tolerancia: 1   # coincide con RN-IBK-002 (folder_date = process_date - 1 día)
+  registro_resultados: true   # habilitado (2026-08-19) — METADATA_API_URL disponible y etapas.monitoring: true
+  reglas:
+    - id: RI-IBK-T_CONSENT_TRANSACTION-001
+      fuente_id: consentimiento_ibk_archivo
+      tipo_check: actualidad
+      accion: detener_proceso
+
+    - id: RI-IBK-T_CONSENT_TRANSACTION-002
+      fuente_id: consentimiento_ibk_archivo
+      tipo_check: duplicados
+      accion: excluir_registros
+
+    - id: RI-IBK-T_CONSENT_TRANSACTION-003
+      fuente_id: consentimiento_ibk_archivo
+      tipo_check: llave_nula
+      accion: excluir_registros
+
+    - id: RI-IBK-T_CONSENT_TRANSACTION-004
+      fuente_id: iden_party
+      tipo_check: duplicados
+      accion: excluir_registros
+
+    - id: RI-IBK-T_CONSENT_TRANSACTION-005
+      fuente_id: iden_party
+      tipo_check: llave_nula
+      accion: excluir_registros
+
+# ------------------------------------------------------------
+# 4. OUTPUTS
+# ------------------------------------------------------------
+outputs:
+  - tabla: t_consent_transaction
+    proyecto: dev-intercorp-data-storage
+    dataset: master_party
+    descripcion: >
+      Centraliza cada evento de consentimiento/rechazo LPDP de clientes IBK con el id
+      unificado ITC resuelto vía iden_itc_party. DDL: input/ddl_output_t_consent_transaction.txt
+    capa: master
+    particion: consent_date
+    tipo_carga: incremental    # delete+insert por itc_company_id + consent_date — ver RN-IBK-004/005
+    campos_auditoria: [load_date, record_source, creation_user]
+    pii: true
+
+  - tabla: ba_customer_consent_group
+    proyecto: dev-intercorp-data-storage
+    dataset: master_party
+    descripcion: >
+      Consentimientos CP_2 otorgados vigentes por cliente IBK, derivado exclusivamente
+      de t_consent_transaction. DDL: input/ddl_output_ba_customer_consent_group.txt
+    capa: business
+    particion: consent_date
+    tipo_carga: incremental    # delete+insert por itc_company_id + consent_date
+    campos_auditoria: [load_date, record_source, creation_user]
+    pii: true
+
+# ------------------------------------------------------------
+# 5. REGLAS DE NEGOCIO
+# ------------------------------------------------------------
+reglas_negocio:
+  - id: RN-IBK-001
+    descripcion: >
+      Se crea una tabla externa NUEVA por cada fecha procesada — `{proyecto}.{dataset}.
+      t_consent_transaction_{fecha_archivo}_external` — apuntando a la ruta GCS de esa fecha.
+      No es una tabla estática reemplazada con CREATE OR REPLACE: en un reproceso histórico
+      (rango de fechas) coexisten varias de estas tablas temporales al mismo tiempo, una por
+      cada fecha del rango. Vigencia máxima 2 días (TTL o limpieza explícita del Workflow).
+    criticidad: media   # regla de arquitectura/infraestructura, no verificable con una regla DQ sobre datos
+    campo_afectado: "tabla externa t_consent_transaction_{fecha_archivo}_external"
+    validado_por: lsullon
+    referencia: "input/ddl_table_external.txt"
+
+  - id: RN-IBK-002
+    descripcion: >
+      El {YYYYMMDD} de la ruta GCS y del nombre de la tabla externa se calcula como
+      process_date - 1 día (asumido según ejemplo de negocio; confirmar exactitud del offset).
+    criticidad: media   # regla de cálculo de parámetros de ejecución, no verificable con una regla DQ sobre datos
+    campo_afectado: "ruta GCS / nombre tabla externa"
+    validado_por: lsullon
+
+  - id: RN-IBK-003
+    descripcion: >
+      Antes de insertar en t_consent_transaction, cruzar por party_id contra
+      dev-intercorp-data-operation.matillion_dev.iden_itc_party_prd, filtrando
+      itc_company_id IN ('000','1000'), para obtener el id unificado ITC.
+    criticidad: alta
+    campo_afectado: id
+    validado_por: lsullon
+
+  - id: RN-IBK-004
+    descripcion: >
+      El consent_date usado como llave de partición/borrado en t_consent_transaction es el
+      valor real contenido en cada registro del archivo — no se deriva por offset fijo, ya
+      que el desfase entre folder_date y el consent_date de contenido no es constante
+      (ejemplo observado: ~2 días respecto a la fecha de sistema).
+    criticidad: alta
+    campo_afectado: consent_date
+    validado_por: lsullon
+
+  - id: RN-IBK-005
+    descripcion: >
+      Carga a t_consent_transaction es DELETE + INSERT: se eliminan los registros de
+      itc_company_id + consent_date(s) presentes en el batch antes de insertar los nuevos.
+    criticidad: alta
+    campo_afectado: t_consent_transaction
+    validado_por: lsullon
+
+  - id: RN-IBK-006
+    descripcion: >
+      ba_customer_consent_group se genera exclusivamente desde t_consent_transaction
+      (no vuelve a leer el archivo ni la tabla externa), filtrando conset_id = 'CP_2',
+      consent_type = 'otorgado' e itc_company_id IN ('000','1000').
+    criticidad: alta
+    campo_afectado: ba_customer_consent_group
+    validado_por: lsullon
+
+  - id: RN-IBK-007
+    descripcion: >
+      Carga a ba_customer_consent_group es DELETE + INSERT por itc_company_id + consent_date,
+      igual que en t_consent_transaction.
+    criticidad: alta
+    campo_afectado: ba_customer_consent_group
+    validado_por: lsullon
+
+  - id: RN-IBK-008
+    descripcion: >
+      El pipeline completo (gestión de tabla externa + SP t_consent_transaction +
+      SP ba_customer_consent_group) se implementa como Stored Procedures orquestados
+      en un único Workflow.
+    criticidad: media   # regla de arquitectura/orquestación, no verificable con una regla DQ sobre datos
+    campo_afectado: orquestación
+    validado_por: lsullon
+
+  - id: RN-IBK-009
+    descripcion: >
+      El Workflow soporta 3 modos de ejecución: normal (sin parámetros, usa fecha de
+      sistema), manual (process_date único) y reproceso (process_date_init +
+      process_date_fin, ejecutando un ciclo completo por cada día del rango).
+    criticidad: media   # regla funcional del Workflow, no verificable con una regla DQ sobre datos
+    campo_afectado: "parámetros de ejecución del Workflow"
+    validado_por: lsullon
+
+# ------------------------------------------------------------
+# 6. COMPONENTES GCP
+# ------------------------------------------------------------
+componentes:
+  - tipo: ddl
+    archivo: data/bigquery/master_party/t_consent_transaction/ddl/ext_t_consent_transaction_external.sql
+    descripcion: "REFERENCIA — no se despliega vía bigquery_ddl (nombre dinámico). Documenta el DDL de la tabla externa temporal (TTL 2 días, RN-IBK-001) que sp_t_consent_transaction_ibk.sql crea dinámicamente vía EXECUTE IMMEDIATE con el nombre t_consent_transaction_{fecha_archivo}_external"
+
+  - tipo: ddl
+    archivo: data/bigquery/master_party/t_consent_transaction/ddl/t_consent_transaction.sql
+    descripcion: "Tabla destino particionada por consent_date, clustered por itc_company_name"
+
+  - tipo: ddl
+    archivo: data/bigquery/master_party/t_consent_transaction/alter/alter_t_consent_transaction_20260819_001.sql
+    descripcion: "ADD COLUMN dq_flag_ind/dq_control_msg/dq_config_id (REGLA 4 fac-data-rules-check, etapas.data_quality: true) — no poblados aún, ver nota en el archivo"
+
+  - tipo: sp
+    archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
+    descripcion: "Cruce con iden_itc_party + delete/insert por itc_company_id + consent_date"
+
+  - tipo: sp
+    archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
+    descripcion: "Gate de integridad (etapas.integridad: true) — actualidad D-1 de consentimiento_ibk_archivo (RI-IBK-...-001). No escribe tablas, solo OUT params"
+
+  - tipo: sp
+    archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_dq_t_consent_transaction.sql
+    descripcion: "SP DQ (etapas.data_quality: true) — valida las 3 reglas de t_consent_transaction contra dq_config, registra en dq_control"
+
+  - tipo: ddl
+    archivo: data/bigquery/master_party/ba_customer_consent_group/ddl/ba_customer_consent_group.sql
+    descripcion: "Tabla destino particionada por consent_date"
+
+  - tipo: ddl
+    archivo: data/bigquery/master_party/ba_customer_consent_group/alter/alter_ba_customer_consent_group_20260819_001.sql
+    descripcion: "ADD COLUMN dq_flag_ind/dq_control_msg/dq_config_id (REGLA 4 fac-data-rules-check, etapas.data_quality: true) — no poblados aún"
+
+  - tipo: sp
+    archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_ba_customer_consent_group_ibk.sql
+    descripcion: "Filtra CP_2/otorgado desde t_consent_transaction y hace delete/insert"
+
+  - tipo: sp
+    archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_dq_ba_customer_consent_group.sql
+    descripcion: "SP DQ (etapas.data_quality: true) — valida las 2 reglas de ba_customer_consent_group contra dq_config, registra en dq_control"
+
+  - tipo: workflow
+    archivo: pipeline/workflow/master_party/t_consent_transaction/wf-ibk-consentimiento.yaml
+    descripcion: "Orquesta tabla externa + SP1 + SP2; soporta process_date normal/manual/reproceso"
+
+  - tipo: cloud_scheduler
+    archivo: pipeline/scheduler/master_party/t_consent_transaction/cs-ibk-consentimiento.yaml
+    descripcion: "Disparo diario del workflow (flujo normal)"
+
+# ------------------------------------------------------------
+# 7. DATA QUALITY
+# ------------------------------------------------------------
+data_quality:
+  dataset_dq: "${dataset_dq}"
+  reglas:
+    - id: DQ-IBK-T_CONSENT_TRANSACTION-001
+      dimension: completitud
+      tipo: technical
+      campo: id
+      critica: true
+      umbral_max_pct_invalidos: 0
+      sql_rule: >
+        SELECT *
+        FROM `${project_t_consent_transaction}.${dataset_t_consent_transaction}.t_consent_transaction`
+        WHERE id IS NULL
+
+    - id: DQ-IBK-T_CONSENT_TRANSACTION-002
+      dimension: completitud
+      tipo: technical
+      campo: consent_date
+      critica: true
+      umbral_max_pct_invalidos: 0
+      sql_rule: >
+        SELECT *
+        FROM `${project_t_consent_transaction}.${dataset_t_consent_transaction}.t_consent_transaction`
+        WHERE consent_date IS NULL
+      # cubre RN-IBK-004 — consent_date debe venir siempre del contenido real del archivo
+
+    - id: DQ-IBK-T_CONSENT_TRANSACTION-003
+      dimension: unicidad
+      tipo: technical
+      campo: conset_transaction_id
+      critica: true
+      umbral_max_pct_invalidos: 0
+      sql_rule: >
+        SELECT itc_company_id, consent_date, conset_transaction_id, COUNT(*) AS cnt
+        FROM `${project_t_consent_transaction}.${dataset_t_consent_transaction}.t_consent_transaction`
+        GROUP BY itc_company_id, consent_date, conset_transaction_id
+        HAVING cnt > 1
+      # cubre RN-IBK-005 — detecta duplicados si el delete+insert por itc_company_id+consent_date falla o se reprocesa mal
+
+    - id: DQ-IBK-BA_CUSTOMER_CONSENT_GROUP-001
+      dimension: validez
+      tipo: business
+      campo: itc_company_id
+      critica: true
+      umbral_max_pct_invalidos: 0
+      sql_rule: >
+        SELECT *
+        FROM `${project_ba_customer_consent_group}.${dataset_ba_customer_consent_group}.ba_customer_consent_group`
+        WHERE itc_company_id NOT IN ('000','1000')
+      # cubre RN-IBK-006 — nota: conset_id/consent_type no se persisten en este output, por lo que el filtro
+      # CP_2/otorgado solo puede validarse indirectamente vía itc_company_id; considerar agregar esos campos
+      # al output si se requiere una validación DQ más estricta
+
+    - id: DQ-IBK-BA_CUSTOMER_CONSENT_GROUP-002
+      dimension: unicidad
+      tipo: technical
+      campo: id
+      critica: true
+      umbral_max_pct_invalidos: 0
+      sql_rule: >
+        SELECT itc_company_id, consent_date, id, COUNT(*) AS cnt
+        FROM `${project_ba_customer_consent_group}.${dataset_ba_customer_consent_group}.ba_customer_consent_group`
+        GROUP BY itc_company_id, consent_date, id
+        HAVING cnt > 1
+      # cubre RN-IBK-007 — detecta duplicados si el delete+insert por itc_company_id+consent_date falla
+
+# ------------------------------------------------------------
+# 8. SEGURIDAD
+# ------------------------------------------------------------
+seguridad:
+  campos_pii_fuente: [documento_legal_id, signed_document, employee_id]
+  campos_pii_output: [documento_legal_id, signed_document]
+  encriptacion_requerida: true    # confirmado por Data Owner (lmorales) — documento_legal_id/signed_document requieren AEAD
+  hash_iden_party: false           # se usa el id ya resuelto de iden_itc_party_prd, no se calcula hash local
+  permisos:
+    - sa: "${service_account_job}"   # confirmado (2026-08-19): SA compartida ya provisionada con acceso a las tablas de este módulo, ver env_dev.json
+      recurso: "dev-intercorp-data-operation.matillion_dev.iden_itc_party_prd"
+      permiso: roles/bigquery.dataViewer
+    - sa: "${service_account_job}"   # confirmado (2026-08-19): SA compartida ya provisionada con acceso a las tablas de este módulo, ver env_dev.json
+      recurso: "dev-intercorp-data-storage.master_party"
+      permiso: roles/bigquery.dataEditor
+  nota: >
+    Confirmado por Data Owner (lmorales): documento_legal_id y signed_document requieren
+    encriptación AEAD.ENCRYPT en capa master — usar el catálogo de llaves
+    process_ctr_protected_data (ver data/standard/architecture/data-platform-layers.md §7).
+    Implementar en etapa CODING antes de habilitar producción.
+
+# ------------------------------------------------------------
+# 9. SCHEDULING
+# ------------------------------------------------------------
+scheduling:
+  frecuencia: "0 10 * * *"   # diaria — hora asumida 10:00am Lima, confirmar horario exacto con negocio
+  zona_horaria: America/Lima
+  dependencias:
+    - "Archivo diario IBK disponible en gs://p-ibkbi-rdp-stg-dlk-us-suoh/data/m_consent/current/{folder_date}/"
+  consumidores: []
+  tiempo_max_ejecucion: ~
+
+# ------------------------------------------------------------
+# 10. RESTRICCIONES Y SUPUESTOS
+# ------------------------------------------------------------
+restricciones:
+  - "Offset folder_date = process_date - 1 día asumido de un único ejemplo de negocio — confirmar con Interbank (RN-IBK-002)"
+  - "consent_date de contenido no tiene offset fijo (~2 días, variable) — se lee del archivo, no se calcula (RN-IBK-004)"
+  - "RESUELTO: approval_channel_name en ba_customer_consent_group queda siempre NULL — no hay origen en t_consent_transaction, confirmado por el equipo. Campo conservado por compatibilidad con el contrato original"
+  - "RESUELTO: cambio de CREATE OR REPLACE TABLE a CREATE TABLE IF NOT EXISTS en ba_customer_consent_group aceptado por el equipo (evita borrar histórico en cada redeploy)"
+  - "consent_date_time del archivo no tiene destino definido en ninguna tabla — confirmar si se descarta"
+  - "RESUELTO: dataset de la tabla externa confirmado como raw_ibk_dlk (proyecto dev-intercorp-data-storage), reemplaza al dataset personal lsullon del DDL de referencia original"
+  - "RESUELTO: tabla externa se nombra t_consent_transaction_{fecha_archivo}_external, una tabla nueva por fecha (no una tabla estática con CREATE OR REPLACE) — en reprocesos históricos coexisten varias simultáneamente, limpiar por TTL o DROP explícito"
+  - "RESUELTO: itc_company_id '000' y '1000' son ambos de Interbank (empresa registrada con 2 códigos) — confirmado por Data Owner"
+  - "RESUELTO: iden_itc_party_prd tiene la misma estructura que iden_itc_party (tabla de referencia en data/data_catalog/master_party/iden-itc-party.md) — confirmado por el equipo"
+  - "RESUELTO: reglas_integridad.registro_resultados = true (2026-08-19) — METADATA_API_URL agregado a env_dev.json y etapas.monitoring activado. El gate de integridad ahora matricula histórico en metadata_operational vía RegisterIntegrityResults"
+  - "Motor de orquestación del Workflow (Cloud Workflows / Composer) no especificado — definir en DESIGN"
+  - "Política ante archivo ausente en el folder_date esperado no definida — no debe ejecutarse DELETE sin INSERT de reemplazo"
+  - "RESUELTO: project_operation/project_analytics/project_billing y dataset_sp/dataset_stage/dataset_dq en env_dev.json apuntan a un proyecto/dataset operativo compartido (no exclusivo del módulo) — confirmado por el equipo, es el patrón de despliegue esperado para este tipo de proceso, no un resto de otro módulo"
+  - "RESUELTO: service_account_job en env_dev.json es una SA compartida ya provisionada con acceso a las tablas de este módulo — confirmado por el equipo. seguridad.permisos ahora referencia ${service_account_job} en vez de un literal distinto"
+  - "EXCEPCIÓN ACEPTADA (fac-data-rules-check, 2026-08-19, REGLA 2/3): las tablas temporales tmp_t_consent_transaction_ibk y tmp_ba_customer_consent_group_ibk usan el sufijo de nombre hardcodeado (no ${table_tmp_...}) en sp_t_consent_transaction_ibk.sql y sp_ba_customer_consent_group_ibk.sql. Son tablas efímeras internas, compartidas únicamente entre esos 2 SPs del mismo módulo, no configurables ni distintas entre ambientes (project/dataset sí son variables — ${project_output}/${dataset_stage} — solo el sufijo de tabla es literal). Se documenta como excepción en vez de crear 6 variables Dataops nuevas (project_/dataset_/table_ x 2 tablas) para un detalle de implementación interno"
+
+# ------------------------------------------------------------
+# 11. MONITORING (etapas.monitoring: true, activado 2026-08-19)
+# ------------------------------------------------------------
+monitoring:
+  METADATA_API_URL: "${METADATA_API_URL}"   # referencia a env_dev.json/env_prd.json — no hardcodear la URL aquí
+  process:
+    code: ${env}-t-consent-transaction-ibk   # debe coincidir con el nombre real del workflow en GCP
+    zone_code: master
+    company_id: "000"
+    company_code: "IBK"
+    business_name: "Centralización de Consentimientos LPDP Interbank"
+    flag_active: "1"
+    flag_scheduler: "1"   # el módulo tiene Cloud Scheduler (cs-ibk-consentimiento.yaml)
+  tasks:
+    - code: sp_t_consent_transaction_ibk
+      object_name: t_consent_transaction
+      object_source: ["dev-intercorp-data-storage.raw_ibk_dlk.t_consent_transaction_{fecha_archivo}_external", "dev-intercorp-data-operation.matillion_dev.iden_itc_party_prd"]
+      description: "Centraliza consentimientos LPDP de Interbank en t_consent_transaction"
+    - code: sp_ba_customer_consent_group_ibk
+      object_name: ba_customer_consent_group
+      object_source: ["dev-intercorp-data-storage.master_party.t_consent_transaction"]
+      description: "Deriva consentimientos CP_2 otorgados en ba_customer_consent_group"

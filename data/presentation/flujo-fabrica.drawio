@@ -1,0 +1,342 @@
+<mxfile host="app.diagrams.net" modified="2026-04-06T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram name="Flujo de Fábrica" id="factory-flow">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2500" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- TÍTULO -->
+        <mxCell id="2" value="Flujo de Fábrica — Data Platform ITC" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="10" width="2400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="70" value="/implement-stage {ETAPA}   ·   /spec-create   ·   /spec-validate   ·   /spec-update   ·   /init-project   ·   /rules-check   ·   /sync-todo" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="20" y="42" width="2400" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- INPUT: spec.yaml -->
+        <!-- ======================================================== -->
+        <mxCell id="39" value="spec.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="72" width="100" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="41" value="" style="endArrow=block;endFill=1;strokeColor=#555555;strokeWidth=2;" edge="1" parent="1" source="39" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- BLOQUE DESIGN (x=140, w=420) — 3 sub-etapas             -->
+        <!-- DISCOVERY (izq) ∥ ARCHITECTURE (der) → PHYSICAL_DESIGN  -->
+        <!-- ======================================================== -->
+        <mxCell id="3" value="DESIGN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e3a5f;fontColor=#ffffff;strokeColor=#1e3a5f;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="72" width="420" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- DISCOVERY (columna izquierda) -->
+        <mxCell id="D0" value="DISCOVERY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00695c;fontColor=#ffffff;strokeColor=#00695c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="145" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="D1" value="/implement-stage DISCOVERY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="145" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="D2" value="Resuelve tabla canónica (${} + inside)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="145" y="217" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="D3" value="Busca glosario → extrae partición,&lt;br&gt;volumetría, campos join" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="145" y="250" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="D4" value="Si no existe → profiling BQ&lt;br&gt;→ genera glosario" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="145" y="290" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="D5" value="bigquery-table-profiler/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="145" y="330" width="190" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- ARCHITECTURE (columna derecha, paralelo con DISCOVERY) -->
+        <mxCell id="7" value="ARCHITECTURE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="355" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="/init-docs · /update-diagrams" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f4ff;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="355" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="architecture-diagrams/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f4ff;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="355" y="217" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="93" value="intercorp-data-architect/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f4ff;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="355" y="250" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="94" value="intercorp-data-enablement/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f4ff;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="355" y="283" width="190" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- Etiqueta "paralelo" entre DISCOVERY y ARCHITECTURE -->
+        <mxCell id="PAR" value="∥ paralelo" style="text;html=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=3;fontColor=#555555;align=center;" vertex="1" parent="1">
+          <mxGeometry x="337" y="152" width="16" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- PHYSICAL_DESIGN — abajo, recibe flechas de ambos -->
+        <mxCell id="60" value="PHYSICAL_DESIGN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="185" y="385" width="330" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="61" value="mlops-framework-developer/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f4ff;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="185" y="432" width="155" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="62" value="customer-attributes-developer/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f4ff;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="350" y="432" width="165" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- Flechas DISCOVERY → PHYSICAL_DESIGN y ARCHITECTURE → PHYSICAL_DESIGN -->
+        <mxCell id="aD60" value="" style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;strokeColor=#00695c;strokeWidth=1.5;dashed=1;" edge="1" source="D0" target="60" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a760" value="" style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;strokeColor=#6c8ebf;strokeWidth=1.5;dashed=1;" edge="1" source="7" target="60" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- BLOQUE BUILD (x=580, w=820)                              -->
+        <!-- ======================================================== -->
+        <mxCell id="4" value="BUILD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d6a4f;fontColor=#ffffff;strokeColor=#2d6a4f;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="72" width="820" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- CODING -->
+        <mxCell id="8" value="CODING" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="585" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="mlops-framework-developer/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="585" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="customer-attributes-developer/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="585" y="217" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="bi-workflow-load-agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="585" y="250" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="71" value="⚠ vertex_ml: notebook/ obligatorio" style="text;html=1;strokeColor=#82b366;fillColor=#f0fff4;fontSize=9;fontStyle=2;align=center;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="585" y="283" width="190" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="95" value="⚠ bq_pipeline: crear tests unitarios&lt;br&gt;data/bigquery/test/test_*.sql" style="text;html=1;strokeColor=#82b366;fillColor=#f0fff4;fontSize=9;fontStyle=2;align=center;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="585" y="309" width="190" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- DATA_QUALITY -->
+        <mxCell id="9" value="DATA_QUALITY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="795" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="dataquality-assistant/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="795" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- ORCHESTRATION -->
+        <mxCell id="10" value="ORCHESTRATION" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="995" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="workflow-orchestration/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="995" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- DATAOPS -->
+        <mxCell id="13" value="DATAOPS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1205" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="dataops-configurator/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1205" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="73" value="deploy configs + env vars" style="text;html=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=2;fontColor=#2d6a4f;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1205" y="217" width="190" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Flechas internas BUILD -->
+        <mxCell id="34" value="" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#666666;strokeWidth=1;" edge="1" source="8" target="9" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="35" value="" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#666666;strokeWidth=1;" edge="1" source="9" target="10" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="64" value="" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#666666;strokeWidth=1;" edge="1" source="10" target="13" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Nota DATAOPS en BUILD -->
+        <mxCell id="75" value="&lt;b&gt;¿Por qué DATAOPS está en BUILD?&lt;/b&gt;&lt;br&gt;COMPLIANCE audita los deploy configs · TESTING necesita env_dev.json para ejecutar." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#d6b656;fontSize=9;align=left;" vertex="1" parent="1">
+          <mxGeometry x="585" y="350" width="810" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- BLOQUE VERIFY (x=1420, w=410)                            -->
+        <!-- ======================================================== -->
+        <mxCell id="5" value="VERIFY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b5451b;fontColor=#ffffff;strokeColor=#b5451b;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="72" width="410" height="45" as="geometry" />
+        </mxCell>
+
+        <mxCell id="11" value="COMPLIANCE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6d5;strokeColor=#d79b00;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1425" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="compliance-reviewer/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f0;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1425" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="TESTING" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6d5;strokeColor=#d79b00;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1635" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="bigquery-mcp-validator/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f0;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1635" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="74" value="usa env_dev.json (de DATAOPS)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=2;fontColor=#b5451b;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1635" y="217" width="190" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="96" value="ejecuta data/bigquery/test/test_*.sql" style="text;html=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=2;fontColor=#b5451b;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1635" y="237" width="190" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="36" value="" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#666666;strokeWidth=1;" edge="1" source="11" target="12" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- data/rules ref -->
+        <mxCell id="31" value="&lt;b&gt;data/rules/&lt;/b&gt;   bigquery.md · security.md · workflow.md · dataops.md · general.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#d6b656;fontSize=10;dashed=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1425" y="270" width="410" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="32" value="usa" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#d6b656;exitX=0.5;exitY=1;entryX=0.2;entryY=0;fontSize=9;fontColor=#a07800;" edge="1" source="23" target="31" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="33" value="usa" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#d6b656;exitX=0.5;exitY=1;entryX=0.8;entryY=0;fontSize=9;fontColor=#a07800;" edge="1" source="24" target="31" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- BLOQUE RELEASE (x=1850, w=620)                           -->
+        <!-- ======================================================== -->
+        <mxCell id="6" value="RELEASE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5c2d91;fontColor=#ffffff;strokeColor=#5c2d91;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1850" y="72" width="620" height="45" as="geometry" />
+        </mxCell>
+
+        <mxCell id="111" value="INFRAOPS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1855" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="112" value="infraops-configurator/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f0ff;strokeColor=#9673a6;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1855" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="SECURITY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="2065" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="rules/security.md (checklist)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f0ff;strokeColor=#9673a6;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="2065" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="DOCUMENTATION" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="2275" y="137" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="bigquery-table-profiler/SKILL.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f0ff;strokeColor=#9673a6;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="2275" y="184" width="190" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="38a" value="" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#666666;strokeWidth=1;" edge="1" source="111" target="14" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="38" value="" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#666666;strokeWidth=1;" edge="1" source="14" target="15" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- OUTPUT: Deploy / PR                                       -->
+        <!-- ======================================================== -->
+        <mxCell id="40" value="Deploy / PR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="2495" y="72" width="110" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="42" value="" style="endArrow=block;endFill=1;strokeColor=#555555;strokeWidth=2;" edge="1" parent="1" source="6" target="40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- FLECHAS ENTRE BLOQUES                                     -->
+        <!-- ======================================================== -->
+        <mxCell id="28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=3;strokeColor=#333333;" edge="1" source="3" target="4" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=3;strokeColor=#333333;" edge="1" source="4" target="5" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=3;strokeColor=#333333;" edge="1" source="5" target="6" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- ARTEFACTOS — fila inferior                                -->
+        <!-- ======================================================== -->
+        <mxCell id="90" value="Artefactos generados" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=3;fontColor=#555555;align=left;" vertex="1" parent="1">
+          <mxGeometry x="20" y="490" width="160" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Artefactos DESIGN / DISCOVERY -->
+        <mxCell id="108" value="&lt;b&gt;spec.yaml enriquecido&lt;/b&gt;&lt;br&gt;tabla_canonica · particion&lt;br&gt;volumetria · campos_join_clave&lt;br&gt;glosario_status · glosario_path" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="145" y="510" width="190" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="109" value="&lt;b&gt;data/standard/business_glossary/&lt;/b&gt;&lt;br&gt;{tabla}.md (nuevo si no existía)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="145" y="572" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="80" value="&lt;b&gt;docs/architecture/&lt;/b&gt;&lt;br&gt;context · data-flow · component&lt;br&gt;sequence · pipeline · deployment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f4ff;strokeColor=#6c8ebf;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="355" y="510" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="81" value="&lt;b&gt;DDL · SP · components.py&lt;/b&gt;&lt;br&gt;pipeline_inference.py · notebook/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f4ff;strokeColor=#6c8ebf;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="355" y="568" width="190" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Artefactos BUILD -->
+        <mxCell id="82" value="&lt;b&gt;components.py · pipeline_inference.py&lt;/b&gt;&lt;br&gt;notebook/ · requirements.txt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8ffe8;strokeColor=#82b366;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="585" y="510" width="190" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="83" value="&lt;b&gt;data/bigquery/dml/&lt;/b&gt;&lt;br&gt;dq_config inserts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8ffe8;strokeColor=#82b366;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="795" y="510" width="190" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="84" value="&lt;b&gt;pipeline/workflow/&lt;/b&gt;&lt;br&gt;wf-*.yaml · cs-*.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8ffe8;strokeColor=#82b366;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="995" y="510" width="190" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="92" value="&lt;b&gt;deploy_config_*.yaml&lt;/b&gt;&lt;br&gt;deploy_dev/prd.json&lt;br&gt;env_dev/prd.json · bucket.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8ffe8;strokeColor=#82b366;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1205" y="510" width="190" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- Artefactos VERIFY -->
+        <mxCell id="85" value="&lt;b&gt;/rules-check report&lt;/b&gt;&lt;br&gt;bigquery · security · workflow&lt;br&gt;dataops · general" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#d79b00;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1425" y="510" width="190" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="86" value="&lt;b&gt;T1–T5 report&lt;/b&gt;&lt;br&gt;pipeline dev · métricas&lt;br&gt;vs umbral_aceptacion" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#d79b00;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1635" y="510" width="190" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- Artefactos RELEASE -->
+        <mxCell id="87" value="&lt;b&gt;infra/iam/{modulo}/setup-iam-{env}.sh&lt;/b&gt;&lt;br&gt;SAs creadas · roles IAM asignados" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0e6ff;strokeColor=#9673a6;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1855" y="510" width="190" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="88" value="&lt;b&gt;Permisos SA verificados&lt;/b&gt;&lt;br&gt;dataViewer · dataEditor · objectAdmin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0e6ff;strokeColor=#9673a6;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="2065" y="510" width="190" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="89" value="&lt;b&gt;README.md&lt;/b&gt;&lt;br&gt;data/standard/business_glossary/{tabla}.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0e6ff;strokeColor=#9673a6;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="2275" y="510" width="190" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- LEYENDA -->
+        <!-- ======================================================== -->
+        <mxCell id="50" value="Leyenda" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="20" y="640" width="120" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="110" value="DISCOVERY (sub-etapa de DESIGN)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="20" y="665" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="51" value="Skill activo (BUILD)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="235" y="665" width="155" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="52" value="Skill / checklist (pendiente)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f0ff;strokeColor=#9673a6;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="405" y="665" width="190" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="53" value="data/rules/ (reglas de referencia)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#d6b656;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="610" y="665" width="220" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="54" value="Skill de diseño / diagrams" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f4ff;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="845" y="665" width="190" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="72" value="&lt;b&gt;Types soportados:&lt;/b&gt;  vertex_ml  ·  bq_pipeline  ·  cloud_run_api  ·  cloud_function" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="20" y="700" width="700" height="28" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

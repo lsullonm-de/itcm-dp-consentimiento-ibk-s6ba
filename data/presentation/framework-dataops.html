@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Framework DataOps ITC</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" />
+  <style>
+    /* ── ITC Custom Theme ── */
+    .reveal { font-family: 'Segoe UI', 'Google Sans', Arial, sans-serif; }
+    .reveal h1 { font-size: 1.9em; color: #64b5f6; }
+    .reveal h2 { font-size: 1.3em; color: #e0e0e0; border-bottom: 2px solid #1a73e8; padding-bottom: 8px; margin-bottom: 18px; }
+    .reveal p, .reveal li { color: #cfd8dc; }
+    .reveal code { background: rgba(26,115,232,0.2); border-radius: 4px; padding: 2px 6px; color: #80cbc4; font-size: 0.9em; }
+    .reveal pre { margin: 0; box-shadow: none; width: 100%; }
+    .reveal section { text-align: left; }
+
+    /* Cover / Section separator */
+    .cover-slide { text-align: center !important; }
+    .section-sep { text-align: center !important; background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 100%); }
+
+    /* Chips / Tags */
+    .chip {
+      display: inline-block; background: rgba(26,115,232,0.25);
+      border: 1px solid #1a73e8; border-radius: 14px;
+      padding: 4px 14px; font-size: 0.58em; color: #90caf9; margin: 3px;
+    }
+    .chip.green  { background: rgba(52,168,83,0.2);  border-color: #34a853; color: #81c784; }
+    .chip.yellow { background: rgba(251,188,4,0.2);  border-color: #fbbc04; color: #fff176; }
+    .chip.red    { background: rgba(234,67,53,0.2);  border-color: #ea4335; color: #ef9a9a; }
+    .chip.purple { background: rgba(142,36,170,0.2); border-color: #8e24aa; color: #ce93d8; }
+
+    /* Layout helpers */
+    .flex-row { display: flex; gap: 16px; }
+    .flex-col { display: flex; flex-direction: column; gap: 10px; }
+    .flex-center { justify-content: center; align-items: center; }
+
+    /* Content boxes */
+    .box {
+      border-radius: 8px; padding: 14px 16px;
+      background: rgba(26,115,232,0.1); border: 1px solid rgba(26,115,232,0.4);
+    }
+    .box.green  { background: rgba(52,168,83,0.1);  border-color: rgba(52,168,83,0.5); }
+    .box.yellow { background: rgba(251,188,4,0.1);  border-color: rgba(251,188,4,0.5); }
+    .box.purple { background: rgba(142,36,170,0.1); border-color: rgba(142,36,170,0.5); }
+    .box.dark   { background: rgba(0,0,0,0.3);      border-color: rgba(255,255,255,0.1); }
+    .box-title  { font-size: 0.7em; font-weight: 700; margin-bottom: 8px; }
+
+    /* Code block */
+    .code-block {
+      background: #0d1117; border-radius: 8px; padding: 14px 16px;
+      border-left: 4px solid #1a73e8; font-family: 'Courier New', monospace;
+      font-size: 0.52em; line-height: 1.6; color: #cfd8dc; white-space: pre;
+    }
+    .code-block .c  { color: #546e7a; }  /* comment */
+    .code-block .k  { color: #64b5f6; }  /* key */
+    .code-block .v  { color: #a5d6a7; }  /* value */
+    .code-block .h  { color: #fbbc04; }  /* highlight */
+
+    /* Step badge */
+    .step {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #1a73e8; color: #fff; border-radius: 50%;
+      width: 26px; height: 26px; font-size: 0.75em; font-weight: 700;
+      flex-shrink: 0; margin-right: 10px;
+    }
+    .step-row { display: flex; align-items: flex-start; margin-bottom: 12px; font-size: 0.7em; }
+
+    /* Mermaid */
+    .mermaid { background: transparent !important; margin: 0 auto; }
+    .mermaid svg { max-height: 400px; }
+
+    /* Table */
+    .reveal table { font-size: 0.6em; width: 100%; border-collapse: collapse; }
+    .reveal table th { background: rgba(26,115,232,0.3); color: #90caf9; padding: 8px 12px; }
+    .reveal table td { padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .reveal table tr:hover td { background: rgba(26,115,232,0.08); }
+
+    /* Pillar cards */
+    .pillar {
+      flex: 1; text-align: center; border-radius: 10px; padding: 18px 12px;
+      background: rgba(26,115,232,0.1); border: 1px solid rgba(26,115,232,0.4);
+    }
+    .pillar .icon { font-size: 1.8em; margin-bottom: 8px; }
+    .pillar strong { font-size: 0.75em; color: #e0e0e0; }
+    .pillar p { font-size: 0.6em; color: #90caf9; margin-top: 6px; }
+
+    /* Service grid */
+    .svc-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .svc { border-radius: 8px; padding: 12px 16px; font-size: 0.62em; text-align: center;
+           background: rgba(26,115,232,0.12); border: 1px solid rgba(26,115,232,0.4);
+           min-width: 130px; }
+    .svc .svc-icon { font-size: 1.4em; display: block; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 1: COVER
+══════════════════════════════════════════════════════════════════ -->
+<section class="cover-slide" style="text-align:center;">
+  <br>
+  <div style="font-size:0.6em; color:#546e7a; letter-spacing:3px; text-transform:uppercase;">ITC — Data Platform</div>
+  <br>
+  <h1 style="font-size:2.1em; color:#64b5f6; font-weight:700; line-height:1.1;">
+    Framework DataOps
+  </h1>
+  <h2 style="font-size:0.95em; color:#90caf9; font-weight:300; border:none; padding:0; margin:10px 0 30px;">
+    Despliegue Automatizado de Componentes de Datos en GCP
+  </h2>
+  <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:6px; margin:20px 0;">
+    <span class="chip">BigQuery</span>
+    <span class="chip">Cloud Workflows</span>
+    <span class="chip">Vertex AI</span>
+    <span class="chip">Cloud Run</span>
+    <span class="chip">Cloud Build</span>
+    <span class="chip">Cloud Scheduler</span>
+  </div>
+  <br>
+  <div style="font-size:0.55em; color:#37474f;">Lima, 2024</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 2: AGENDA
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>¿Qué veremos?</h2>
+  <div style="max-width: 680px;">
+    <div class="step-row"><span class="step">1</span><div><strong>Alcance del Framework</strong> — qué parte del ciclo de desarrollo cubre</div></div>
+    <div class="step-row"><span class="step">2</span><div><strong>Objetivo y Pilares</strong> — qué queremos lograr y cómo</div></div>
+    <div class="step-row"><span class="step">3</span><div><strong>Requisitos</strong> — repositorio, Cloud Build y responsabilidades</div></div>
+    <div class="step-row"><span class="step">4</span><div><strong>Arquitectura del Framework</strong> — arquetipo de proyecto, YAML, variables</div></div>
+    <div class="step-row"><span class="step">5</span><div><strong>Servicios Soportados</strong> — componentes y orden de ejecución</div></div>
+    <div class="step-row"><span class="step">6</span><div><strong>Flujo de Despliegue</strong> — de código a producción</div></div>
+    <div class="step-row"><span class="step">7</span><div><strong>Framework XOps — MLOps</strong> — extensión para Vertex AI pipelines</div></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 3: ALCANCE
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Alcance del Framework</h2>
+  <p style="font-size:0.65em; color:#90caf9; margin-bottom:20px;">
+    El framework actúa en la etapa de <strong style="color:#fbbc04;">Despliegue</strong> dentro del ciclo completo de desarrollo de datos.
+  </p>
+  <div class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1a3a5c','primaryTextColor':'#e0e0e0','primaryBorderColor':'#546e7a','lineColor':'#546e7a','edgeLabelBackground':'#0d1117','clusterBkg':'#0d1b2a','clusterBorder':'#1a73e8'}}}%%
+flowchart LR
+    A(["💡 Ideación"]) --> B(["🔍 Análisis"])
+    B --> C(["🎨 Diseño"])
+    C --> D(["🔧 Construcción"])
+    D --> E
+    E --> F(["📊 Monitoreo"])
+
+    subgraph E ["🚀  Despliegue  —  Alcance DataOps"]
+      direction LR
+      d1["dev"] --> d2["qa"] --> d3["prd"]
+    end
+
+    style A   fill:#1a2a3a,stroke:#546e7a,color:#90caf9
+    style B   fill:#1a2a3a,stroke:#546e7a,color:#90caf9
+    style C   fill:#1a2a3a,stroke:#546e7a,color:#90caf9
+    style D   fill:#1a2a3a,stroke:#546e7a,color:#90caf9
+    style F   fill:#1a2a3a,stroke:#546e7a,color:#90caf9
+    style d1  fill:#1b4332,stroke:#34a853,color:#a5d6a7
+    style d2  fill:#3d2c00,stroke:#fbbc04,color:#fff176
+    style d3  fill:#3b0f0a,stroke:#ea4335,color:#ef9a9a
+    style E   fill:#0d1b2a,stroke:#1a73e8,color:#64b5f6
+  </div>
+  <br>
+  <div class="box yellow" style="font-size:0.6em;">
+    <strong>¿Qué cubre el framework?</strong> Automatizar el paso de artefactos de datos desde un repositorio Git
+    hacia los ambientes dev, qa y prd en GCP — sin scripts manuales ni procedimientos ad-hoc.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 4: OBJETIVO
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>¿Qué queremos lograr?</h2>
+  <p style="font-size:0.65em; color:#90caf9; margin-bottom:18px;">
+    Sincronizar los equipos de Desarrollo y Operación en despliegues a producción, a través de 3 pilares.
+  </p>
+  <div class="flex-row">
+    <div class="pillar">
+      <div class="icon">🗄️</div>
+      <strong>Repositorios</strong>
+      <p>Versionamiento y control de código como fuente de verdad de todo despliegue</p>
+    </div>
+    <div class="pillar">
+      <div class="icon">⚙️</div>
+      <strong>CI/CD Engine</strong>
+      <p>Despliegue automatizado con Cloud Build — sin intervención manual en prd</p>
+    </div>
+    <div class="pillar">
+      <div class="icon">🤝</div>
+      <strong>Equipos Sincronizados</strong>
+      <p>Dev y Ops trabajan sobre el mismo artefacto ya validado en ambientes previos</p>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:18px;">
+    <span class="chip green">Autogestión</span>
+    <span class="chip">Automatización</span>
+    <span class="chip purple">Colaboración</span>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 5: REQUISITOS — SECTION
+══════════════════════════════════════════════════════════════════ -->
+<section class="section-sep" style="text-align:center;">
+  <br><br>
+  <h1>Requisitos</h1>
+  <p style="color:#78909c; font-size:0.75em;">Lo necesario para adoptar el Framework DataOps</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 6: REQUISITOS DETALLE
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Requisitos del Framework</h2>
+  <div class="flex-row" style="font-size:0.65em; align-items:flex-start;">
+    <div class="box" style="flex:1;">
+      <div class="box-title" style="color:#64b5f6;">🗄️ Repositorio</div>
+      <p>Servicio de versionamiento de código:</p>
+      <ul>
+        <li>GitLab / GitHub / Azure Repos</li>
+        <li>Manejo básico de Git</li>
+        <li>Rama de certificación (<code>dev</code>) y producción (<code>prd</code>)</li>
+      </ul>
+    </div>
+    <div class="box" style="flex:1;">
+      <div class="box-title" style="color:#64b5f6;">⚙️ Configuración Cloud Build</div>
+      <p>Por repositorio, se configuran:</p>
+      <ul>
+        <li>Trigger <code>dev/qa</code> — para certificación</li>
+        <li>Trigger <code>prd</code> — para producción</li>
+        <li>Service Account con permisos de despliegue</li>
+        <li>Variables <code>_DATAOPS_VARIABLES</code> en cada trigger</li>
+      </ul>
+    </div>
+    <div class="box" style="flex:1;">
+      <div class="box-title" style="color:#64b5f6;">👥 Responsabilidades</div>
+      <p><strong>Data / ML Engineer</strong></p>
+      <ul>
+        <li>Configura el repositorio</li>
+        <li>Ejecuta y valida el despliegue en dev/qa (Build Id)</li>
+      </ul>
+      <p style="margin-top:8px;"><strong>Cloud Operator</strong></p>
+      <ul>
+        <li>Revisa y valida el Build Id provisto</li>
+        <li>Ejecuta el trigger de producción</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 7: ARQUITECTURA — SECTION
+══════════════════════════════════════════════════════════════════ -->
+<section class="section-sep" style="text-align:center;">
+  <br><br>
+  <h1>Arquitectura<br>del Framework</h1>
+  <p style="color:#78909c; font-size:0.75em;">Arquetipo de proyecto, componentes y sistema de variables</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 8: ESTRUCTURA DEL REPOSITORIO
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Arquetipo de Proyecto — Estructura del Repositorio</h2>
+  <div class="flex-row" style="align-items:flex-start; gap:20px;">
+    <div class="code-block" style="flex:1.1;">
+[repositorio]/
+├── deploy/
+│   ├── deploy_dev.json   <span class="c">← qué se despliega en dev</span>
+│   ├── deploy_qa.json
+│   └── deploy_prd.json   <span class="c">← qué se despliega en prd</span>
+│
+├── <span class="h">data/bigquery/</span>        <span class="c">← scripts SQL (sin YAML)</span>
+│   ├── ddl/              <span class="c">← CREATE TABLE / VIEW</span>
+│   │   └── [categoria]/
+│   ├── sp/               <span class="c">← STORED PROCEDURES</span>
+│   │   └── [categoria]/
+│   └── dml/              <span class="c">← CALL / INSERT (solo dev)</span>
+│
+├── image/                <span class="c">← Docker image YAMLs</span>
+├── service/
+│   ├── cloud_run/
+│   ├── cloud_function/
+│   ├── vertex/           <span class="c">← ML Pipelines</span>
+│   └── pubsub/
+└── pipeline/
+    └── workflow/         <span class="c">← Cloud Workflows</span>
+    </div>
+    <div class="flex-col" style="flex:1; font-size:0.62em;">
+      <div class="box yellow">
+        <div class="box-title" style="color:#fbbc04;">deploy_[env].json</div>
+        Lista declarativa de artefactos a desplegar por ambiente.<br>
+        El framework respeta el <strong>orden de ejecución</strong> automáticamente.
+      </div>
+      <div class="box green">
+        <div class="box-title" style="color:#81c784;">data/bigquery/</div>
+        Scripts SQL puros — DDL, SP y DML. No necesitan YAML de configuración.
+        El framework los ejecuta directamente en BigQuery.
+      </div>
+      <div class="box">
+        <div class="box-title" style="color:#64b5f6;">service/ y pipeline/</div>
+        Cada componente tiene su <code>deploy_config.yaml</code> con flags de configuración
+        y variables de entorno (<code>env_vars</code>).
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 9: ARQUETIPO DE COMPONENTES — YAML
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Arquetipo de Componentes — YAML</h2>
+  <p style="font-size:0.63em; color:#90caf9; margin-bottom:14px;">
+    Todo componente (excepto SQL) se configura mediante un <code>deploy_config.yaml</code> con 2 bloques.
+  </p>
+  <div class="flex-row" style="align-items:flex-start;">
+    <div style="flex:1;">
+      <div style="font-size:0.6em; color:#64b5f6; margin-bottom:6px; font-weight:700;">Bloque 1 — Configuración de despliegue</div>
+      <div class="code-block">
+<span class="c"># Flags del componente</span>
+<span class="k">project:</span>         <span class="v">${env}-itc-customer-services</span>
+<span class="k">region:</span>          <span class="v">us-central1</span>
+<span class="k">name:</span>            <span class="v">${env}-mi-servicio</span>
+<span class="k">service_account:</span> <span class="v">${env}-sa@${env}-itc-cs.iam...</span>
+<span class="k">image:</span>           <span class="v">us-central1-docker.pkg.dev/...</span>
+<span class="k">min_instances:</span>   <span class="v">0</span>
+<span class="k">max_instances:</span>   <span class="v">3</span>
+      </div>
+    </div>
+    <div style="flex:1;">
+      <div style="font-size:0.6em; color:#34a853; margin-bottom:6px; font-weight:700;">Bloque 2 — Variables de entorno</div>
+      <div class="code-block" style="border-left-color:#34a853;">
+<span class="k">env_vars:</span>
+  <span class="c"># 1. Variables de ambiente</span>
+  <span class="k">ENV:</span>              <span class="v">${env}</span>
+  <span class="k">PIPELINE_DISPLAY_NAME:</span> <span class="v">${env}-proceso</span>
+
+  <span class="c"># 2. Tablas BigQuery input</span>
+  <span class="k">PROJECT_INPUT:</span>    <span class="v">${project_mi_tabla}</span>
+  <span class="k">DATASET_INPUT:</span>    <span class="v">${dataset_mi_tabla}</span>
+  <span class="k">TABLE_INPUT:</span>      <span class="v">${table_mi_tabla}</span>
+
+  <span class="c"># 3. Datasets de trabajo</span>
+  <span class="k">PROJECT_OUT:</span>      <span class="v">${project_analytics}</span>
+  <span class="k">DATASET_STAGE:</span>    <span class="v">${dataset_stage}</span>
+  <span class="k">DATASET_OUT:</span>      <span class="v">${dataset_analytics}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 10: SISTEMA DE VARIABLES
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Sistema de Variables</h2>
+  <p style="font-size:0.63em; color:#90caf9; margin-bottom:16px;">
+    Tres tipos de variables disponibles en todos los YAMLs — nunca se hardcodean proyectos, datasets ni tablas.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Sintaxis</th>
+        <th>Origen</th>
+        <th>Cuándo se resuelve</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code style="color:#fbbc04;">${env}</code></td>
+        <td><code>env_[env].json</code> del framework — reemplazo estático por ambiente</td>
+        <td>Antes de cada step</td>
+      </tr>
+      <tr>
+        <td><code style="color:#64b5f6;">${VARIABLE}</code></td>
+        <td><code>_DATAOPS_VARIABLES</code> del trigger Cloud Build — config del proyecto</td>
+        <td>Antes de cada step</td>
+      </tr>
+      <tr>
+        <td><code style="color:#a5d6a7;">${DATAOPS_VARIABLE}</code></td>
+        <td><code>dataops_variable_value.txt</code> — outputs de steps anteriores</td>
+        <td>En tiempo de ejecución</td>
+      </tr>
+    </tbody>
+  </table>
+  <br>
+  <div class="mermaid" style="font-size:0.85em;">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#0d2b4e','primaryTextColor':'#e0e0e0','primaryBorderColor':'#1a73e8','lineColor':'#1a73e8','edgeLabelBackground':'#0d1117'}}}%%
+flowchart LR
+    T["Trigger\nCloud Build\n_DATAOPS_VARIABLES"] -->|"${project_mi_tabla}\n${dataset_mi_tabla}\n${table_mi_tabla}"| Y["deploy_config.yaml"]
+    Y -->|"${env}"| GCP["GCP\n(BigQuery, Cloud Run\nVertex AI...)"]
+    style T  fill:#0d2b4e,stroke:#1a73e8,color:#64b5f6
+    style Y  fill:#1a3a5c,stroke:#1a73e8,color:#e0e0e0
+    style GCP fill:#0d1b2a,stroke:#34a853,color:#a5d6a7
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 11: CONVENCIONES BIGQUERY
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Convenciones BigQuery — Proyectos, Datasets y Tablas</h2>
+  <p style="font-size:0.63em; color:#90caf9; margin-bottom:14px;">
+    Toda referencia a un objeto BigQuery va en variables — <strong>nunca hardcodeada</strong>.
+  </p>
+  <div class="flex-row" style="align-items:flex-start; gap:20px;">
+    <div style="flex:1.2;">
+      <div class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#0d2b4e','primaryTextColor':'#e0e0e0','primaryBorderColor':'#1a73e8','lineColor':'#546e7a'}}}%%
+flowchart TD
+    subgraph IN ["Tablas Input  (una variable por tabla)"]
+      direction LR
+      PI["project_[tabla]"] --- DI["dataset_[tabla]"] --- TI["table_[tabla]"]
+    end
+
+    subgraph WK ["Datasets de Trabajo"]
+      direction LR
+      WK1["project_analytics\ndataset_stage\n(temporal)"]
+      WK2["project_analytics\ndataset_sp\n(stored procs)"]
+      WK3["project_analytics\ndataset_analytics\n(output final)"]
+    end
+
+    IN --> WK
+
+    style IN  fill:#0d1b2a,stroke:#1a73e8,color:#64b5f6
+    style WK  fill:#0d1b2a,stroke:#34a853,color:#81c784
+    style WK1 fill:#0d2b1a,stroke:#34a853,color:#a5d6a7
+    style WK2 fill:#0d2b1a,stroke:#34a853,color:#a5d6a7
+    style WK3 fill:#0d2b1a,stroke:#34a853,color:#a5d6a7
+      </div>
+    </div>
+    <div style="flex:1; font-size:0.6em;">
+      <div class="box" style="margin-bottom:10px;">
+        <div class="box-title" style="color:#64b5f6;">Patrón de referencia completo</div>
+        <code>${project_X}.${dataset_X}.${table_X}</code>
+      </div>
+      <div class="code-block" style="font-size:0.95em;">
+<span class="c"># _DATAOPS_VARIABLES (trigger Cloud Build)</span>
+
+<span class="c">## Input — una entrada por tabla</span>
+<span class="k">project_ba_itc_attr_digital:</span>  <span class="v">dev-project-bq</span>
+<span class="k">dataset_ba_itc_attr_digital:</span>  <span class="v">ba_itc_customer</span>
+<span class="k">table_ba_itc_attr_digital:</span>    <span class="v">ba_itc_attr_digital</span>
+
+<span class="c">## Output / Trabajo</span>
+<span class="k">project_analytics:</span>  <span class="v">dev-itc-customer-services</span>
+<span class="k">dataset_stage:</span>      <span class="v">stage_tmp</span>
+<span class="k">dataset_sp:</span>         <span class="v">stored_procedures</span>
+<span class="k">dataset_analytics:</span>  <span class="v">analytics</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 12: BUENAS PRACTICAS SP
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Buenas Prácticas — Stored Procedures Parametrizados</h2>
+  <p style="font-size:0.63em; color:#90caf9; margin-bottom:12px;">
+    Un SP que funciona en dev debe funcionar igual en prd — solo cambiando los parámetros.
+  </p>
+  <div class="flex-row" style="align-items:flex-start;">
+    <div style="flex:1; font-size:0.62em;">
+      <div class="box green" style="margin-bottom:10px;">
+        <div class="box-title" style="color:#81c784;">✅ Premisas</div>
+        <ul style="margin:6px 0 0;">
+          <li>Toda referencia a tabla va <strong>parametrizada</strong> (proyecto, dataset, nombre)</li>
+          <li>Se construyen <strong>queries dinámicos</strong> con <code>FORMAT()</code> + <code>EXECUTE IMMEDIATE</code></li>
+          <li>El SP es portátil entre ambientes sin modificar el código</li>
+        </ul>
+      </div>
+      <div class="box">
+        <div class="box-title" style="color:#64b5f6;">Orquestación recomendada</div>
+        <ul style="margin:6px 0 0;">
+          <li>Cloud Workflows como orquestador principal</li>
+          <li>Ejecución de SPs y servicios vía API (impersonando SA)</li>
+          <li>Manejo de errores y notificaciones Pub/Sub integrado</li>
+        </ul>
+      </div>
+    </div>
+    <div class="code-block" style="flex:1.3;">
+<span class="c">-- Definición del SP</span>
+<span class="k">CREATE OR REPLACE PROCEDURE</span>
+  <span class="v">`${project_analytics}.${dataset_sp}.sp_proceso`</span>
+(
+  <span class="k">IN</span> p_project_in  <span class="k">STRING</span>,
+  <span class="k">IN</span> p_dataset_in  <span class="k">STRING</span>,
+  <span class="k">IN</span> p_table_in    <span class="k">STRING</span>,
+  <span class="k">IN</span> p_project_out <span class="k">STRING</span>,
+  <span class="k">IN</span> p_dataset_out <span class="k">STRING</span>
+)
+<span class="k">BEGIN</span>
+  <span class="k">DECLARE</span> sql <span class="k">STRING</span>;
+
+  <span class="k">SET</span> sql = FORMAT(<span class="v">"""
+    INSERT INTO `%s.%s.resultado`
+    SELECT * FROM `%s.%s.%s`
+    WHERE fecha = CURRENT_DATE()
+  """</span>,
+    p_project_out, p_dataset_out,
+    p_project_in, p_dataset_in, p_table_in
+  );
+
+  <span class="k">EXECUTE IMMEDIATE</span> sql;
+<span class="k">END</span>;
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 13: SERVICIOS SOPORTADOS
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Servicios Soportados</h2>
+  <p style="font-size:0.63em; color:#90caf9; margin-bottom:16px;">
+    El framework puede desplegar automáticamente los siguientes componentes de la plataforma GCP.
+  </p>
+  <div class="svc-grid">
+    <div class="svc"><span class="svc-icon">🗄️</span>BigQuery DDL</div>
+    <div class="svc"><span class="svc-icon">📦</span>BigQuery SP</div>
+    <div class="svc"><span class="svc-icon">✏️</span>BigQuery DML</div>
+    <div class="svc"><span class="svc-icon">🐳</span>Docker Image</div>
+    <div class="svc"><span class="svc-icon">☁️</span>Cloud Run</div>
+    <div class="svc"><span class="svc-icon">⚡</span>Cloud Function</div>
+    <div class="svc"><span class="svc-icon">🔄</span>Cloud Workflows</div>
+    <div class="svc"><span class="svc-icon">🤖</span>Vertex AI Pipeline</div>
+    <div class="svc"><span class="svc-icon">📨</span>Pub/Sub</div>
+    <div class="svc"><span class="svc-icon">⏰</span>Cloud Scheduler</div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 14: ORDEN DE EJECUCIÓN
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Orden de Ejecución en Cloud Build</h2>
+  <p style="font-size:0.63em; color:#90caf9; margin-bottom:16px;">
+    El framework garantiza automáticamente el orden correcto — las dependencias se resuelven solas.
+  </p>
+  <div class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1a3a5c','primaryTextColor':'#e0e0e0','primaryBorderColor':'#1a73e8','lineColor':'#546e7a','edgeLabelBackground':'#0d1117'}}}%%
+flowchart LR
+    DDL["🗄️ DDL"]    --> SP["📦 SP"]
+    SP              --> IMG["🐳 Image"]
+    IMG             --> CR["☁️ Cloud\nRun"]
+    CR              --> VP["🤖 Vertex\nPipeline"]
+    VP              --> CF["⚡ Cloud\nFunction"]
+    CF              --> PS["📨 Pub/Sub"]
+    PS              --> WF["🔄 Workflow"]
+    WF              --> CS["⏰ Scheduler"]
+
+    style DDL fill:#1b3a1b,stroke:#34a853,color:#a5d6a7
+    style SP  fill:#1b3a1b,stroke:#34a853,color:#a5d6a7
+    style IMG fill:#0d2040,stroke:#1a73e8,color:#90caf9
+    style CR  fill:#0d2040,stroke:#1a73e8,color:#90caf9
+    style VP  fill:#2a0d40,stroke:#8e24aa,color:#ce93d8
+    style CF  fill:#0d2040,stroke:#1a73e8,color:#90caf9
+    style PS  fill:#3b0f0a,stroke:#ea4335,color:#ef9a9a
+    style WF  fill:#3d2c00,stroke:#fbbc04,color:#fff176
+    style CS  fill:#3d2c00,stroke:#fbbc04,color:#fff176
+  </div>
+  <br>
+  <div style="font-size:0.58em; color:#546e7a; text-align:center;">
+    DDL primero asegura que las tablas existan antes de que los SPs y los servicios las referencien.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 15: FLUJO DE DESPLIEGUE — SECTION
+══════════════════════════════════════════════════════════════════ -->
+<section class="section-sep" style="text-align:center;">
+  <br><br>
+  <h1>Flujo de Despliegue</h1>
+  <p style="color:#78909c; font-size:0.75em;">De código a producción, paso a paso</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 16: FLUJO COMPLETO
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Flujo Completo de Despliegue</h2>
+  <div class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1a3a5c','primaryTextColor':'#e0e0e0','primaryBorderColor':'#1a73e8','lineColor':'#546e7a','edgeLabelBackground':'#0d1117','clusterBkg':'#0d1117','clusterBorder':'#37474f'}}}%%
+flowchart LR
+    subgraph DEV ["👨‍💻 Desarrollo"]
+      W1["Dev 1"]
+      W2["Dev 2"]
+    end
+
+    subgraph REPO ["📁 Repositorio GIT"]
+      direction TB
+      BR_DEV["rama dev/qa"]
+      BR_PRD["rama prd"]
+    end
+
+    subgraph CERT ["🔶 Certificación"]
+      CB_CERT["Cloud Build\nTrigger dev"]
+      BUILD_ID["Build Id ✓"]
+    end
+
+    subgraph PRD_FLOW ["🔴 Producción"]
+      OPS["☑️ Cloud Operator\nvalida Build Id"]
+      CB_PRD["Cloud Build\nTrigger prd"]
+    end
+
+    subgraph GCP ["☁️ GCP"]
+      D["dev / qa"]
+      P["prd"]
+    end
+
+    W1 -->|push| BR_DEV
+    W2 -->|push| BR_DEV
+    BR_DEV -->|trigger automático| CB_CERT
+    CB_CERT --> D
+    CB_CERT --> BUILD_ID
+    BUILD_ID -->|"informa Build Id"| OPS
+    BR_PRD -->|trigger manual| CB_PRD
+    OPS -->|aprueba y ejecuta| CB_PRD
+    CB_PRD --> P
+
+    style REPO  fill:#0d1117,stroke:#37474f
+    style CERT  fill:#0d1117,stroke:#fbbc04
+    style PRD_FLOW fill:#0d1117,stroke:#ea4335
+    style GCP   fill:#0d1117,stroke:#34a853
+    style D     fill:#1b3a1b,stroke:#34a853,color:#a5d6a7
+    style P     fill:#3b0f0a,stroke:#ea4335,color:#ef9a9a
+    style CB_CERT fill:#1a2040,stroke:#fbbc04,color:#fff176
+    style CB_PRD  fill:#2a0a0a,stroke:#ea4335,color:#ef9a9a
+    style OPS   fill:#1a2a1a,stroke:#34a853,color:#a5d6a7
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 17: XOPS / MLOps — SECTION
+══════════════════════════════════════════════════════════════════ -->
+<section class="section-sep" style="text-align:center;">
+  <br><br>
+  <h1>Framework XOps</h1>
+  <h2 style="border:none; color:#90caf9; font-weight:300;">Extensión MLOps — Vertex AI Pipelines</h2>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 18: MLOps CONCEPTO
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Framework XOps — MLOps</h2>
+  <p style="font-size:0.63em; color:#90caf9; margin-bottom:16px;">
+    El mismo framework DataOps se extiende para desplegar pipelines de Machine Learning en Vertex AI.
+  </p>
+  <div class="flex-row">
+    <div class="pillar" style="border-color: rgba(142,36,170,0.4); background: rgba(142,36,170,0.08);">
+      <div class="icon">📓</div>
+      <strong>Flujo ML conservado</strong>
+      <p>Los ML Engineers siguen desarrollando en Jupyter Notebooks sin cambiar su forma de trabajo</p>
+    </div>
+    <div class="pillar" style="border-color: rgba(142,36,170,0.4); background: rgba(142,36,170,0.08);">
+      <div class="icon">🔄</div>
+      <strong>Compilación automática</strong>
+      <p>El framework interpreta los notebooks y compila los artefactos del pipeline Vertex AI (KFP)</p>
+    </div>
+    <div class="pillar" style="border-color: rgba(142,36,170,0.4); background: rgba(142,36,170,0.08);">
+      <div class="icon">🗄️</div>
+      <strong>BigQuery integrado</strong>
+      <p>Los DDL y SPs del modelo se despliegan por el mismo framework en el mismo flujo CI/CD</p>
+    </div>
+  </div>
+  <br>
+  <div style="text-align:center;">
+    <span class="chip purple">vertex_pipeline</span>
+    <span class="chip">KFP Components</span>
+    <span class="chip purple">deploy_config_train.yaml</span>
+    <span class="chip purple">deploy_config_inference.yaml</span>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 19: MLOps FLUJO DIAGRAMA
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Flujo MLOps — Vertex AI Pipeline</h2>
+  <div class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1a0d2e','primaryTextColor':'#e0e0e0','primaryBorderColor':'#8e24aa','lineColor':'#546e7a','clusterBkg':'#0d1117','clusterBorder':'#37474f'}}}%%
+flowchart LR
+    subgraph REPO ["📁 Repositorio — service/vertex/mi-modelo/"]
+      NB["📓 notebook/\npipeline-train.ipynb\npipeline-inference.ipynb"]
+      YAML2["⚙️ deploy_config_train.yaml\ndeploy_config_inference.yaml"]
+      SQL2["🗄️ data/bigquery/\nddl/ · sp/"]
+    end
+
+    subgraph CB2 ["☁️ Cloud Build — XOps Framework"]
+      COMP["📦 Compila notebook → .py\nGenera JSON del pipeline"]
+      DEPBQ["🗄️ Despliega DDL y SP\nen BigQuery"]
+    end
+
+    subgraph VA ["🤖 Vertex AI"]
+      TR["Pipeline Train\n(KFP)"]
+      INF["Pipeline Inference\n(KFP)"]
+    end
+
+    NB   --> COMP
+    YAML2 --> COMP
+    SQL2 --> DEPBQ
+    COMP --> TR
+    COMP --> INF
+    DEPBQ --> TR
+
+    style REPO fill:#0d1117,stroke:#37474f
+    style CB2  fill:#0d1b2a,stroke:#1a73e8
+    style VA   fill:#1a0d2e,stroke:#8e24aa
+    style TR   fill:#2a1040,stroke:#8e24aa,color:#ce93d8
+    style INF  fill:#2a1040,stroke:#8e24aa,color:#ce93d8
+    style COMP fill:#0d2040,stroke:#1a73e8,color:#90caf9
+    style DEPBQ fill:#0d2040,stroke:#34a853,color:#a5d6a7
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 20: MLOps ENV_VARS
+══════════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Variables en Vertex AI — deploy_config.yaml</h2>
+  <p style="font-size:0.63em; color:#90caf9; margin-bottom:12px;">
+    Las <code>env_vars</code> del pipeline se organizan en 4 bloques con convenciones estrictas de tipado.
+  </p>
+  <div class="flex-row" style="align-items:flex-start; gap:16px;">
+    <div class="code-block" style="flex:1.3; font-size:0.5em;">
+<span class="c"># deploy_config_train.yaml</span>
+<span class="k">project:</span>         <span class="v">${project_analytics}</span>
+<span class="k">service_account:</span> <span class="v">${env}-pipeline-sa@...</span>
+<span class="k">region:</span>          <span class="v">us-central1</span>
+<span class="k">bucket:</span>          <span class="v">gs://${env}-pipeline-bucket</span>
+<span class="k">pipelines:</span>
+  - <span class="v">notebook/pipeline-train.ipynb</span>
+
+<span class="k">env_vars:</span>
+  <span class="c"># ── 1. Framework ─────────────────────</span>
+  <span class="k">ENV:</span>                   <span class="v">${env}</span>
+  <span class="k">PIPELINE_DISPLAY_NAME:</span> <span class="v">${env}-mi-modelo-train</span>
+  <span class="k">PIPELINE_DESCRIPTION:</span>  <span class="v">"Pipeline de entrenamiento"</span>
+  <span class="k">PIPELINE_PATH_ROOT:</span>    <span class="v">mi-modelo/train</span>
+  <span class="k">PIPELINE_BUCKET_PROJECT_PATH:</span> <span class="v">gs://bucket/</span>
+  <span class="k">PIPELINE_BUCKET:</span>       <span class="v">gs://${env}-pipeline-bucket</span>
+
+  <span class="c"># ── 2. Tablas BigQuery input ──────────</span>
+  <span class="k">PROJECT_INPUT:</span>  <span class="v">${project_mi_tabla_input}</span>
+  <span class="k">DATASET_INPUT:</span>  <span class="v">${dataset_mi_tabla_input}</span>
+  <span class="k">TABLE_INPUT:</span>    <span class="v">${table_mi_tabla_input}</span>
+
+  <span class="c"># ── 3. Paths GCS ─────────────────────</span>
+  <span class="k">MODEL_ARTIFACTS:</span> <span class="v">gs://${env}-bucket/artifacts/</span>
+
+  <span class="c"># ── 4. Hiperparámetros y recursos ────</span>
+  <span class="k">LEARNING_RATE:</span>       <span class="h">0.01</span>      <span class="c"># sin comillas → float()</span>
+  <span class="k">N_ESTIMATORS:</span>        <span class="h">100</span>       <span class="c"># sin comillas → int()</span>
+  <span class="k">MACHINE_TYPE:</span>        <span class="v">"n1-standard-4"</span>
+  <span class="k">MACHINE_CPU_LIMIT:</span>   <span class="v">"4"</span>       <span class="c"># siempre string</span>
+  <span class="k">MACHINE_MEMORY_LIMIT:</span><span class="v">"15G"</span>     <span class="c"># siempre string</span>
+    </div>
+    <div style="flex:1; font-size:0.6em;" class="flex-col">
+      <div class="box purple">
+        <div class="box-title" style="color:#ce93d8;">Variables auto-inyectadas</div>
+        No van en <code>env_vars</code> — el framework las inyecta desde los flags top-level:
+        <ul style="margin-top:6px;">
+          <li><code>PIPELINE_PROJECT_ID</code></li>
+          <li><code>PIPELINE_SERVICE_ACCOUNT</code></li>
+          <li><code>PIPELINE_REGION</code></li>
+          <li><code>PIPELINE_COMPILE_FILE</code></li>
+        </ul>
+      </div>
+      <div class="box yellow">
+        <div class="box-title" style="color:#fff176;">Tipado en Python</div>
+        <code>os.getenv()</code> siempre retorna string.<br>
+        Numéricos sin comillas en YAML deben castearse:
+        <br><br>
+        <code>int(os.getenv("N_ESTIMATORS"))</code><br>
+        <code>float(os.getenv("LEARNING_RATE"))</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SLIDE 21: GRACIAS
+══════════════════════════════════════════════════════════════════ -->
+<section class="cover-slide" style="text-align:center;">
+  <br><br><br>
+  <h1 style="color:#64b5f6; font-size:2.5em;">¡Gracias!</h1>
+  <br>
+  <p style="color:#90caf9; font-size:0.9em;">¿Preguntas?<br>Estamos listos para responderlas.</p>
+  <br><br>
+  <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px;">
+    <span class="chip">DataOps</span>
+    <span class="chip">XOps</span>
+    <span class="chip purple">MLOps</span>
+    <span class="chip green">GCP</span>
+    <span class="chip">CI/CD</span>
+  </div>
+  <br>
+  <div style="font-size:0.55em; color:#37474f;">ITC — Equipo de Data Platform &nbsp;·&nbsp; Lima, 2024</div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    flowchart: { curve: 'basis', useMaxWidth: true },
+    securityLevel: 'loose'
+  });
+
+  Reveal.initialize({
+    hash: true,
+    transition: 'slide',
+    transitionSpeed: 'default',
+    backgroundTransition: 'fade',
+    plugins: [RevealNotes],
+    width: 1280,
+    height: 720,
+    margin: 0.06
+  });
+
+  // Render Mermaid after Reveal is ready and on each slide change
+  Reveal.on('ready', () => mermaid.run({ querySelector: '.mermaid' }));
+  Reveal.on('slidechanged', () => mermaid.run({ querySelector: '.mermaid' }));
+</script>
+</body>
+</html>

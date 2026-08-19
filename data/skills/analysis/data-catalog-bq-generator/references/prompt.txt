@@ -1,0 +1,537 @@
+2026-03-10
+I. TABLAS BASE - REPOSITORIO ATRIBUTOS CLIENTES INTERCORP
+=======================================================
+Tablas fuente que alimentan la logica de todos los SPs.
+Organizadas por dominio. Los nombres de dataset/proyecto son parametrizados en la
+mayoria de SPs (se pasan como variables al momento de ejecutar el procedimiento).
+
+REGLAS A CONSIDERAR
+-Tablas que tiene que ver con ventas, transacciones, interacciones, estan particionadas con el campo transaction_date, process_date o payment_date
+-todas las tablas tienen itc_company_id el cual te dice de que empresa de intercorp es. Esta relacion esta en docs\relacion_company_ids.csv
+-Estas tablas son tablas son de un modelo corporativo, cada empresa tiene  una tabla particular pero aqui esta homologado, pero las transacciones son independientes por company_id
+
+OBJETIVO
+El objetivo es tener la documentacion completa y detallada de la tabla para que un analista de información pueda basarse en ello para:
+  -responder preguntas de negocio
+  -crear nuevos atributos 
+  -obtener insigths de la información
+  -realizar perfilamiento de clientes en base a consumos en las diferentes empresas del grupo intercorp y siguiendo algun criterio como 
+  -identificar segmentos/grupos de clientes : ejemplos. clientes con enfermedades cronicas, clientes con dieta sana,  clientes que visitan casinos, etc.
+  -tener nociones tecnicas para realizar queries sobre las tablas: volumetria, campos para join, perfilamiento, dato nulos, en blanco, etc.
+  
+
+Quiero que se realice lo siguiente para la tabla que te indique. 
+
+1. Obten la metadata de la tabla, con esto obtiene el campo de particionado para consultas para el caso de tablas  de eventos/transacciones
+2. Para el caso de tablas de eventos/transacciones, toma como base 3 dias aleatorios de cada mes, de los ultimos 12 meses del año de transacciones y reliza un perfilado de datos para que obtengas metadata y se pueda enriquecer el diccionario de la tabla,
+    Si son catalogos, toma toda la data
+3. Generame un archivo markdown para la tabla que contenga:
+    Glosario de campos: entiende la data y generame el diccionario de los datos considerando que por itc_company_id el contenido de los datos podria variar
+    Descripcion de la tabla: en base al nombre y contenido de la data
+    Metadata de la tabla en bigquery> lo que se obtuvo en el punto 1
+    Reglas de negocio que observes en la data
+    Reglas u observaciones de calidad de datos que encuentres
+    Otros puntos que sean parte de una documentacion detallada para lograr el objetivo
+
+
+=======================================================================
+0. TABLAS DE USUARIO.
+=======================================================================
+Estas tablas estan preconstruidas en esquemas usuarias
+Sus md deben empezar con el prefijo user_[dataset]_[nombre tabla].md
+donde dataset debe ser tomada del dataset donde se ubica la tabla
+
+Maestro de vínculos:
+ `int-advanced-analytics-01.aodarm.m_itc_vinculos_cliente`
+  muestra relacion entre 2 parties: persona_1 y persona_2
+
+Transaccional Cineplanet:
+ `int-advanced-analytics-01.aodarm.tmp_transacciones_totales_cineplanet`
+ el campo id es el party id
+
+Ba segmentación itc:
+ `int-advanced-analytics-01.gmaravi.ba_segmentacion_clientes_itc`
+  Maestro de segmentacion intercorp
+
+=======================================================================
+1. TRANSACCIONES
+=======================================================================
+
+
+t_retail_transaction
+  Dataset : master_transaction
+  Proyecto : intercorp-data-storage-pv
+  Partitioned on field: transaction_date
+  Descripcion: Transacciones de venta retail (SPSA, Promart, Oechsle, Farmacias, etc.)
+  Usado por: sp_load_tmp_ba_itc_attr_retail_*.sql, sp_load_tmp_dv_employee_transaction.sql,
+             sp_load_ba_itc_attr_card_consumption.sql, sp_load_ba_itc_attr_digital.sql,
+             sp_load_ba_itc_attr_entertainment.sql
+
+  Transacciones de las siguientes companias para la fecha 2026-01-30
+  row company_id cantidad_registros
+  1	025	        638169
+  2	048	        493680
+  3	011	        63654
+  4	024	        87119
+  5	010	        3399468
+
+  Relacion de companias (el resto esta en el csv docs\relacion_company_ids.csv):
+  itc_company_id,itc_company_name,itc_company_abrev
+  010,SUPERMERCADOS PERUANOS,spsa
+  025,INKAFARMA,inkf
+  048,MIFARMA,mfarm
+  024,PROMART,pmart
+  015,REAL PLAZA,rpla
+  011,TIENDAS PERUANAS,oe
+
+
+t_transaction
+  Dataset : master_transaction (tambien recibe t_transaction de proyectos Izipay)
+  Proyecto : intercorp-data-storage-pv
+  Partitioned on field: transaction_date
+  Descripcion: Transacciones POS/ecommerce procesadas por Izipay. Transacciones cabecera para la compania 086,IZIPAY S.A.C,izpay
+  Usado por: sp_atributos_izi.sql, sp_t_transaction_izipay_load.sql,
+             sp_load_ba_itc_attr_card_consumption.sql, sp_load_ibk_cuenta_sueldo_adobe.sql,
+             sp_m_customer_card.sql
+  
+
+t_payment
+  Dataset : master_transaction
+  Proyecto : intercorp-data-storage-pv
+  Partitioned on field: payment_date
+  Descripcion: Pagos (detalle de medio de pago / tarjeta usada)
+  Usado por: sp_load_tmp_ba_itc_attr_retail_1.sql, sp_load_ba_itc_attr_card_consumption.sql,
+             sp_m_customer_card.sql
+ 
+    Row	itc_company_id	f0_
+    1	010	952793
+    2	025	350702
+    3	048	272537
+    4	024	32401
+    5	011	23799
+
+t_experience_transaction
+  Dataset : master_transaction
+  Proyecto : intercorp-data-storage-pv
+  Partitioned on field: transaction_date
+  Descripcion: Transacciones de entretenimiento (Cineplanet, eventos, etc.)
+  Usado por: sp_load_ba_itc_attr_entertainment.sql
+
+    Row	itc_company_id	f0_
+    1	013	58558
+    2	033	639979
+
+t_ventas_noretail
+  Dataset : raw_itcm_sitc
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Ventas no retail del sistema SITC (empresas no incluidas en t_retail_transaction)
+  Usado por: sp_load_tmp_dv_employee_transaction_no_retail.sql
+
+tee_trn_retail_hpsa [NO SE TIENE ACESO]
+  Dataset : (proyecto IBK / fuente externa HPSA)
+  Descripcion: Transacciones retail IBK (fuente Homebanking/HPSA)
+  Usado por: sp_load_tmp_ba_itc_attr_retail_1.sql
+
+
+=======================================================================
+2. IDENTIDAD / PARTY
+=======================================================================
+
+iden_itc_party
+  Dataset : master_party (o iden_itc_party segun SP)
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Identificadores de persona en el ecosistema Intercorp
+               (vincula party_id (id  del cliente en intercorp) con documentos de identidad de las empresas del grupo)
+               las empreas manejan su propio id pero en el modelo intercorp ese id es del cliente en intercorp
+  Usado por: sp_load_tmp_dv_employee_transaction.sql, sp_m_customer_card.sql,
+             sp_load_tmp_ba_itc_attr_retail_1.sql, paimedia_inkafarma.sql,
+             paimedia_mifarma.sql, sp_t_transaction_izipay_load.sql
+
+iden_itc_card
+  Dataset : master_party (sensible)
+  Descripcion: Identificadores de tarjeta vinculados a party_id
+  Usado por: sp_m_customer_card.sql, sp_t_transaction_izipay_load.sql
+
+=======================================================================
+3. EMPLEADOS INTERCORP (SENSIBLE)
+=======================================================================
+
+m_individual
+  Dataset : m_individual (proyecto sensitivo)
+  Descripcion: Base de empleados activos de empresas Intercorp
+               (incluye party_id, empresa, fecha ingreso, inscripcion club)
+  Usado por: sp_load_tmp_dv_employee_transaction.sql,
+             sp_load_tmp_dv_employee_transaction_no_retail.sql,
+             sp_load_dv_employee_rotation.sql,
+             sp_load_dv_employee_club_permanence.sql
+
+m_individual_restriccion
+  Dataset : m_individual (proyecto sensitivo)
+  Descripcion: Empleados con restricciones o condiciones especiales
+  Usado por: sp_load_tmp_dv_employee_transaction.sql,
+             sp_load_tmp_dv_employee_transaction_no_retail.sql,
+             sp_load_dv_employee_rotation.sql,
+             sp_load_dv_employee_club_permanence.sql
+
+=======================================================================
+4. MAESTROS / CATALOGOS
+=======================================================================
+
+m_commerce
+  Dataset : master_placement
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Catalogo de comercios (commerce_id, commerce_name,
+               business_commercial_name, segment, geodata)
+  Usado por: sp_atributos_izi.sql, sp_m_customer_card.sql,
+             sp_load_ibk_cuenta_sueldo_adobe.sql, sp_load_aux_m_commerce_ibk.sql
+
+m_product
+  Dataset : master_product
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Catalogo de productos (SKU, categoria, descripcion)
+  Usado por: sp_load_tmp_ba_itc_attr_retail_1.sql,
+             sp_load_ba_itc_attr_card_consumption.sql,
+             sp_load_ba_itc_attr_digital.sql
+
+m_place
+  Dataset : master_placement
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Catalogo de lugares fisicos (tiendas, sucursales)
+  Usado por: sp_load_ba_itc_attr_entertainment.sql,
+             sp_load_tmp_ba_itc_attr_retail_1.sql
+
+c_itc_company
+  Dataset : master_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Catalogo de empresas del ecosistema Intercorp (codigos, nombres)
+  Usado por: sp_load_tmp_dv_employee_transaction.sql,
+             sp_load_tmp_dv_employee_transaction_no_retail.sql
+
+c_bin_card
+  ref> intercorp-data-storage-pv.master_transaction.c_bin_card
+  Descripcion: Catalogo de BINs de tarjetas bancarias (banco emisor, tipo, marca)
+  Usado por: sp_load_tmp_ba_itc_attr_retail_1.sql,
+             sp_load_ba_itc_attr_card_consumption.sql,
+             sp_load_ibk_cuenta_sueldo_adobe.sql
+
+c_entidades_financieras
+  ref> intercorp-data-storage-pv.bi_ibk_casos_uso.c_entidades_financieras
+  Descripcion: Catalogo de entidades financieras
+  Usado por: sp_load_ba_itc_attr_card_consumption.sql,
+             sp_load_ibk_cuenta_sueldo_adobe.sql
+
+c_gamas_tarjetas_noibk
+  ref : intercorp-data-storage-pv.bi_ibk_casos_uso.c_gamas_tarjetas_noibk
+  Descripcion: Clasificacion de gamas de tarjetas de bancos distintos a IBK
+  Usado por: sp_load_ibk_cuenta_sueldo_adobe.sql
+
+c_clasificacion_marcas_retail_ibk
+  referencia> intercorp-data-storage-pv.bi_itc_attribute_party.c_clasificacion_marcas_retail_ibk
+  Descripcion: Clasificacion de marcas retail para IBK
+  Usado por: sp_load_tmp_ba_itc_attr_retail_1.sql
+
+c_productos_escenciales_retail
+  ref : intercorp-data-storage-pv.master_product.c_productos_escenciales_retail
+  Descripcion: Catalogo de productos esenciales en canal retail
+  Usado por: sp_load_ba_itc_attr_card_consumption.sql
+
+c_productos_escenciales_pos
+  ref : intercorp-data-storage-pv.master_placement.c_productos_escenciales_pos
+  Descripcion: Catalogo de productos esenciales en canal POS
+  Usado por: sp_load_ba_itc_attr_card_consumption.sql
+
+c_empresas_cuenta_sueldo_ibk
+  ref : intercorp-data-storage-pv.bi_ibk_casos_uso.c_empresas_cuenta_sueldo_ibk
+  Descripcion: Catalogo de empresas que pagan sueldos via IBK
+  Usado por: sp_load_ibk_cuenta_sueldo_adobe.sql
+
+=======================================================================
+5. ATRIBUTOS Y PERFILES (tablas que son output de un SP e input de otro)
+=======================================================================
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+
+ba_itc_attr_bienestar
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de bienestar del cliente
+  SP en repo : FALTA - no tiene logica en este repositorio
+
+ba_itc_attr_card_consumption
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de consumo con tarjeta (retail, POS, canal, tipo tarjeta)
+  Usado por: (es output) sp_load_ba_itc_attr_card_consumption.sql
+
+ba_itc_attr_corporate
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos corporativos del cliente (segmento, cluster, perfil empresa)
+  Usado por: (es output) sp_load_ba_itc_attr_corporate.sql
+
+ba_itc_attr_demographic
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos demograficos del cliente (edad, sexo, id_conyuge, etc.)
+  Usado por: sp_load_tmp_dv_employee_transaction.sql,
+             sp_load_tmp_dv_employee_transaction_no_retail.sql
+
+ba_itc_attr_digital
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de comportamiento digital (GA4, sesiones, canales digitales)
+  Usado por: (es output) sp_load_ba_itc_attr_digital.sql
+
+ba_itc_attr_entertainment
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de entretenimiento (Cineplanet, eventos, experiencias)
+  Usado por: (es output) sp_load_ba_itc_attr_entertainment.sql
+
+ba_itc_attr_insurance
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de seguros del cliente (productos, coberturas)
+  SP en repo : FALTA - no tiene logica en este repositorio
+
+ba_itc_attr_payment
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de medios de pago del cliente (tarjetas, bancos, gamas)
+  SP en repo : FALTA - no tiene logica en este repositorio
+
+ba_itc_attr_payment_pos
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de consumo POS/Izipay (rubros, comercios, ventanas 15d/1m/3m/6m/12m)
+  Usado por: (es output) sp_load_bi_itc_attribute_party_ba_itc_attr_payment_pos.sql
+
+ba_itc_attr_prediction
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de prediccion del cliente (scores de comportamiento futuro)
+  Usado por: (es output) sp_load_ba_itc_attr_prediction.sql
+
+ba_itc_attr_purchase_card
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de intencion de compra con tarjeta
+  SP en repo : FALTA - no tiene logica en este repositorio
+
+ba_itc_attr_purchase_intention
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de intencion de compra del cliente
+  SP en repo : FALTA - no tiene logica en este repositorio
+
+ba_itc_attr_purchase_prediction
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Prediccion de compra del cliente
+  SP en repo : FALTA - no tiene logica en este repositorio
+
+ba_itc_attr_rcc
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos RCC (Reporte de Credito del Consumidor / riesgo crediticio)
+  SP en repo : FALTA - no tiene logica en este repositorio
+
+ba_itc_attr_retail
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Atributos de consumo retail (SPSA, Promart, Oechsle, Farmacias - ventanas temporales)
+  Usado por: (es output) sp_load_ba_itc_attr_retail.sql
+
+ba_itc_audience_contact
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Informacion de contacto del cliente para audiencias (email, telefono, etc.)
+  SP en repo : FALTA - no tiene logica en este repositorio
+
+c_attribute_metadata
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Catalogo de metadatos de atributos (nombre, descripcion, tipo, dominio)
+  SP en repo : FALTA - tabla de catalogo estatico
+
+c_clasificacion_marcas_retail_ibk
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Clasificacion de marcas retail para uso en atributos IBK
+  Usado por: sp_load_tmp_ba_itc_attr_retail_1.sql (como input)
+
+c_flags_categorias_retail_ibk
+  Dataset : bi_itc_attribute_party
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Flags de categorias retail para segmentacion IBK
+  SP en repo : FALTA - tabla de catalogo estatico
+
+-- tablas de otros dominios usadas como input por SPs de atributos --
+
+ba_seg_clusters / m_customer_profile / m_customer
+  Dataset : ba_segmentos_vea / master_party (parametrizado)
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Segmentacion y perfil enriquecido de cliente
+  Usado por: sp_load_ba_itc_attr_corporate.sql
+
+ba_contact_info
+  Dataset : (parametrizado - itc_attributes)
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Informacion de contacto del cliente
+  Usado por: sp_load_ba_itc_attr_corporate.sql
+
+ba_customer_prediction
+  Dataset : ba_prediction
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Scores/predicciones de comportamiento de cliente (edad estimada, etc.)
+  Usado por: sp_load_ba_itc_attr_prediction.sql
+
+dv_employee_profile
+  Dataset : bi_itc_huascaran_profile
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Perfil del empleado Intercorp (datos base del colaborador)
+  Usado por: sp_load_tmp_dv_employee_transaction.sql,
+             sp_load_tmp_dv_employee_transaction_no_retail.sql
+
+dv_employee_transaction
+  Dataset : bi_itc_huascaran_transaction
+  Proyecto : intercorp-data-storage-pv
+  Descripcion: Transacciones historicas de empleados (output de tmp que alimenta permanencia)
+  Usado por: sp_load_dv_employee_club_permanence.sql
+
+=======================================================================
+6. OUTLIERS / CALIDAD DE DATOS (inputs para atributos)
+=======================================================================
+
+bi_retail_outliers
+  ref : intercorp-data-storage-pv.bi_vuc_insight.bi_retail_outliers
+  Descripcion: Clientes con comportamiento atipico en retail (excluidos del calculo)
+  Usado por: sp_load_ba_itc_attr_card_consumption.sql,
+             sp_load_tmp_ba_itc_attr_retail_1.sql
+
+bi_pos_outliers
+  ref : intercorp-data-storage-pv.bi_vuc_insight.bi_pos_outliers
+  Descripcion: Clientes con comportamiento atipico en POS/Izipay
+  Usado por: sp_load_ba_itc_attr_card_consumption.sql,
+             sp_load_bi_itc_attribute_party_ba_itc_attr_payment_pos.sql
+
+ba_itc_valid_customer (aux_party_type_clasification)
+  Dataset : bi_vuc_insight
+  Descripcion: Universo de clientes validos para calculo de atributos
+  Usado por: sp_load_ba_itc_attr_card_consumption.sql,
+             sp_load_bi_itc_attribute_party_ba_itc_attr_payment_pos.sql
+
+=======================================================================
+7. DIGITAL / GOOGLE ANALYTICS
+=======================================================================
+
+ga4  (Google Analytics 4)
+  Dataset : (proyecto storage sources - parametrizado)
+  Descripcion: Sesiones y eventos digitales de apps/web Intercorp
+  Usado por: sp_load_ba_itc_attr_digital.sql,
+             sp_load_aux_t_googleanalytics_session_monthly.sql,
+             sp_load_aux_attrib_googleanalytics_monthly.sql
+
+iden_itc_party_digital
+  Dataset : (parametrizado)
+  Descripcion: Identificadores party para entorno digital
+  Usado por: sp_load_ba_itc_attr_digital.sql
+
+=======================================================================
+8. ADS - REDES SOCIALES (RAW)
+=======================================================================
+
+Facebook Ads (tablas raw por empresa)
+  Proyectos/Datasets:
+    - prod-oechsle-data-ga.facebook_oe_raw         (Oechsle)
+    - prod-promart-data-ga.facebook_hp_raw          (Promart/Homecenters)
+    - prd-farma-peru-data-storage-pv.raw_facebook_ads_mifarma    (Mifarma)
+    - prd-farma-peru-data-storage-pv.raw_facebook_ads            (Inkafarma)
+    - prd-aviva-data-storage-pv.facebook_aviva_raw  (Aviva)
+    - prd-peinnovabi-data-storage-pv.raw_facebook_ads            (Innova)
+    - prd-spsa-data-storage-pv.facebook_spsa_raw    (SPSA/Plaza Vea)
+  Descripcion: Datos crudos de campanas Facebook Ads por empresa (impresiones,
+               clics, alcance, gasto, videos) con tablas particionadas por fecha
+  Usado por: sp_load_fbads_ad.sql, sp_load_fbads_video.sql
+
+TikTok Ads (tablas raw por empresa)
+  Proyectos/Datasets:
+    - prod-oechsle-data-ga.tiktok_oe_raw            (Oechsle)
+    - prod-oechsle-data-ga.tiktok_oe_raw_profilevisit (Oechsle - visitas)
+    - prod-promart-data-ga.raw_tiktok               (Promart)
+    - prod-promart-data-ga.raw_tiktok_profile_visit  (Promart - visitas)
+    - prd-farma-peru-data-storage-pv.raw_tiktok_ads_mifarma     (Mifarma)
+    - prd-farma-peru-data-storage-pv.raw_tiktok_ads_inkafarma   (Inkafarma)
+    - prd-aviva-data-storage-pv.tiktok_aviva_raw    (Aviva)
+    - prd-peinnovabi-data-storage-pv.tiktok_innova_raw          (Innova)
+  Descripcion: Datos crudos de campanas TikTok Ads por empresa
+  Usado por: sp_load_tik_ad.sql, sp_load_tik_ads_profile_visits.sql
+
+Google Ads (tablas raw por empresa)
+  Dataset : (parametrizado por empresa)
+  Descripcion: Datos de campanas Google Ads (grupos de anuncios, audiencias,
+               conversiones, videos) por empresa Intercorp
+  Usado por: sp_load_p_ads_*.sql (13 SPs)
+
+=======================================================================
+9. FARMA - FUENTE EXTERNA
+=======================================================================
+
+prd_farma_peru_data_storage_pv_bi_genoma_dv_paidmedia_inkafarma_loyalty
+  Dataset : prd_itc_dp_matillion_integrati_silent_matter_270218
+  Proyecto: prd-farma-peru-data-storage-pv
+  Descripcion: Clientes con lealtad/actividad en campanas paid media de Inkafarma
+  Usado por: paimedia_inkafarma.sql, paimedia_inkafarma_2.sql
+
+prd_farma_peru_data_storage_pv_bi_genoma_dv_paidmedia_mifarma_loyalty
+  Dataset : prd_itc_dp_matillion_integrati_silent_matter_270218
+  Proyecto: prd-farma-peru-data-storage-pv
+  Descripcion: Clientes con lealtad/actividad en campanas paid media de Mifarma
+  Usado por: paimedia_mifarma.sql, paimedia_mifarma_2.sql
+
+=======================================================================
+10. GEODATA INEI
+=======================================================================
+
+aux_customer_geodata_inei_calculated (fuente de entrada tmp)
+  Dataset : master_aux
+  Descripcion: Datos geograficos de clientes calculados a partir de INEI
+               (ubigeo, coordenadas, nivel socioeconomico estimado)
+  Usado por: sp_aux_customer_geodata_inei_calculated.sql,
+             sp_aux_customer_geodata_inei_derived.sql
+
+
+
+2026-03-11
+II. LOGICA DE ATRIBUTOS - REPOSITORIO ATRIBUTOS CLIENTES INTERCORP
+===================================================================
+OBJETIVO
+Tener el detalle del contenido para que cualquier analista de informacion pueda entender como estan construidos la logica de los atributos
+de cada tabla y entender dónde y cómo agregar nuevos atributos que se soliciten
+
+DESCRIPCION
+En la carpeta source/ esta el desarrollo y scripts de la construccion de todo el tema de atributos
+Las capas son business, master, raw dentro de una arquitectura de informacion por capas
+en general la capa business es la que contiene atributos para responder preguntas de negocio y estas
+tiene prefijos ba_ (business analytics), toda esa definicion de la arquitectura de datos la encontramos
+en D:\workspace\itc\itcm-dp-knowledge-base\data\standard
+en general la forma de organizar las carpetas es source/[capa de informacion]/[dataset]/[tabla]
+Basándote en todo lo generado en  data/standard/data_catalog, genera un README.md para cada carpeta relacionada a una tabla de atributos
+en general, dentro de cada carpeta de tabla hay las subcarpetas ddl, dml y sp. Mapea todo ellos y sobretodo la logica
+de los store procedures que exiten para generame la explicacion detallada de la logica los sp para la carpeta de la tabla
+por ejemplo esta seria carpeta para una tabla source\business\bi_itc_attribute_party\ba_itc_attr_card_consumption. 
+en los README debemos tener el detalle de:
+-busines glossaries involucrados
+-inputs/outputs que interactuan
+-identificacion de los campos usados para los join
+-reglas de negocio usadas en las logicas
+-reglas de calidad utilizadas para limpiar o corregir los datos
+-dependencias de otras logicas entre scripts
+-detalle de la trazabilidad de los campos input y output
+-explicacion de la logica para construir los atributos
+-diagrama de flujo con las tablas que interactuan. algo como esto:
+        tabla1 ---
+                  ----->tabla output
+        tabla2 ---
+-otros puntos que sean necesarios para lograr el objetivo
+

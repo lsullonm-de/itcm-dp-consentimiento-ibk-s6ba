@@ -1,0 +1,257 @@
+# ============================================================
+# MANIFEST DE ESPECIFICACIÓN — Data Platform ITC
+# Estándar: data/standard/spec-manifest.md
+# ============================================================
+
+id: SPEC-ITC-20260401-001
+version: "1.0"
+status: draft
+empresa: itc
+equipo: data-platform
+fecha: "2026-04-01"
+autor: amoreno
+aprobador: ~
+
+# ------------------------------------------------------------
+# 1. CONTEXTO
+# ------------------------------------------------------------
+contexto:
+  nombre: "Atributo de Nivel Educativo"
+  tipo_flujo: atributos
+  descripcion: >
+    Generar el atributo ba_itc_attr_education con el nivel educativo agrupado
+    de cada cliente ITC, normalizado y agrupado desde la fuente RCC mediante
+    un diccionario de mapeo validado por negocio.
+  objetivo_negocio: >
+    Enriquecer el perfil del cliente para modelos de scoring crediticio
+    y campañas de segmentación educacional del área de Analítica de Clientes.
+  data_owner: "Área de Analítica de Clientes"
+  business_steward: lmorales
+  kpis:
+    - "Cobertura > 85% de iden_itc_party activos en el mes"
+    - "Disponible antes del día 3 de cada mes"
+    - "0 nulls en campo nivel_educativo"
+
+# ------------------------------------------------------------
+# 2. ETAPAS APLICABLES
+# ------------------------------------------------------------
+etapas:
+  plan: true
+  diseno: true
+  codificacion: true
+  data_quality: true
+  estandarizacion: true
+  orquestacion: true
+  testing: true
+  dataops: true
+  calidad: false
+  seguridad: true
+  documentacion: true
+  monitoreo: false
+
+# ------------------------------------------------------------
+# 3. FUENTES DE DATOS
+# ------------------------------------------------------------
+fuentes:
+  - id: rcc
+    descripcion: "Reporte de Crédito Consolidado — contiene nivel educativo declarado"
+    proyecto: "${project_ba_itc_attr_rcc}"
+    dataset: "${dataset_ba_itc_attr_rcc}"
+    tabla: "${table_ba_itc_attr_rcc}"
+    volumetria: "~14M registros"
+    particion: load_date
+    pii: true
+
+  - id: iden_party
+    descripcion: "Identificación unificada de persona ITC — permite el join via hash"
+    proyecto: "${project_iden_itc_party}"
+    dataset: "${dataset_iden_itc_party}"
+    tabla: "${table_iden_itc_party}"
+    volumetria: "~20M registros"
+    particion: ~
+    pii: true
+
+# ------------------------------------------------------------
+# 4. OUTPUTS
+# ------------------------------------------------------------
+outputs:
+  - tabla: ba_itc_attr_education
+    proyecto: "${project_analytics}"
+    dataset: "${dataset_analytics}"
+    descripcion: "Nivel educativo agrupado por cliente ITC, identificado por hash iden_party"
+    capa: business
+    particion: load_date
+    tipo_carga: reemplazo
+    campos_auditoria:
+      - load_date
+      - record_source
+      - creation_user
+    pii: false
+
+# ------------------------------------------------------------
+# 5. REGLAS DE NEGOCIO
+# ------------------------------------------------------------
+reglas_negocio:
+  - id: RN-ITC-001
+    descripcion: >
+      Aplicar el diccionario nivel_map con claves y valores exactos definidos por negocio.
+      No renombrar el diccionario, no agregar ni eliminar claves, no cambiar los valores de salida.
+    criticidad: alta
+    campo_afectado: nivel_educativo
+    validado_por: lmorales
+    referencia: "data/skills/ml-model-dev-agent.md — Sección 3.6"
+
+  - id: RN-ITC-002
+    descripcion: >
+      Si el valor del campo nivel_educativo_raw no existe en el diccionario nivel_map,
+      asignar 'Sin categoria'. No dejar nulls en el campo nivel_educativo del output.
+    criticidad: alta
+    campo_afectado: nivel_educativo
+    validado_por: lmorales
+
+  - id: RN-ITC-003
+    descripcion: >
+      El join con iden_party se realiza exclusivamente vía SHA256(tipo_doc || nro_doc).
+      Ningún campo de identificación personal debe aparecer en el output.
+    criticidad: alta
+    campo_afectado: iden_party_hash
+    validado_por: amoreno
+
+  - id: RN-ITC-004
+    descripcion: >
+      Solo incluir clientes con match en iden_itc_party (INNER JOIN).
+      Registros RCC sin correspondencia en iden_party se descartan.
+    criticidad: media
+    campo_afectado: ~
+    validado_por: lmorales
+
+# ------------------------------------------------------------
+# 6. COMPONENTES GCP
+# ------------------------------------------------------------
+componentes:
+  - tipo: ddl
+    archivo: data/bigquery/ddl/ba_itc_attr_education.sql
+    descripcion: "Tabla destino particionada por load_date en dataset analytics"
+
+  - tipo: sp
+    archivo: data/bigquery/sp/sp_ba_itc_attr_education.sql
+    descripcion: "Carga completa: normalización nivel_map + join iden_party + insert destino"
+
+  - tipo: sp
+    archivo: data/bigquery/sp/sp_dq_ba_itc_attr_education.sql
+    descripcion: "Validaciones DQ: completitud y validez de nivel_educativo"
+
+  - tipo: workflow
+    archivo: pipeline/workflow/wf-itc-attr-education.yaml
+    descripcion: "Orquestación: ejecutar SP carga → ejecutar DQ → validar resultado → notificar"
+
+  - tipo: cloud_scheduler
+    archivo: pipeline/workflow/cs-itc-attr-education.yaml
+    descripcion: "Trigger mensual: día 1 a las 3:00am hora Lima"
+
+# ------------------------------------------------------------
+# 7. DATA QUALITY
+# ------------------------------------------------------------
+data_quality:
+  dataset_dq: "${dataset_dq}"
+  reglas:
+    - id: DQ-ITC-BA_ITC_ATTR_EDUCATION-001
+      dimension: completitud
+      tipo: technical
+      campo: nivel_educativo
+      critica: true
+      umbral_max_pct_invalidos: 0
+      sql_rule: >
+        SELECT *
+        FROM `${project_analytics}.${dataset_analytics}.ba_itc_attr_education`
+        WHERE nivel_educativo IS NULL
+
+    - id: DQ-ITC-BA_ITC_ATTR_EDUCATION-002
+      dimension: validez
+      tipo: business
+      campo: nivel_educativo
+      critica: true
+      umbral_max_pct_invalidos: 5
+      sql_rule: >
+        SELECT *
+        FROM `${project_analytics}.${dataset_analytics}.ba_itc_attr_education`
+        WHERE nivel_educativo NOT IN (
+          'Sin_educacion', 'Primaria', 'Secundaria_c', 'Secundaria_i',
+          'Tecnica_c', 'Tecnica_i', 'Universitaria_c', 'Universitaria_i',
+          'Postgrado', 'Sin categoria'
+        )
+
+    - id: DQ-ITC-BA_ITC_ATTR_EDUCATION-003
+      dimension: unicidad
+      tipo: technical
+      campo: iden_party_hash
+      critica: true
+      umbral_max_pct_invalidos: 0
+      sql_rule: >
+        SELECT iden_party_hash, load_date, COUNT(*) AS cnt
+        FROM `${project_analytics}.${dataset_analytics}.ba_itc_attr_education`
+        GROUP BY iden_party_hash, load_date
+        HAVING cnt > 1
+
+    - id: DQ-ITC-BA_ITC_ATTR_EDUCATION-004
+      dimension: completitud
+      tipo: business
+      campo: load_date
+      critica: false
+      umbral_max_pct_invalidos: 0
+      sql_rule: >
+        SELECT *
+        FROM `${project_analytics}.${dataset_analytics}.ba_itc_attr_education`
+        WHERE load_date IS NULL OR load_date > CURRENT_DATE()
+
+# ------------------------------------------------------------
+# 8. SEGURIDAD
+# ------------------------------------------------------------
+seguridad:
+  campos_pii_fuente:
+    - tipo_doc
+    - nro_doc
+    - nivel_educativo   # dato sensible en fuente RCC
+  campos_pii_output: []
+  encriptacion_requerida: false
+  hash_iden_party: true
+  permisos:
+    - sa: "${env}-itc-attr-education-job@${env}-itc-customer-services.iam.gserviceaccount.com"
+      recurso: "${project_ba_itc_attr_rcc}.${dataset_ba_itc_attr_rcc}"
+      permiso: roles/bigquery.dataViewer
+    - sa: "${env}-itc-attr-education-job@${env}-itc-customer-services.iam.gserviceaccount.com"
+      recurso: "${project_iden_itc_party}.${dataset_iden_itc_party}"
+      permiso: roles/bigquery.dataViewer
+    - sa: "${env}-itc-attr-education-job@${env}-itc-customer-services.iam.gserviceaccount.com"
+      recurso: "${project_analytics}.${dataset_analytics}"
+      permiso: roles/bigquery.dataEditor
+    - sa: "${env}-itc-attr-education-job@${env}-itc-customer-services.iam.gserviceaccount.com"
+      recurso: "${project_analytics}.${dataset_dq}"
+      permiso: roles/bigquery.dataEditor
+  nota: >
+    El output no expone PII. El join con iden_party se realiza internamente en el SP
+    usando SHA256 — el hash iden_party_hash no es reversible y no se clasifica como PII.
+
+# ------------------------------------------------------------
+# 9. SCHEDULING
+# ------------------------------------------------------------
+scheduling:
+  frecuencia: "0 3 1 * *"          # Día 1 de cada mes, 3:00am UTC-5 (Lima)
+  zona_horaria: America/Lima
+  dependencias:
+    - "ba_itc_attr_rcc debe estar cargada con los datos del mes anterior (disponible D-1)"
+    - "iden_itc_party sin restricción de tiempo — tabla estática"
+  consumidores:
+    - "Pipeline de scoring crediticio — consume ba_itc_attr_education como feature"
+    - "Dashboard de segmentación educacional en Looker Studio"
+  tiempo_max_ejecucion: 45m
+
+# ------------------------------------------------------------
+# 10. RESTRICCIONES Y SUPUESTOS
+# ------------------------------------------------------------
+restricciones:
+  - "No modificar el diccionario nivel_map — claves y valores aprobados por negocio (RN-ITC-001)"
+  - "Solo INNER JOIN con iden_party — registros sin match se descartan sin alerta"
+  - "El SP usa únicamente tablas intermedias en ${dataset_stage} — no en analytics"
+  - "Refresh mensual — no convertir a diario sin aprobación de Data Owner"
+  - "ADD COLUMN únicamente en DDL — no alterar ni eliminar columnas existentes"

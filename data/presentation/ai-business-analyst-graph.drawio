@@ -1,0 +1,118 @@
+<mxfile host="app.diagrams.net" modified="2026-05-29T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram name="Grafo Agentes" id="ai-agents-graph">
+    <mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="0" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="700" math="0" shadow="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- TÍTULO -->
+        <mxCell id="t" value="Agente Analista de Negocio — Árbol de Orquestación" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="18" width="900" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- ── ENTRADAS ── -->
+        <mxCell id="u1" value="Analista Operación" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="110" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="u2" value="Analista Comercial" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="305" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="u3" value="Ejecutivo" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="500" width="160" height="48" as="geometry" />
+        </mxCell>
+
+        <!-- ── ORQUESTADOR ── -->
+        <mxCell id="orch" value="🧠 Business Analyst&lt;br&gt;Orchestrator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e3a5f;fontColor=#ffffff;strokeColor=#1e3a5f;fontSize=13;fontStyle=1;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="300" y="295" width="195" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ── SUB-AGENTES ── -->
+        <mxCell id="a1" value="Requirements Analyst" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=12;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="590" y="80" width="195" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" value="Data Catalog Specialist" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=12;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="590" y="195" width="195" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="a3" value="SQL Translator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=12;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="590" y="310" width="195" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="a4" value="Data Validator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=12;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="590" y="425" width="195" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="a5" value="Visualization Developer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=12;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="590" y="540" width="195" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="a6" value="Insights Narrator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2d6a4f;fontSize=12;arcSize=30;" vertex="1" parent="1">
+          <mxGeometry x="590" y="610" width="195" height="48" as="geometry" />
+        </mxCell>
+
+        <!-- ── BIGQUERY ── -->
+        <mxCell id="bq" value="BigQuery" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#f57c00;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="855" y="295" width="120" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ── OUTPUTS ── -->
+        <mxCell id="o1" value="Tabla / Gráfico" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="860" y="80" width="140" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="o2" value="Dashboard" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="860" y="540" width="140" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="o3" value="Resumen Ejecutivo" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="860" y="610" width="140" height="48" as="geometry" />
+        </mxCell>
+
+        <!-- ── ARISTAS: usuarios → orquestador ── -->
+        <mxCell id="eu1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6c8ebf;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.25;" edge="1" parent="1" source="u1" target="orch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eu2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6c8ebf;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="u2" target="orch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eu3" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6c8ebf;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.75;" edge="1" parent="1" source="u3" target="orch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ── ARISTAS: orquestador → sub-agentes ── -->
+        <mxCell id="ea1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2d6a4f;strokeWidth=2;" edge="1" parent="1" source="orch" target="a1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ea2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2d6a4f;strokeWidth=2;" edge="1" parent="1" source="orch" target="a2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ea3" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2d6a4f;strokeWidth=2;" edge="1" parent="1" source="orch" target="a3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ea4" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2d6a4f;strokeWidth=2;" edge="1" parent="1" source="orch" target="a4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ea5" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2d6a4f;strokeWidth=1.5;dashed=1;" edge="1" parent="1" source="orch" target="a5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ea6" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2d6a4f;strokeWidth=1.5;dashed=1;" edge="1" parent="1" source="orch" target="a6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ── ARISTAS: SQL Translator ↔ BigQuery ── -->
+        <mxCell id="ebq1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#f57c00;strokeWidth=2;" edge="1" parent="1" source="a3" target="bq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ebq2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#f57c00;strokeWidth=2;" edge="1" parent="1" source="bq" target="a4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ── ARISTAS: sub-agentes → outputs ── -->
+        <mxCell id="eo1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#b85450;strokeWidth=1.5;" edge="1" parent="1" source="a1" target="o1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eo2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#b85450;strokeWidth=1.5;" edge="1" parent="1" source="a5" target="o2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eo3" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#b85450;strokeWidth=1.5;" edge="1" parent="1" source="a6" target="o3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

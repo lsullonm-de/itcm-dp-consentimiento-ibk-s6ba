@@ -1,0 +1,7 @@
+# Resultados de Playwright
+
+Esta carpeta contiene artefactos de ejecuciones de Playwright E2E
+(screenshots, videos, traces, reportes HTML) copiados desde el proyecto
+bajo prueba para referencia y debugging.
+
+No se commitean archivos binarios.

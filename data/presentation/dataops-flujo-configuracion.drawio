@@ -1,0 +1,331 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- TÍTULO -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="title" value="Etapa DATAOPS — Flujo de Configuración de Despliegue" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;fontColor=#1a1a2e;" vertex="1" parent="1">
+      <mxGeometry x="200" y="20" width="1250" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="subtitle" value="Convierte los artefactos de BUILD en archivos de despliegue listos para VERIFY" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#555555;" vertex="1" parent="1">
+      <mxGeometry x="200" y="58" width="1250" height="24" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- ESTADO INICIAL — repo después de ORCHESTRATION -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="col0_label" value="ESTADO INICIAL&#xa;(repo post-ORCHESTRATION)" style="text;html=1;strokeColor=none;fillColor=#e8f4fd;align=center;verticalAlign=middle;rounded=1;fontSize=11;fontStyle=1;fontColor=#1565C0;" vertex="1" parent="1">
+      <mxGeometry x="30" y="100" width="200" height="44" as="geometry" />
+    </mxCell>
+
+    <!-- Repo box -->
+    <mxCell id="repo_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b0bec5;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="30" y="154" width="200" height="530" as="geometry" />
+    </mxCell>
+
+    <!-- Artefactos existentes en el repo -->
+    <mxCell id="a_ddl" value="📄 data/bigquery/ddl/*.sql" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565C0;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="166" width="172" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="a_sp" value="📄 data/bigquery/sp/*.sql" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565C0;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="204" width="172" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="a_wf" value="📄 pipeline/workflow/*.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565C0;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="242" width="172" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="a_sched" value="📄 pipeline/scheduler/*.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565C0;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="280" width="172" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="a_cf" value="📄 service/cloud_function/**" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565C0;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="318" width="172" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="a_cr" value="📄 service/cloud_run/**" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565C0;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="356" width="172" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="a_vx" value="📄 service/vertex/**" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565C0;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="394" width="172" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- Deploy vacíos -->
+    <mxCell id="a_missing_label" value="⚠️ Falta (pendiente DATAOPS):" style="text;html=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=2;fontColor=#b71c1c;align=left;" vertex="1" parent="1">
+      <mxGeometry x="44" y="436" width="172" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="a_m1" value="❌ deploy/deploy_dev.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffebee;strokeColor=#b71c1c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="458" width="172" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="a_m2" value="❌ deploy/deploy_prd.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffebee;strokeColor=#b71c1c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="492" width="172" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="a_m3" value="❌ deploy/deploy_qa.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffebee;strokeColor=#b71c1c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="526" width="172" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="a_m4" value="❌ deploy/env_dev.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffebee;strokeColor=#b71c1c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="560" width="172" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="a_m5" value="❌ deploy/env_prd.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffebee;strokeColor=#b71c1c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="594" width="172" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="a_m6" value="❌ deploy/env_qa.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffebee;strokeColor=#b71c1c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="628" width="172" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="a_m7" value="❌ service/**/deploy_config.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffebee;strokeColor=#b71c1c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="44" y="662" width="172" height="28" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PASO 1 — Escanear variables ${} -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="p1_label" value="PASO 1&#xa;Escanear variables \${}" style="text;html=1;strokeColor=none;fillColor=#fff3e0;align=center;verticalAlign=middle;rounded=1;fontSize=11;fontStyle=1;fontColor=#e65100;" vertex="1" parent="1">
+      <mxGeometry x="270" y="100" width="180" height="44" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p1_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f0;strokeColor=#e65100;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="270" y="154" width="180" height="340" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p1_scan" value="grep -r '\${' en:&#xa;data/bigquery/ddl/&#xa;data/bigquery/sp/&#xa;pipeline/workflow/&#xa;pipeline/scheduler/&#xa;service/**" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="282" y="166" width="156" height="90" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p1_arrow" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#e65100;strokeWidth=2;" edge="1" source="p1_scan" target="p1_vars" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p1_vars" value="Variables detectadas:&#xa;• ${project_analytics}&#xa;• ${dataset_analytics}&#xa;• ${dataset_sp}&#xa;• ${dataset_dq}&#xa;• ${project_m_party}&#xa;• ${dataset_m_party}&#xa;• ${table_m_party}&#xa;• ${mail_pubsub_project}&#xa;• ${mail_pubsub_topic}&#xa;• …" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=9;align=left;spacingLeft=6;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="282" y="276" width="156" height="200" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PASO 2 — env_dev.json / env_prd.json -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="p2_label" value="PASO 2&#xa;Completar env_[env].json" style="text;html=1;strokeColor=none;fillColor=#e8f5e9;align=center;verticalAlign=middle;rounded=1;fontSize=11;fontStyle=1;fontColor=#1b5e20;" vertex="1" parent="1">
+      <mxGeometry x="490" y="100" width="210" height="44" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p2_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#388e3c;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="490" y="154" width="210" height="530" as="geometry" />
+    </mxCell>
+
+    <!-- env_dev.json -->
+    <mxCell id="p2_dev_label" value="✅ deploy/env_dev.json" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#1b5e20;align=left;" vertex="1" parent="1">
+      <mxGeometry x="502" y="162" width="186" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="p2_dev" value="{&#xa;  &quot;project_analytics&quot;: &quot;dev-itc-…&quot;,&#xa;  &quot;dataset_analytics&quot;: &quot;analytics&quot;,&#xa;  &quot;dataset_sp&quot;: &quot;stored_procedures&quot;,&#xa;  &quot;dataset_dq&quot;: &quot;itc_dataquality&quot;,&#xa;  &quot;project_m_party&quot;: &quot;dev-itc-…&quot;,&#xa;  &quot;dataset_m_party&quot;: &quot;itc_m_party&quot;,&#xa;  &quot;mail_pubsub_project&quot;: &quot;central-…&quot;,&#xa;  &quot;mail_pubsub_topic&quot;: &quot;itcm-mail&quot;&#xa;}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=9;align=left;spacingLeft=6;fontFamily=Courier New;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="502" y="184" width="186" height="156" as="geometry" />
+    </mxCell>
+
+    <!-- Regla de orden -->
+    <mxCell id="p2_rule" value="📐 Regla de orden:&#xa;1. Variables generales&#xa;2. Por tabla: project_ → dataset_ → table_&#xa;3. Variables de mail al final" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9fbe7;strokeColor=#c5e1a5;fontSize=9;align=left;spacingLeft=6;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="502" y="350" width="186" height="68" as="geometry" />
+    </mxCell>
+
+    <!-- env_prd.json -->
+    <mxCell id="p2_prd_label" value="✅ deploy/env_prd.json" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#1b5e20;align=left;" vertex="1" parent="1">
+      <mxGeometry x="502" y="428" width="186" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="p2_prd" value="{&#xa;  &quot;project_analytics&quot;: &quot;prd-itc-…&quot;,&#xa;  &quot;dataset_analytics&quot;: &quot;analytics&quot;,&#xa;  &quot;dataset_sp&quot;: &quot;stored_procedures&quot;,&#xa;  &quot;dataset_dq&quot;: &quot;itc_dataquality&quot;,&#xa;  &quot;project_m_party&quot;: &quot;prd-itc-…&quot;,&#xa;  &quot;dataset_m_party&quot;: &quot;itc_m_party&quot;,&#xa;  &quot;mail_pubsub_project&quot;: &quot;stalwart-…&quot;,&#xa;  &quot;mail_pubsub_topic&quot;: &quot;itcm-inca-mail&quot;&#xa;}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=9;align=left;spacingLeft=6;fontFamily=Courier New;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="502" y="450" width="186" height="156" as="geometry" />
+    </mxCell>
+
+    <!-- Nota env excluida -->
+    <mxCell id="p2_note" value="⚠️ NO incluir var &quot;env&quot;&#xa;(global del framework)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=9;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="502" y="616" width="186" height="36" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PASO 3 — deploy_[env].json -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="p3_label" value="PASO 3&#xa;Completar deploy_[env].json" style="text;html=1;strokeColor=none;fillColor=#ede7f6;align=center;verticalAlign=middle;rounded=1;fontSize=11;fontStyle=1;fontColor=#4527a0;" vertex="1" parent="1">
+      <mxGeometry x="740" y="100" width="210" height="44" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p3_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="740" y="154" width="210" height="530" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p3_order_label" value="📦 Orden de ejecución:" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#4527a0;align=left;" vertex="1" parent="1">
+      <mxGeometry x="752" y="162" width="186" height="20" as="geometry" />
+    </mxCell>
+
+    <!-- Cadena de componentes -->
+    <mxCell id="c_ddl" value="1. bigquery_ddl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565C0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="186" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_sp" value="2. bigquery_sp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565C0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="222" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_dml" value="3. bigquery_dml  (solo dev)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3949ab;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="258" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_bucket" value="4. bucket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="294" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_image" value="5. image" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="330" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_cr" value="6. cloud_run" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="366" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_vx" value="7. vertex_pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="402" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_cf" value="8. cloud_function" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="438" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_ps" value="9. pubsub" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="474" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_wf" value="10. workflow" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede7f6;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="510" width="182" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="c_cs" value="11. cloud_scheduler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede7f6;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="756" y="546" width="182" height="28" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p3_sample" value="{&#xa;  &quot;bigquery_ddl&quot;: [&quot;/data/bigquery/ddl/…&quot;],&#xa;  &quot;bigquery_sp&quot;:  [&quot;/data/bigquery/sp/…&quot;],&#xa;  &quot;cloud_function&quot;: [&quot;/service/…/deploy_config.yaml&quot;],&#xa;  &quot;workflow&quot;:        [],&#xa;  &quot;cloud_scheduler&quot;: []&#xa;}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede7f6;strokeColor=#7b1fa2;fontSize=9;align=left;spacingLeft=6;fontFamily=Courier New;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="752" y="586" width="186" height="84" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PASO 4 — deploy_config.yaml por servicio -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="p4_label" value="PASO 4&#xa;deploy_config.yaml por servicio" style="text;html=1;strokeColor=none;fillColor=#fbe9e7;align=center;verticalAlign=middle;rounded=1;fontSize=11;fontStyle=1;fontColor=#bf360c;" vertex="1" parent="1">
+      <mxGeometry x="990" y="100" width="220" height="44" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p4_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f6;strokeColor=#bf360c;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="990" y="154" width="220" height="530" as="geometry" />
+    </mxCell>
+
+    <!-- Cloud Function deploy_config -->
+    <mxCell id="p4_cf_label" value="☁️ Cloud Function" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#bf360c;align=left;" vertex="1" parent="1">
+      <mxGeometry x="1002" y="162" width="196" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="p4_cf" value="service/cloud_function/[nombre]/deploy_config.yaml:&#xa;&#xa;name: itc-dq-run-stats&#xa;description: …&#xa;region: us-central1&#xa;runtime: python311&#xa;entry_point: main&#xa;trigger_type: http&#xa;timeout: 540&#xa;memory: 512Mi&#xa;service_account: _DATAOPS_VARIABLES&#xa;env_vars:&#xa;  ENV: _DATAOPS_VARIABLES&#xa;  BQ_PROJECT: _DATAOPS_VARIABLES&#xa;  BQ_DATASET_SP: _DATAOPS_VARIABLES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe9e7;strokeColor=#bf360c;fontSize=8;align=left;spacingLeft=6;fontFamily=Courier New;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="1002" y="184" width="196" height="170" as="geometry" />
+    </mxCell>
+
+    <!-- Cloud Run deploy_config -->
+    <mxCell id="p4_cr_label" value="🚀 Cloud Run" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#bf360c;align=left;" vertex="1" parent="1">
+      <mxGeometry x="1002" y="364" width="196" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="p4_cr" value="service/cloud_run/[nombre]/deploy_config.yaml:&#xa;&#xa;name: itc-[nombre]-api&#xa;region: us-central1&#xa;image_name: …&#xa;min_instances: 1&#xa;max_instances: 3&#xa;memory: 512Mi&#xa;cpu: 1&#xa;port: 8080&#xa;allow_unauthenticated: false&#xa;service_account: _DATAOPS_VARIABLES&#xa;env_vars:&#xa;  ENV: _DATAOPS_VARIABLES&#xa;  PROJECT_ID: _DATAOPS_VARIABLES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbe9e7;strokeColor=#bf360c;fontSize=8;align=left;spacingLeft=6;fontFamily=Courier New;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="1002" y="386" width="196" height="178" as="geometry" />
+    </mxCell>
+
+    <!-- Nota _DATAOPS_VARIABLES -->
+    <mxCell id="p4_note" value="📌 _DATAOPS_VARIABLES&#xa;= variables inyectadas por el trigger&#xa;de Cloud Build en runtime.&#xa;Nunca hardcodear proyecto/SA." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=9;align=left;spacingLeft=6;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="1002" y="574" width="196" height="68" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PASO 5 — Validación de cobertura -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="p5_label" value="PASO 5&#xa;Validar cobertura de variables" style="text;html=1;strokeColor=none;fillColor=#e0f7fa;align=center;verticalAlign=middle;rounded=1;fontSize=11;fontStyle=1;fontColor=#006064;" vertex="1" parent="1">
+      <mxGeometry x="1250" y="100" width="200" height="44" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p5_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f7fa;strokeColor=#00838f;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="1250" y="154" width="200" height="530" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p5_check" value="grep -r '\${' data/ pipeline/ service/&#xa;| grep -v env_dev | grep -v env_prd" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2ebf2;strokeColor=#00838f;fontSize=9;align=left;spacingLeft=6;fontFamily=Courier New;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="166" width="176" height="48" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p5_ok" value="✅ Sin resultado&#xa;= cobertura completa&#xa;→ Listo para VERIFY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#388e3c;fontSize=11;fontStyle=1;fontColor=#1b5e20;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="230" width="176" height="60" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p5_fail" value="❌ Variables sin cubrir&#xa;→ Agregar en env_dev.json&#xa;y env_prd.json&#xa;→ Volver a Paso 2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#b71c1c;fontSize=11;fontStyle=1;fontColor=#b71c1c;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="310" width="176" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- Estado final repo -->
+    <mxCell id="p5_final_label" value="📁 Estado final del repo:" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#006064;align=left;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="400" width="176" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="p5_f1" value="✅ deploy/deploy_dev.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="424" width="176" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="p5_f2" value="✅ deploy/deploy_qa.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="456" width="176" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="p5_f3" value="✅ deploy/deploy_prd.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="488" width="176" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="p5_f4" value="✅ deploy/env_dev.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="520" width="176" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="p5_f5" value="✅ deploy/env_prd.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="552" width="176" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="p5_f6" value="✅ service/**/deploy_config.yaml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="584" width="176" height="26" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p5_next" value="→ /implement-stage COMPLIANCE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;strokeColor=#0d47a1;fontSize=11;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="1">
+      <mxGeometry x="1262" y="630" width="176" height="36" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- FLECHAS entre pasos -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- repo → p1 -->
+    <mxCell id="arr01" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#546e7a;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="repo_box" target="p1_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <!-- p1 → p2 -->
+    <mxCell id="arr12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#e65100;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="p1_box" target="p2_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <!-- p2 → p3 -->
+    <mxCell id="arr23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#388e3c;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="p2_box" target="p3_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <!-- p3 → p4 -->
+    <mxCell id="arr34" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#7b1fa2;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="p3_box" target="p4_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <!-- p4 → p5 -->
+    <mxCell id="arr45" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#bf360c;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="p4_box" target="p5_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <!-- retroceso p5 fail → p2 -->
+    <mxCell id="arr_back" value="variables sin cubrir" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b71c1c;strokeWidth=2;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontColor=#b71c1c;fontSize=9;" edge="1" source="p5_fail" target="p2_box" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1350" y="760" />
+          <mxPoint x="595" y="760" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- LEYENDA de fases -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="leyenda_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#b0bec5;strokeWidth=1;" vertex="1" parent="1">
+      <mxGeometry x="30" y="740" width="620" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="ley_title" value="Leyenda:" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;align=left;" vertex="1" parent="1">
+      <mxGeometry x="44" y="748" width="80" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="ley1" value="🔵 Artefactos pre-existentes (BUILD)" style="text;html=1;strokeColor=none;fillColor=#e3f2fd;rounded=1;fontSize=9;align=left;spacingLeft=4;" vertex="1" parent="1">
+      <mxGeometry x="44" y="766" width="200" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="ley2" value="🟢 Artefactos creados en DATAOPS" style="text;html=1;strokeColor=none;fillColor=#e8f5e9;rounded=1;fontSize=9;align=left;spacingLeft=4;" vertex="1" parent="1">
+      <mxGeometry x="252" y="766" width="200" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="ley3" value="🔴 Faltantes detectados al inicio" style="text;html=1;strokeColor=none;fillColor=#ffebee;rounded=1;fontSize=9;align=left;spacingLeft=4;" vertex="1" parent="1">
+      <mxGeometry x="460" y="766" width="178" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- Prerequisito VERIFY -->
+    <mxCell id="prereq" value="✅ DATAOPS completo → prerequisito cumplido para /implement-stage COMPLIANCE (VERIFY)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;strokeColor=#0d47a1;fontSize=11;fontStyle=1;fontColor=#ffffff;align=center;" vertex="1" parent="1">
+      <mxGeometry x="660" y="740" width="790" height="44" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

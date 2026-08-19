@@ -1,0 +1,33 @@
+{
+  "project_operation": "pendiente_definir",
+  "project_analytics": "pendiente_definir",
+  "project_billing": "pendiente_definir",
+
+  "dataset_sp": "pendiente_definir",
+  "dataset_stage": "pendiente_definir",
+  "dataset_dq": "pendiente_definir",
+
+  "METADATA_API_URL": "https://prd-itcbi-spld-run-usct1-pv01-947655304508.us-central1.run.app",
+
+  "service_account_job": "pendiente_definir",
+  "service_account_app": "pendiente_definir",
+
+  "project_consentimiento_ibk_archivo": "pendiente_definir",
+  "dataset_consentimiento_ibk_archivo": "pendiente_definir",
+  "table_consentimiento_ibk_archivo": "t_consent_transaction_{fecha_archivo}_external",
+
+  "project_iden_party": "pendiente_definir",
+  "dataset_iden_party": "pendiente_definir",
+  "table_iden_party": "iden_itc_party_prd",
+
+  "project_t_consent_transaction": "pendiente_definir",
+  "dataset_t_consent_transaction": "master_party",
+  "table_t_consent_transaction": "t_consent_transaction",
+
+  "project_ba_customer_consent_group": "pendiente_definir",
+  "dataset_ba_customer_consent_group": "master_party",
+  "table_ba_customer_consent_group": "ba_customer_consent_group",
+
+  "mail_pubsub_project": "stalwart-motif-270218",
+  "mail_pubsub_topic": "itcm-inca-mail"
+}

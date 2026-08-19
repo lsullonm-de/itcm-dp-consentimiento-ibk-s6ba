@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" version="21.7.5">
+  <diagram name="inca-analytics-agent" id="arch-biz-v2">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- TÍTULO -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="title" value="Agente de Análisis de Datos — inca-analytics-agent" style="text;html=1;strokeColor=none;fillColor=#212121;align=center;verticalAlign=middle;fontColor=#ffffff;fontSize=18;fontStyle=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="12" width="1070" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="Convierte preguntas de negocio en lenguaje natural → insights accionables con gráficos y tablas" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#616161;fontSize=11;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="54" width="1070" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- CAPA 1: EXPERIENCIA DEL USUARIO (FRONT) -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="l1_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="20" y="80" width="1070" height="185" as="geometry"/>
+        </mxCell>
+        <mxCell id="l1_label" value="CAPA 1 — EXPERIENCIA DEL USUARIO" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#0D47A1;fontSize=12;fontStyle=1;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="20" y="80" width="400" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="l1_tech" value="React · AG Grid · ECharts · Streaming SSE" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontColor=#1565C0;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="640" y="80" width="445" height="26" as="geometry"/>
+        </mxCell>
+
+        <!-- Capa 1 — Boxes -->
+        <mxCell id="l1_chat" value="💬 Chat&lt;br/&gt;conversacional&lt;br/&gt;&lt;font style=&quot;font-size: 9px; color: #bbdefb;&quot;&gt;El usuario escribe su&lt;br/&gt;pregunta en lenguaje&lt;br/&gt;natural&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;fontColor=#ffffff;strokeColor=#0D47A1;fontSize=12;fontStyle=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="38" y="112" width="200" height="128" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="l1_stream" value="⚡ Progreso&lt;br/&gt;en tiempo real&lt;br/&gt;&lt;font style=&quot;font-size: 9px; color: #bbdefb;&quot;&gt;Streaming de respuesta&lt;br/&gt;paso a paso mientras&lt;br/&gt;el agente procesa&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;fontColor=#ffffff;strokeColor=#0D47A1;fontSize=12;fontStyle=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="278" y="112" width="200" height="128" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="l1_dash" value="📊 Dashboard&lt;br/&gt;de análisis&lt;br/&gt;&lt;font style=&quot;font-size: 9px; color: #bbdefb;&quot;&gt;Gráficos + tablas +&lt;br/&gt;narrativa de insights&lt;br/&gt;listos para presentar&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;fontColor=#ffffff;strokeColor=#0D47A1;fontSize=12;fontStyle=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="518" y="112" width="200" height="128" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="l1_hist" value="📁 Historial&lt;br/&gt;y colaboración&lt;br/&gt;&lt;font style=&quot;font-size: 9px; color: #bbdefb;&quot;&gt;Guarda, versiona y&lt;br/&gt;comparte análisis con&lt;br/&gt;el equipo&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;fontColor=#ffffff;strokeColor=#0D47A1;fontSize=12;fontStyle=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="855" y="112" width="200" height="128" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrows dentro de capa 1 -->
+        <mxCell id="a1a" value="" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#1565C0;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="l1_chat" target="l1_stream">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a1b" value="" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#1565C0;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="l1_stream" target="l1_dash">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a1c" value="" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#1565C0;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="l1_dash" target="l1_hist">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- CAPA 2: INTELIGENCIA — AGENTE ADK -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="l2_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBE9E7;strokeColor=#BF360C;strokeWidth=2;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="20" y="290" width="1070" height="215" as="geometry"/>
+        </mxCell>
+        <mxCell id="l2_label" value="CAPA 2 — INTELIGENCIA ARTIFICIAL (Agente ADK Multi-Agente)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#BF360C;fontSize=12;fontStyle=1;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="20" y="290" width="560" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="l2_tech" value="Google ADK · LLM · ai-fabric-serving · FastAPI · Redis Cache" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontColor=#BF360C;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="580" y="290" width="505" height="26" as="geometry"/>
+        </mxCell>
+
+        <!-- Capa 2 — 4 agentes en pipeline -->
+        <mxCell id="l2_intent" value="🧭 Comprende&lt;br/&gt;la pregunta&lt;br/&gt;&lt;font style=&quot;font-size: 9px; color: #ffccbc;&quot;&gt;Agente Intencional:&lt;br/&gt;clasifica qué tipo de&lt;br/&gt;análisis se necesita&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BF360C;fontColor=#ffffff;strokeColor=#870000;fontSize=12;fontStyle=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="38" y="325" width="210" height="155" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="l2_semantic" value="📚 Busca&lt;br/&gt;el contexto&lt;br/&gt;&lt;font style=&quot;font-size: 9px; color: #ffccbc;&quot;&gt;Agente Semántico:&lt;br/&gt;consulta el catálogo&lt;br/&gt;de datos disponibles&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BF360C;fontColor=#ffffff;strokeColor=#870000;fontSize=12;fontStyle=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="288" y="325" width="210" height="155" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="l2_sql" value="🔎 Consulta&lt;br/&gt;los datos&lt;br/&gt;&lt;font style=&quot;font-size: 9px; color: #ffccbc;&quot;&gt;Agente SQL: genera,&lt;br/&gt;valida y ejecuta la&lt;br/&gt;consulta en BigQuery&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BF360C;fontColor=#ffffff;strokeColor=#870000;fontSize=12;fontStyle=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="538" y="325" width="210" height="155" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="l2_insights" value="✨ Genera&lt;br/&gt;la respuesta&lt;br/&gt;&lt;font style=&quot;font-size: 9px; color: #ffccbc;&quot;&gt;Agentes Insights +&lt;br/&gt;Chips: narrativa,&lt;br/&gt;gráfico, sugerencias&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BF360C;fontColor=#ffffff;strokeColor=#870000;fontSize=12;fontStyle=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="800" y="325" width="260" height="155" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrows dentro de capa 2 -->
+        <mxCell id="a2a" value="" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#BF360C;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="l2_intent" target="l2_semantic">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a2b" value="" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#BF360C;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="l2_semantic" target="l2_sql">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a2c" value="" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#BF360C;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="l2_sql" target="l2_insights">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- CAPA 3: DATOS — BIGQUERY -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="l3_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#1B5E20;strokeWidth=2;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="20" y="530" width="1070" height="185" as="geometry"/>
+        </mxCell>
+        <mxCell id="l3_label" value="CAPA 3 — DATOS (Google BigQuery)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#1B5E20;fontSize=12;fontStyle=1;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="20" y="530" width="400" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="l3_tech" value="Particionado mensual · Clustering por empresa · HyperLogLog para métricas aproximadas" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontColor=#1B5E20;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="420" y="530" width="665" height="26" as="geometry"/>
+        </mxCell>
+
+        <!-- Dataset 1: bi_itcm_agent -->
+        <mxCell id="l3_ds1" value="🏪 &lt;b&gt;Ventas Propias del Grupo&lt;/b&gt;&lt;br/&gt;bi_itcm_agent · 79K filas · 18 meses&lt;br/&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;InkaFarma · MiFarma · Plaza Vea · Mass&lt;br/&gt;Promart · Oechsle · Vivanda&lt;br/&gt;Métricas: ventas, tickets, clientes únicos (HLL)&lt;br/&gt;por empresa, marca, canal, departamento, categoría&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;fontColor=#ffffff;strokeColor=#1B5E20;fontSize=11;fontStyle=1;arcSize=6;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="38" y="563" width="330" height="135" as="geometry"/>
+        </mxCell>
+
+        <!-- Dataset 2: bi_itcm_somos1 -->
+        <mxCell id="l3_ds2" value="👥 &lt;b&gt;Somos 1 — Cross-Retail&lt;/b&gt;&lt;br/&gt;bi_itcm_somos1 · 24.5M filas · 2019-2026&lt;br/&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;Clientes que compran en varias empresas&lt;br/&gt;del Grupo simultáneamente&lt;br/&gt;Perfil: departamento, edad, género, educación&lt;br/&gt;Análisis: lealtad multi-empresa&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;fontColor=#ffffff;strokeColor=#1B5E20;fontSize=11;fontStyle=1;arcSize=6;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="388" y="563" width="330" height="135" as="geometry"/>
+        </mxCell>
+
+        <!-- Dataset 3: bi_vuc_insight -->
+        <mxCell id="l3_ds3" value="📦 &lt;b&gt;InRetail — Venta Agregada&lt;/b&gt;&lt;br/&gt;bi_vuc_insight · 1.2M filas · 37 meses&lt;br/&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;Venta por punto de venta y departamento&lt;br/&gt;Incluye canal online y presencial&lt;br/&gt;Actualización: diaria (reemplazo completo)&lt;br/&gt;Empresas InRetail: Farmas, SPSA, Promart, TP&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;fontColor=#ffffff;strokeColor=#1B5E20;fontSize=11;fontStyle=1;arcSize=6;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="738" y="563" width="332" height="135" as="geometry"/>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- COLUMNA DERECHA: CATÁLOGO DE DATOS (CONTEXTO) -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="cat_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE7F6;strokeColor=#4A148C;strokeWidth=2;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="80" width="425" height="425" as="geometry"/>
+        </mxCell>
+        <mxCell id="cat_label" value="📖 CATÁLOGO DE DATOS" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#4A148C;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="80" width="425" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="cat_sub" value="Base de conocimiento del agente: reglas de negocio,&lt;br/&gt;definición de métricas y guías de consulta" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#6A1B9A;fontSize=9;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="106" width="425" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cat_a" value="&lt;b&gt;Ventas Propias (bi_itcm_agent)&lt;/b&gt;&lt;br/&gt;• Cómo calcular ventas, tickets y clientes&lt;br/&gt;• Regla HLL: usar siempre para transacciones&lt;br/&gt;• Regla: GROUP BY empresa si no se especifica&lt;br/&gt;• Período por defecto: último mes cerrado&lt;br/&gt;• Cobertura: 4 empresas, 10+ marcas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6A1B9A;fontColor=#EDE7F6;strokeColor=#4A148C;fontSize=9;align=left;spacingLeft=8;spacingTop=4;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1133" y="140" width="388" height="108" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cat_b" value="&lt;b&gt;Somos 1 — Cross-Retail (bi_itcm_somos1)&lt;/b&gt;&lt;br/&gt;• Clientes que compran en 1 vs N empresas&lt;br/&gt;• Filtrar siempre por año y mes&lt;br/&gt;• Flag por empresa: SPSA, Promart, Farmas, Oec&lt;br/&gt;• Análisis de lealtad y penetración del grupo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6A1B9A;fontColor=#EDE7F6;strokeColor=#4A148C;fontSize=9;align=left;spacingLeft=8;spacingTop=4;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1133" y="258" width="388" height="95" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cat_c" value="&lt;b&gt;InRetail Venta (bi_vuc_insight)&lt;/b&gt;&lt;br/&gt;• Filtrar siempre departamento: evita doble conteo&lt;br/&gt;• TOTAL PERU = vista nacional · LIMA · PROVINCIAS&lt;br/&gt;• Tabla diaria: no filtrar por fecha de carga&lt;br/&gt;• Filtro de período: DATE(anio, mes, 1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6A1B9A;fontColor=#EDE7F6;strokeColor=#4A148C;fontSize=9;align=left;spacingLeft=8;spacingTop=4;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1133" y="363" width="388" height="95" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cat_vec" value="🔍 Embeddings indexados en Vector Store para búsqueda semántica por el Agente" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;fontColor=#EDE7F6;strokeColor=#6A1B9A;fontSize=9;align=center;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1133" y="465" width="388" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- COLUMNA DERECHA: CALIDAD DEL AGENTE -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="eval_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#880E4F;strokeWidth=2;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="530" width="425" height="185" as="geometry"/>
+        </mxCell>
+        <mxCell id="eval_label" value="📐 CALIDAD DEL AGENTE" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#880E4F;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="530" width="425" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="eval_gt" value="&lt;b&gt;33 preguntas de negocio — Ground Truth&lt;/b&gt;&lt;br/&gt;Cada pregunta tiene respuesta esperada verificada manualmente en BigQuery&lt;br/&gt;Cobertura: MoM · YTD · Interanual · Ticket · Clientes · Cross-retail" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#AD1457;fontColor=#FCE4EC;strokeColor=#880E4F;fontSize=9;align=left;spacingLeft=8;spacingTop=4;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1133" y="563" width="388" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="eval_judge" value="&lt;b&gt;Juez IA automático&lt;/b&gt; — evalúa cada respuesta en 3 dimensiones:&lt;br/&gt;Tabla correcta (5%) · SQL generado (5%) · &lt;b&gt;Respuesta final (90%)&lt;/b&gt;&lt;br/&gt;Dashboard de score: detecta regresiones al cambiar modelo o datos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#AD1457;fontColor=#FCE4EC;strokeColor=#880E4F;fontSize=9;align=left;spacingLeft=8;spacingTop=4;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1133" y="643" width="388" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- ARROWS ENTRE CAPAS -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <!-- Pregunta: Capa 1 → Capa 2 (Chat envía pregunta al agente) -->
+        <mxCell id="v_12a" value="pregunta" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#424242;strokeWidth=2;fontColor=#424242;fontSize=10;fontStyle=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="l1_chat" target="l2_intent">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Respuesta: Capa 2 → Capa 1 (Insights sube al Dashboard) -->
+        <mxCell id="v_21a" value="respuesta" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#424242;strokeWidth=2;fontColor=#424242;fontSize=10;fontStyle=1;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="l2_insights" target="l1_dash">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Datos: Capa 2 SQL → Capa 3 (ejecuta consulta en BQ) -->
+        <mxCell id="v_23a" value="ejecuta consulta" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#424242;strokeWidth=2;fontColor=#424242;fontSize=10;fontStyle=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="l2_sql" target="l3_ds1">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="643" y="510"/><mxPoint x="203" y="510"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- Datos: Capa 3 → Capa 2 SQL (devuelve resultados) -->
+        <mxCell id="v_32a" value="datos" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2E7D32;strokeWidth=2;fontColor=#2E7D32;fontSize=10;fontStyle=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="l3_ds1" target="l2_sql">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="370" y="631"/><mxPoint x="370" y="510"/><mxPoint x="538" y="510"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- Catálogo → Agente Semántico (busca contexto) -->
+        <mxCell id="h_cat_sem" value="contexto" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#4A148C;strokeWidth=2;fontColor=#4A148C;fontSize=10;fontStyle=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" edge="1" parent="1" source="cat_a" target="l2_semantic">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1094" y="194"/><mxPoint x="1094" y="402"/><mxPoint x="498" y="402"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- Evaluación → (flecha de retroalimentación al agente) -->
+        <mxCell id="h_eval_agent" value="mejora continua" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#880E4F;strokeWidth=1;fontColor=#880E4F;fontSize=9;fontStyle=3;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" edge="1" parent="1" source="eval_judge" target="l2_insights">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1094" y="675"/><mxPoint x="1094" y="515"/><mxPoint x="1060" y="515"/><mxPoint x="1060" y="402"/></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- FOOTER -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="footer" value="Intercorp Management — Data &amp; Analytics · Agente de Análisis Conversacional · Julio 2026" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#9E9E9E;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="727" width="1520" height="28" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

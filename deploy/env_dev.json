@@ -1,0 +1,33 @@
+{
+  "project_operation": "dev-itc-customer-services",
+  "project_analytics": "dev-itc-customer-services",
+  "project_billing":   "dev-itc-customer-services",
+
+  "dataset_sp": "demo_migracion",
+  "dataset_stage": "demo_migracion",
+  "dataset_dq": "demo_migracion",
+
+  "METADATA_API_URL":  "https://dev-itc-metadata-api-232282934791.us-central1.run.app",
+
+  "service_account_job": "dev-demo-migra-matillion-job@dev-itc-customer-services.iam.gserviceaccount.com",
+  "service_account_app": "pendiente_definir",
+
+  "project_consentimiento_ibk_archivo": "dev-intercorp-data-storage",
+  "dataset_consentimiento_ibk_archivo": "raw_ibk_dlk",
+  "table_consentimiento_ibk_archivo": "t_consent_transaction_{fecha_archivo}_external",
+
+  "project_iden_party": "dev-intercorp-data-operation",
+  "dataset_iden_party": "matillion_dev",
+  "table_iden_party": "iden_itc_party_prd",
+
+  "project_t_consent_transaction": "dev-intercorp-data-storage",
+  "dataset_t_consent_transaction": "master_party",
+  "table_t_consent_transaction": "t_consent_transaction",
+
+  "project_ba_customer_consent_group": "dev-intercorp-data-storage",
+  "dataset_ba_customer_consent_group": "master_party",
+  "table_ba_customer_consent_group": "ba_customer_consent_group",
+
+  "mail_pubsub_project": "central-data-governance-260223",
+  "mail_pubsub_topic": "itcm-mail"
+}

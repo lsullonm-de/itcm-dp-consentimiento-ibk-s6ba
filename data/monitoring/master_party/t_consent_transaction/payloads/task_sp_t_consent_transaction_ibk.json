@@ -1,0 +1,18 @@
+{
+  "code": "${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk",
+  "process_code": "${env}-t-consent-transaction-ibk",
+  "process_parent_code": null,
+  "company_id": "000",
+  "company_code": "IBK",
+  "business_name": "Centraliza consentimientos LPDP de Interbank en t_consent_transaction",
+  "technical_name": "${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk",
+  "object_catalog": "${project_t_consent_transaction}",
+  "object_schema": "${dataset_t_consent_transaction}",
+  "object_name": "t_consent_transaction",
+  "object_type": "TABLE",
+  "object_source": ["${project_consentimiento_ibk_archivo}.${dataset_consentimiento_ibk_archivo}.t_consent_transaction_{fecha_archivo}_external", "${project_iden_party}.${dataset_iden_party}.${table_iden_party}"],
+  "flag_active": "1",
+  "last_status_code": null,
+  "flag_reprocess": "0",
+  "creation_user": "dataops-deploy"
+}
