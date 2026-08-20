@@ -1,5 +1,7 @@
 {
   "bigquery_ddl": [
+    "/data/bigquery/master_party/t_consent_transaction/ddl/ddl_dq_config.sql",
+    "/data/bigquery/master_party/t_consent_transaction/ddl/ddl_dq_control.sql",
     "/data/bigquery/master_party/t_consent_transaction/ddl/t_consent_transaction.sql",
     "/data/bigquery/master_party/t_consent_transaction/alter/alter_t_consent_transaction_20260819_001.sql",
     "/data/bigquery/master_party/ba_customer_consent_group/ddl/ba_customer_consent_group.sql",

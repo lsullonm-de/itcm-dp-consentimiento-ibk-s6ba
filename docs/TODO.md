@@ -61,6 +61,7 @@
 - [ ] ⚠️ No se generó `bigquery_dml` en `deploy_prd.json` (regla del framework: DML solo en dev) — esto deja sin resolver cómo se registran las reglas DQ en producción; confirmar con el equipo el mecanismo real
 - [ ] ⚠️ `validar_dq_criticas` cuenta fails por `execution_date = CURRENT_DATE()` sin distinguir `execution_id` — si se corre más de una vez el mismo día (normal + reproceso manual), el conteo mezcla ambas corridas
 - [ ] No se generaron `dml_dq_monitor_config_*.sql` — el spec no declara monitores DQ explícitos, solo reglas
+- [x] **BUG (2026-08-20):** trigger Cloud Build falló en `deploy-dml` — `Not found: Table dev-itc-customer-services:demo_migracion.dq_config was not found`. Nunca se creó el DDL de `dq_config`/`dq_control`, solo el `INSERT` (`dml_dq_config_*`). Fix: agregados `ddl_dq_config.sql`/`ddl_dq_control.sql` en `t_consent_transaction/ddl/` (`CREATE TABLE IF NOT EXISTS`, tablas compartidas del `dataset_dq`), registrados en `componentes[]` del spec y al inicio de `bigquery_ddl` en `deploy_dev.json`/`deploy_prd.json`. Pendiente: re-disparar el trigger Dataops dev
 
 ### COMPLIANCE
 - [x] `fac-data-rules-check` ejecutado (2026-08-19) — 2 críticas + 2 advertencias encontradas y corregidas. Reporte: `docs/reports/rules-check-2026-08-19.md`
