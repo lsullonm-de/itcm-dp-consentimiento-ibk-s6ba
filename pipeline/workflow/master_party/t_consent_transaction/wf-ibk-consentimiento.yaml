@@ -276,6 +276,8 @@ source:
                               next: build_sql_tct_p1
 
                       # -------- SP 1: sp_t_consent_transaction_ibk --------
+                      # Partido en 3 (no 2) — con p_process_date_ini/end el SP pasó a 11 parámetros
+                      # y sql_tct_p1 solo quedaba a 26 bytes del límite de 400 por expresión.
                       - build_sql_tct_p1:
                           assign:
                             # p_process_date_ini = p_process_date_end = fecha_actual — este SP
@@ -286,23 +288,26 @@ source:
                                 + "DATE '" + fecha_actual + "'"
                                 + ", DATE '" + fecha_actual + "'"
                                 + ", '" + var_project_archivo + "'"
-                                + ", '" + var_dataset_archivo + "'"
-                                + ", '" + var_project_iden_party + "'"
-                                + ", '" + var_dataset_iden_party + "'"
-                                + ", '" + var_table_iden_party + "'"}
+                                + ", '" + var_dataset_archivo + "'"}
 
                       - build_sql_tct_p2:
                           assign:
-                            - sql_tct_p2: ${", '" + var_project_tct + "'"
+                            - sql_tct_p2: ${", '" + var_project_iden_party + "'"
+                                + ", '" + var_dataset_iden_party + "'"
+                                + ", '" + var_table_iden_party + "'"
+                                + ", '" + var_project_tct + "'"
                                 + ", '" + var_dataset_tct + "'"
-                                + ", '" + var_table_tct + "'"
-                                + ", '" + var_dataset_stage + "'"
+                                + ", '" + var_table_tct + "'"}
+
+                      - build_sql_tct_p3:
+                          assign:
+                            - sql_tct_p3: ${", '" + var_dataset_stage + "'"
                                 + ", v_read, v_write); "
                                 + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
 
                       - build_sql_tct:
                           assign:
-                            - query_tct: ${sql_tct_p1 + sql_tct_p2}
+                            - query_tct: ${sql_tct_p1 + sql_tct_p2 + sql_tct_p3}
 
                       - log_query_tct:
                           call: sys.log
@@ -512,23 +517,31 @@ source:
                   assign:
                     - var_sugerencia_reanudacion: ${"Para continuar el reproceso desde donde se quedó, ejecutar nuevamente con process_date_init - "
                         + var_ultima_fecha_intentada + " y process_date_fin - " + _param_fin + "."}
-                  next: handle_error
+                  next: build_content_error_p1
 
               - sugerencia_simple:
                   assign:
                     - var_sugerencia_reanudacion: ${"Reintentar manualmente con process_date - " + var_ultima_fecha_intentada + "."}
-                  next: handle_error
+                  next: build_content_error_p1
+
+              # Expresión partida en 2 — GCP Workflows limita cada expresión ${...} a 400 caracteres
+              - build_content_error_p1:
+                  assign:
+                    - content_error_p1: ${"<p>Se detectó un error procesando consentimientos LPDP de Interbank (modo - "
+                        + var_modo + ").</p>"
+                        + "<p>CHECKPOINT — última fecha intentada (donde se detuvo) - " + var_ultima_fecha_intentada + "</p>"}
+
+              - build_content_error_p2:
+                  assign:
+                    - content_error_p2: ${"<p>Fechas procesadas correctamente antes del error - " + string(var_fechas_procesadas) + "</p>"
+                        + "<p>" + var_sugerencia_reanudacion + "</p>"
+                        + "<p>Detalle - " + text.decode(json.encode(e)) + "</p>"}
 
               - handle_error:
                   assign:
                     - email_body:
                         subject: "[IBK-CONSENTIMIENTO] Centralización LPDP [❌ ERROR]"
-                        content: ${"<p>Se detectó un error procesando consentimientos LPDP de Interbank (modo - "
-                            + var_modo + ").</p>"
-                            + "<p>CHECKPOINT — última fecha intentada (donde se detuvo) - " + var_ultima_fecha_intentada + "</p>"
-                            + "<p>Fechas procesadas correctamente antes del error - " + string(var_fechas_procesadas) + "</p>"
-                            + "<p>" + var_sugerencia_reanudacion + "</p>"
-                            + "<p>Detalle - " + text.decode(json.encode(e)) + "</p>"}
+                        content: ${content_error_p1 + content_error_p2}
                         toAddress:
                           - "lsullonm@intercorp.com.pe"   # ⚠️ SOLO PARA PRUEBAS — reemplazar por los destinatarios reales antes de producción
                   next: enviar_mail
