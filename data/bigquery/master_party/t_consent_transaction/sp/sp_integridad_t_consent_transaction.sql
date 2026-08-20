@@ -51,7 +51,7 @@ BEGIN
   SET v_folder_date = FORMAT_DATE('%Y%m%d', DATE_SUB(p_process_date_ini, INTERVAL 1 DAY));
   SET v_ext_table_path = p_project_archivo || '.' || p_dataset_archivo
                          || '.t_consent_transaction_' || v_folder_date || '_external';
-  SET v_gcs_uri = 'gs://p-ibkbi-rdp-stg-dlk-us-suoh/data/m_consent/current/' || v_folder_date
+  SET v_gcs_uri = 'gs://${gcs_bucket_consentimiento_ibk_archivo}/data/m_consent/current/' || v_folder_date
                   || '/*/T_IN_LPDP_CONSENTIMIENTO_' || v_folder_date || '.txt.gz';
 
   SET v_sql = '''

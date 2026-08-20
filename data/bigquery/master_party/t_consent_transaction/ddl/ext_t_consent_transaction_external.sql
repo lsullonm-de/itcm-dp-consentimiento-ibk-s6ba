@@ -39,7 +39,7 @@ CREATE OR REPLACE EXTERNAL TABLE `${project_consentimiento_ibk_archivo}.${datase
 )
 OPTIONS (
   format = 'CSV',
-  uris = ['gs://p-ibkbi-rdp-stg-dlk-us-suoh/data/m_consent/current/{fecha_archivo}/*/T_IN_LPDP_CONSENTIMIENTO_{fecha_archivo}.txt.gz'],
+  uris = ['gs://${gcs_bucket_consentimiento_ibk_archivo}/data/m_consent/current/{fecha_archivo}/*/T_IN_LPDP_CONSENTIMIENTO_{fecha_archivo}.txt.gz'],
   field_delimiter = '|',
   skip_leading_rows = 0,
   allow_quoted_newlines = true

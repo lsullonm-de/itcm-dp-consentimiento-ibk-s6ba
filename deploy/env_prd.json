@@ -15,6 +15,7 @@
   "project_consentimiento_ibk_archivo": "pendiente_definir",
   "dataset_consentimiento_ibk_archivo": "pendiente_definir",
   "table_consentimiento_ibk_archivo": "t_consent_transaction_{fecha_archivo}_external",
+  "gcs_bucket_consentimiento_ibk_archivo": "p-ibkbi-rdp-stg-dlk-us-suoh",
 
   "project_iden_party": "pendiente_definir",
   "dataset_iden_party": "pendiente_definir",

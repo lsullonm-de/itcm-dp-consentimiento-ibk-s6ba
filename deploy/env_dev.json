@@ -15,6 +15,7 @@
   "project_consentimiento_ibk_archivo": "dev-intercorp-data-storage",
   "dataset_consentimiento_ibk_archivo": "raw_ibk_dlk",
   "table_consentimiento_ibk_archivo": "t_consent_transaction_{fecha_archivo}_external",
+  "gcs_bucket_consentimiento_ibk_archivo": "dev-demo-raw-sales-xrt9",
 
   "project_iden_party": "dev-intercorp-data-operation",
   "dataset_iden_party": "matillion_dev",

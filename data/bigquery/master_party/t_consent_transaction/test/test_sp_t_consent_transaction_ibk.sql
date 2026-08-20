@@ -2,11 +2,13 @@
 -- Spec: spec-ibk-20260819-001 | Ejecutar en fac-data-stage-testing, dataset de test aislado
 --
 -- ⚠️ LIMITACIÓN CONOCIDA: este SP crea una EXTERNAL TABLE sobre un archivo real en GCS
--- (gs://p-ibkbi-rdp-stg-dlk-us-suoh/...). No es simulable con datos en memoria como el resto
--- de SPs del framework. Para correr este test end-to-end en dev se necesita:
+-- (gs://${gcs_bucket_consentimiento_ibk_archivo}/...). No es simulable con datos en memoria como
+-- el resto de SPs del framework. Para correr este test end-to-end en dev se necesita:
 --   1. Un archivo .txt.gz de prueba subido a la ruta
---      gs://p-ibkbi-rdp-stg-dlk-us-suoh/data/m_consent/current/{fecha_prueba-1d}/{cualquier-uuid}/
---      T_IN_LPDP_CONSENTIMIENTO_{fecha_prueba-1d}.txt.gz  (o el bucket de test que designe Interbank)
+--      gs://${gcs_bucket_consentimiento_ibk_archivo}/data/m_consent/current/{fecha_prueba-1d}/{cualquier-uuid}/
+--      T_IN_LPDP_CONSENTIMIENTO_{fecha_prueba-1d}.txt.gz
+--      (dev usa gs://dev-demo-raw-sales-xrt9/... — bucket propio del dev, no el real de IBK,
+--      porque service_account_job no tiene storage.objectViewer sobre p-ibkbi-rdp-stg-dlk-us-suoh)
 --   2. Al menos una fila con party_id que exista en iden_itc_party_prd para itc_company_id
 --      IN ('000','1000'), y al menos una fila con party_id SIN match (para el caso T3)
 --

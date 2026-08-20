@@ -76,7 +76,7 @@ BEGIN
   -- CREATE OR REPLACE además la hace idempotente ante reintentos del mismo día.
   SET v_ext_table_name = 't_consent_transaction_' || v_folder_date || '_external';
   SET v_ext_table_path = p_project_archivo || '.' || p_dataset_archivo || '.' || v_ext_table_name;
-  SET v_gcs_uri = 'gs://p-ibkbi-rdp-stg-dlk-us-suoh/data/m_consent/current/' || v_folder_date
+  SET v_gcs_uri = 'gs://${gcs_bucket_consentimiento_ibk_archivo}/data/m_consent/current/' || v_folder_date
                   || '/*/T_IN_LPDP_CONSENTIMIENTO_' || v_folder_date || '.txt.gz';
   -- NOTA: el "{UUID}" del contrato original se convierte aquí en el wildcard '*' de BigQuery —
   -- no existe un placeholder literal de UUID en la sintaxis de external table.
