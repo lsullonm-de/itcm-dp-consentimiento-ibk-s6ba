@@ -102,9 +102,38 @@ Las 2 BAJAS son cosméticas/de proceso del framework, no bloquean.
 
 Ambos SPs siguen procesando una única fecha por invocación (el Workflow ya itera fecha por fecha) — el cambio es solo de firma, sin alterar el comportamiento ni el diseño de una tabla externa por fecha.
 
-Los 3 hallazgos MEDIA (cabecera del workflow, `SELECT *` en el patrón de dedup, `DROP TABLE` sobre tablas tmp efímeras) se dejan **sin corregir**, documentados como excepción aceptada: son contradicciones entre distintos documentos "oficiales" del propio framework, no defectos de este módulo — corregir uno de los dos lados requeriría una decisión de los dueños del framework, no de este pipeline.
+Los 3 hallazgos MEDIA (cabecera del workflow, `SELECT *` en el patrón de dedup, `DROP TABLE` sobre tablas tmp efímeras) se dejaron inicialmente **sin corregir**, documentados como excepción aceptada por ser contradicciones entre distintos documentos "oficiales" del propio framework.
 
-### Resultado actualizado: ⚠️ PASS con advertencias — 0 CRÍTICA, 0 ALTA, 3 MEDIA (excepción documentada), 2 BAJA (cosméticas)
+### Resultado actualizado: ⚠️ PASS con advertencias — 0 CRÍTICA, 0 ALTA, 3 MEDIA (1 confirmada como bug real, ver abajo), 2 BAJA (cosméticas)
+
+---
+
+## Actualización — 2026-08-20 (falla real de deploy confirma el hallazgo MEDIA #2)
+
+El trigger de Cloud Build falló en el paso `deploy-workflow`:
+```
+ERROR: (gcloud.workflows.deploy) INVALID_ARGUMENT: request contains errors
+- field: workflow.service_account
+  description: the referenced service account "projects/-/serviceAccounts/" is invalid
+```
+
+Esto confirma que el hallazgo MEDIA #2 (cabecera ausente en `wf-ibk-consentimiento.yaml`) **no era solo un conflicto documental — rompía el deploy real**. La guía correcta es `data/skills/build/dataops/dataops-configurator/SKILL.md` §8 ("workflow — Cloud Workflows"): la cabecera (`name`, `region`, `project`, `service_account`) debe estar **en el mismo archivo YAML**, antes de `source:` — el framework no la inyecta automáticamente. `data/standard/services/workflow.md` (que decía lo contrario y que seguimos durante ORCHESTRATION) está desactualizado en este punto.
+
+**Fix aplicado:** agregada la cabecera a `wf-ibk-consentimiento.yaml`:
+```yaml
+name: ${env}-t-consent-transaction-ibk
+region: us-central1
+project: ${project_operation}
+description: "Centralización de Consentimientos LPDP Interbank (IBK) — t_consent_transaction + ba_customer_consent_group"
+service_account: ${service_account_job}
+source:
+  ...
+```
+`name` usa el mismo valor que ya referenciaba `cs-ibk-consentimiento.yaml` en `target.workflow` — no requirió cambios en el Scheduler.
+
+Los otros 2 hallazgos MEDIA (`SELECT *` en el patrón de dedup, `DROP TABLE` en tablas tmp efímeras) siguen como excepción documentada — no rompen ningún deploy, son contradicciones puramente de estilo/documentación entre estándares del framework.
+
+### Resultado final: ⚠️ PASS con advertencias — 0 CRÍTICA, 0 ALTA, 1 MEDIA corregida (bug real de deploy) + 2 MEDIA como excepción documentada, 2 BAJA (cosméticas)
 
 ---
 > 📁 Generado por `fac-data-stage-compliance` · 2026-08-19
