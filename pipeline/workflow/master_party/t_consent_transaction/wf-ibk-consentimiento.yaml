@@ -757,6 +757,8 @@ source:
               - raise_error:
                   raise: ${e}
 
+  # MONITORING — nunca debe romper el pipeline: atrapa su propio error y loguea WARNING
+  # (mismo patrón que RegisterIntegrityResults).
   CreateExecution:
     params:
       - api_url
@@ -772,29 +774,42 @@ source:
       - user
     steps:
       - call_api:
-          call: http.post
-          args:
-            url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/task-execution/creation"}
-            auth:
-              type: OIDC
-              audience: ${api_url}
-            body:
-              execution_id: ${execution_id}
-              process_code: ${process_code}
-              task_code: ${task_code}
-              object_last_load_date: null
-              execution_type: ${execution_type}
-              execution_status_code: ${execution_status_code}
-              execution_data_read: ${execution_data_read}
-              execution_data_write: ${execution_data_write}
-              creation_user: ${user}
-              process_date_init: ${process_date_init}
-              process_date_end: ${process_date_end}
-          result: api_response
+          try:
+            call: http.post
+            args:
+              url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/task-execution/creation"}
+              auth:
+                type: OIDC
+                audience: ${api_url}
+              body:
+                execution_id: ${execution_id}
+                process_code: ${process_code}
+                task_code: ${task_code}
+                object_last_load_date: null
+                execution_type: ${execution_type}
+                execution_status_code: ${execution_status_code}
+                execution_data_read: ${execution_data_read}
+                execution_data_write: ${execution_data_write}
+                creation_user: ${user}
+                process_date_init: ${process_date_init}
+                process_date_end: ${process_date_end}
+            result: api_response
+          except:
+            as: e
+            steps:
+              - log_registro_fallido:
+                  call: sys.log
+                  args:
+                    text: ${"[MONITORING] No se pudo crear el registro de ejecución - " + json.encode_to_string(e)}
+                    severity: WARNING
+              - return_error:
+                  return: null
 
       - return_response:
           return: ${api_response.body}
 
+  # MONITORING — nunca debe romper el pipeline: se invoca también desde el except de
+  # TrackedBigQueryJobWithResults, así que un fallo aquí no debe tapar el error real de BigQuery.
   UpdateExecution:
     params:
       - api_url
@@ -811,29 +826,44 @@ source:
       - user
     steps:
       - call_api:
-          call: http.put
-          args:
-            url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/task-execution/" + execution_id + "/" + task_code + "/update_new"}
-            auth:
-              type: OIDC
-              audience: ${api_url}
-            body:
-              execution_id: ${execution_id}
-              process_code: ${process_code}
-              task_code: ${task_code}
-              object_last_load_date: ${object_last_load_date}
-              execution_type: ${execution_type}
-              execution_status_code: ${execution_status_code}
-              execution_data_read: ${execution_data_read}
-              execution_data_write: ${execution_data_write}
-              process_date_init: ${process_date_init}
-              process_date_end: ${process_date_end}
-              update_user: ${user}
-          result: api_response
+          try:
+            call: http.put
+            args:
+              url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/task-execution/" + execution_id + "/" + task_code + "/update_new"}
+              auth:
+                type: OIDC
+                audience: ${api_url}
+              body:
+                execution_id: ${execution_id}
+                process_code: ${process_code}
+                task_code: ${task_code}
+                object_last_load_date: ${object_last_load_date}
+                execution_type: ${execution_type}
+                execution_status_code: ${execution_status_code}
+                execution_data_read: ${execution_data_read}
+                execution_data_write: ${execution_data_write}
+                process_date_init: ${process_date_init}
+                process_date_end: ${process_date_end}
+                update_user: ${user}
+            result: api_response
+          except:
+            as: e
+            steps:
+              - log_registro_fallido:
+                  call: sys.log
+                  args:
+                    text: ${"[MONITORING] No se pudo actualizar el registro de ejecución - " + json.encode_to_string(e)}
+                    severity: WARNING
+              - return_error:
+                  return: null
 
       - return_response:
           return: ${api_response.body}
 
+  # MONITORING — nunca debe romper el pipeline ni tapar el error original: atrapa su propio
+  # error y loguea WARNING (mismo patrón que RegisterIntegrityResults). Es especialmente crítico
+  # aquí porque este sub-workflow se invoca también desde el except principal (update_process_failed)
+  # — si la API de metadata falla justo ahí, no debe perderse el error real que causó la falla.
   UpdateProcessStatus:
     params:
       - api_url
@@ -846,21 +876,32 @@ source:
       - flag_scheduler
     steps:
       - call_api:
-          call: http.put
-          args:
-            url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/update"}
-            auth:
-              type: OIDC
-              audience: ${api_url}
-            body:
-              execution_date: ${execution_date}
-              flag_active: ${flag_active}
-              flag_reprocess: ${flag_reprocess}
-              last_status_code: ${status}
-              execution_user: ${user}
-              update_user: ${user}
-              flag_scheduler: ${flag_scheduler}
-          result: api_response
+          try:
+            call: http.put
+            args:
+              url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/update"}
+              auth:
+                type: OIDC
+                audience: ${api_url}
+              body:
+                execution_date: ${execution_date}
+                flag_active: ${flag_active}
+                flag_reprocess: ${flag_reprocess}
+                last_status_code: ${status}
+                execution_user: ${user}
+                update_user: ${user}
+                flag_scheduler: ${flag_scheduler}
+            result: api_response
+          except:
+            as: e
+            steps:
+              - log_registro_fallido:
+                  call: sys.log
+                  args:
+                    text: ${"[MONITORING] No se pudo actualizar el estado del proceso - " + json.encode_to_string(e)}
+                    severity: WARNING
+              - return_error:
+                  return: null
 
       - return_response:
           return: ${api_response.body}
