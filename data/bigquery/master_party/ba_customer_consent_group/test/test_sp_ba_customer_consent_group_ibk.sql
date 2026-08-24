@@ -48,8 +48,9 @@ SELECT * FROM UNNEST([
   )
 ]);
 
--- Scope generado por sp_t_consent_transaction_ibk: itc_company_id + consent_date tocados en la corrida
-CREATE OR REPLACE TABLE `${project_t_consent_transaction}.test_stage_tmp.tmp_t_consent_transaction_ibk` AS
+-- Scope generado por sp_t_consent_transaction_ibk: itc_company_id + consent_date tocados en la
+-- corrida. Vive en ${project_iden_party}, no en ${project_t_consent_transaction} — ver esa SP.
+CREATE OR REPLACE TABLE `${project_iden_party}.test_stage_tmp.tmp_t_consent_transaction_ibk` AS
 SELECT DISTINCT itc_company_id, consent_date
 FROM `${project_t_consent_transaction}.test_master_party.t_consent_transaction`;
 
@@ -114,10 +115,13 @@ SET v_row_count = (
 ASSERT v_row_count = 0
   AS 'T4: approval_channel_name debe ser siempre NULL, se obtuvo ' || CAST(v_row_count AS STRING) || ' filas no nulas';
 
--- T5: las tablas temporales de scope se limpiaron al finalizar
+-- T5: las tablas temporales de scope se limpiaron al finalizar (cada una en su propio proyecto)
 SET v_row_count = (
-  SELECT COUNT(*) FROM `${project_t_consent_transaction}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
-  WHERE table_name IN ('tmp_t_consent_transaction_ibk', 'tmp_ba_customer_consent_group_ibk')
+  SELECT COUNT(*) FROM `${project_iden_party}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
+  WHERE table_name = 'tmp_t_consent_transaction_ibk'
+) + (
+  SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
+  WHERE table_name = 'tmp_ba_customer_consent_group_ibk'
 );
 ASSERT v_row_count = 0
   AS 'T5: las tablas temporales de scope deben quedar eliminadas al finalizar el SP, se obtuvieron ' || CAST(v_row_count AS STRING);

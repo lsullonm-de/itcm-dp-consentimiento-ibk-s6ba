@@ -142,7 +142,10 @@ BEGIN
   -- Sufijo de tabla hardcodeado a propósito (excepción aceptada, ver restricciones del spec,
   -- fac-data-rules-check REGLA 2/3): tabla efímera interna compartida solo entre este SP y
   -- sp_ba_customer_consent_group_ibk.sql, no varía entre ambientes.
-  SET v_stage_path = p_project_output || '.' || p_dataset_stage || '.tmp_t_consent_transaction_ibk';
+  -- Proyecto resuelto vía ${project_iden_party} (Dataops, en deploy) y no con p_project_output:
+  -- el dataset de stage (p_dataset_stage) vive físicamente bajo el proyecto de iden_party
+  -- (dev-intercorp-data-operation), no bajo el proyecto de salida de t_consent_transaction.
+  SET v_stage_path = '${project_iden_party}' || '.' || p_dataset_stage || '.tmp_t_consent_transaction_ibk';
 
   SET v_sql = '''
     CREATE OR REPLACE TABLE `''' || v_stage_path || '''` AS
