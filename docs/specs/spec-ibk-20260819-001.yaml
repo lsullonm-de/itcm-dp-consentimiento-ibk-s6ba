@@ -60,20 +60,20 @@ fuentes:
     proyecto: dev-intercorp-data-storage
     dataset: raw_ibk_dlk          # confirmado por el equipo — reemplaza al dataset personal "lsullon" del DDL de referencia original
     tabla: "t_consent_transaction_{fecha_archivo}_external"   # confirmado: 1 tabla externa NUEVA por fecha, no una tabla estática reemplazada
-    volumetria: 60000              # por confirmar con Interbank
+    volumetria: 6822318            # confirmado con archivo real de dev (2026-08-21) — la estimación original (60000) era ~100x menor
     particion: "consent_date"                # tabla externa, sin partición BQ
     pii: true
     tipo_fuente: archivo
     campo_fecha: "{YYYYMMDD} en ruta GCS gs://p-ibkbi-rdp-stg-dlk-us-suoh/data/m_consent/current/{YYYYMMDD}/{UUID}/"
     rol: principal               # universo del proceso — activado con etapas.integridad: true (2026-08-19)
-    llave: [party_id, consent_transaction_id]
+    llave: [party_id, consent_date_time]   # cambiado 2026-08-21: consent_transaction_id viene SIEMPRE vacío en el archivo real (confirmado con Interbank), no es utilizable como llave
 
     # ── Campos agregados por DISCOVERY (2026-08-19) ────────────────
     tabla_canonica: "dev-intercorp-data-storage.raw_ibk_dlk.t_consent_transaction_{fecha_archivo}_external"
     tabla_profiling: no_aplica
     glosario_status: no_aplica   # fuente tipo archivo — no hay tabla BQ que perfilar todavía
     glosario_path: ~
-    campos_join_clave: [party_id, consent_transaction_id]
+    campos_join_clave: [party_id, consent_date_time]   # ver nota en "llave" — actualizado 2026-08-21
     empresas_cubiertas: ["000", "1000"]   # filtro de negocio declarado en RN-IBK-003/006 — confirmado: ambos códigos pertenecen a Interbank (ver RN-IBK-003)
     observaciones: >
       Sin acceso BigQuery desde esta sesión al proyecto dev-intercorp-data-storage
@@ -443,7 +443,8 @@ restricciones:
   - "consent_date de contenido no tiene offset fijo (~2 días, variable) — se lee del archivo, no se calcula (RN-IBK-004)"
   - "RESUELTO: approval_channel_name en ba_customer_consent_group queda siempre NULL — no hay origen en t_consent_transaction, confirmado por el equipo. Campo conservado por compatibilidad con el contrato original"
   - "RESUELTO: cambio de CREATE OR REPLACE TABLE a CREATE TABLE IF NOT EXISTS en ba_customer_consent_group aceptado por el equipo (evita borrar histórico en cada redeploy)"
-  - "consent_date_time del archivo no tiene destino definido en ninguna tabla — confirmar si se descarta"
+  - "RESUELTO (2026-08-21): consent_date_time no se persiste como columna en t_consent_transaction, pero SÍ tiene uso funcional — es parte de la nueva llave de dedup (party_id + consent_date_time) en sp_t_consent_transaction_ibk.sql, ver siguiente restricción"
+  - "RESUELTO (2026-08-21): consent_transaction_id viene SIEMPRE vacío en el archivo real de Interbank (confirmado con el equipo, 6.8M filas de muestra en dev, 0% con valor) — no es utilizable como llave. Llave de dedup/llave-nula cambiada de [party_id, consent_transaction_id] a [party_id, consent_date_time] en fuentes[], sp_t_consent_transaction_ibk.sql y DQ-IBK-T_CONSENT_TRANSACTION-003. El campo se sigue seleccionando como conset_transaction_id (columna de auditoría, casi siempre NULL) pero ya no participa en ninguna regla"
   - "RESUELTO: dataset de la tabla externa confirmado como raw_ibk_dlk (proyecto dev-intercorp-data-storage), reemplaza al dataset personal lsullon del DDL de referencia original"
   - "RESUELTO: tabla externa se nombra t_consent_transaction_{fecha_archivo}_external, una tabla nueva por fecha (no una tabla estática con CREATE OR REPLACE) — en reprocesos históricos coexisten varias simultáneamente, limpiar por TTL o DROP explícito"
   - "RESUELTO: itc_company_id '000' y '1000' son ambos de Interbank (empresa registrada con 2 códigos) — confirmado por Data Owner"

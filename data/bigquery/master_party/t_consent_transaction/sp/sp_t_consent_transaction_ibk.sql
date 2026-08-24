@@ -167,18 +167,24 @@ BEGIN
       SAFE_CAST(a.consent_date AS DATE)  AS consent_date,
       a.signed_document                  AS signed_document
     FROM (
-      -- [RI-IBK-T_CONSENT_TRANSACTION-002/003] excluir duplicados (se queda con el evento más
-      -- reciente por consent_date_time) y llave nula de la fuente principal — patrón obligatorio
-      -- de @.claude/data/standard/data-integrity.md Sección 4
+      -- [RI-IBK-T_CONSENT_TRANSACTION-002/003] excluir duplicados y llave nula de la fuente
+      -- principal — patrón obligatorio de @.claude/data/standard/data-integrity.md Sección 4.
+      -- Llave = party_id + consent_date_time (NO consent_transaction_id): confirmado con datos
+      -- reales de Interbank (2026-08-21) que ese campo viene SIEMPRE vacío en el archivo, tanto
+      -- en dev como en producción — no es utilizable como parte de la llave del evento. Se sigue
+      -- seleccionando como conset_transaction_id más abajo (columna de auditoría, casi siempre
+      -- NULL), pero ya no participa en el dedup ni en el filtro de llave nula. Tie-break por
+      -- load_date (timestamp de escritura del archivo origen) ante duplicados exactos de
+      -- party_id + consent_date_time.
       SELECT * EXCEPT(rn)
       FROM (
         SELECT t.*,
           ROW_NUMBER() OVER (
-            PARTITION BY party_id, consent_transaction_id
-            ORDER BY consent_date_time DESC
+            PARTITION BY party_id, consent_date_time
+            ORDER BY load_date DESC
           ) AS rn
         FROM `''' || v_ext_table_path || '''` t
-        WHERE party_id IS NOT NULL AND consent_transaction_id IS NOT NULL
+        WHERE party_id IS NOT NULL AND consent_date_time IS NOT NULL
       )
       WHERE rn = 1
     ) a

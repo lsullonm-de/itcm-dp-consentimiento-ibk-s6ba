@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS `${project_t_consent_transaction}.${dataset_t_consent
   itc_company_name STRING OPTIONS(description="Nombre de la empresa que genera el registro único de cliente"),
   business_unit_id STRING OPTIONS(description="Código identificador de la Unidad de negocio"),
   business_unit STRING OPTIONS(description="Descripción de la Unidad de negocio"),
-  conset_transaction_id STRING OPTIONS(description="Código identificador del evento por el cual el cliente da el consentimiento o rechazo del tratamiento de sus datos (origen: consent_transaction_id del archivo)"),
+  conset_transaction_id STRING OPTIONS(description="Origen: consent_transaction_id del archivo. Confirmado con Interbank (2026-08-21) que viene SIEMPRE vacío en el archivo real — no se usa como llave de dedup/carga (ver sp_t_consent_transaction_ibk.sql), se conserva solo por compatibilidad con el contrato original"),
   customer_id STRING OPTIONS(description="Código identificador del cliente en el sistema origen IBK (origen: party_id del archivo)"),
   id STRING OPTIONS(description="Identificador unificado ITC de la persona, resuelto vía JOIN por party_id contra iden_itc_party_prd filtrando itc_company_id IN ('000','1000') — RN-IBK-003"),
   conset_id STRING OPTIONS(description="Código identificador del consentimiento que da el cliente a la empresa (origen: consent_id del archivo). 'CP_2' = consentimiento LPDP consumido por ba_customer_consent_group"),
