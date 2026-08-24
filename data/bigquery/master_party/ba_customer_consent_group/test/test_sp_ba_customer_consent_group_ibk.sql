@@ -115,12 +115,13 @@ SET v_row_count = (
 ASSERT v_row_count = 0
   AS 'T4: approval_channel_name debe ser siempre NULL, se obtuvo ' || CAST(v_row_count AS STRING) || ' filas no nulas';
 
--- T5: las tablas temporales de scope se limpiaron al finalizar (cada una en su propio proyecto)
+-- T5: las tablas temporales de scope se limpiaron al finalizar — ambas viven bajo
+-- ${project_iden_party} (dataset de stage), no bajo project_ba_customer_consent_group
 SET v_row_count = (
   SELECT COUNT(*) FROM `${project_iden_party}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
   WHERE table_name = 'tmp_t_consent_transaction_ibk'
 ) + (
-  SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
+  SELECT COUNT(*) FROM `${project_iden_party}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
   WHERE table_name = 'tmp_ba_customer_consent_group_ibk'
 );
 ASSERT v_row_count = 0

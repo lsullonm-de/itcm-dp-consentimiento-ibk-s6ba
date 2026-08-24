@@ -43,12 +43,15 @@ BEGIN
 
   -- Sufijos de tabla hardcodeados a propósito (excepción aceptada, ver restricciones del spec,
   -- fac-data-rules-check REGLA 2/3): tablas efímeras internas de este módulo, no varían entre
-  -- ambientes. v_scope_path la genera sp_t_consent_transaction_ibk.sql — mismo nombre literal,
-  -- mismo proyecto (${project_iden_party}, no p_project_output — ver esa SP para el detalle).
+  -- ambientes. El dataset de stage (p_dataset_stage) vive físicamente bajo ${project_iden_party}
+  -- (dev-intercorp-data-operation), no bajo p_project_output (dev-intercorp-data-storage) — el
+  -- dataset "demo_migracion" de stage no existe en ese proyecto. Aplica a AMBAS tablas de stage,
+  -- no solo a la que genera sp_t_consent_transaction_ibk.sql (bug real 2026-08-21: v_filtered_path
+  -- seguía usando p_project_output y falló con "Dataset ... was not found").
   SET v_scope_path    = '${project_iden_party}' || '.' || p_dataset_stage  || '.tmp_t_consent_transaction_ibk';
   SET v_source_path   = p_project_source || '.' || p_dataset_source || '.' || p_table_source;
   SET v_output_path   = p_project_output || '.' || p_dataset_output || '.' || p_table_output;
-  SET v_filtered_path = p_project_output || '.' || p_dataset_stage  || '.tmp_ba_customer_consent_group_ibk';
+  SET v_filtered_path = '${project_iden_party}' || '.' || p_dataset_stage  || '.tmp_ba_customer_consent_group_ibk';
 
   -- ============================================================
   -- 2. FILTRO DE NEGOCIO [RN-IBK-006]
