@@ -2,7 +2,7 @@ name: ${env}-t-consent-transaction-ibk-scheduler
 project: ${project_operation}
 region: us-central1
 description: "Scheduler diario — Centralización de Consentimientos LPDP Interbank (IBK), flujo normal"
-schedule: "0 10 * * *"
+schedule: "0 10 * * 1-5"   # lunes-viernes — no hay archivo de Interbank los fines de semana
 timeZone: "America/Lima"
 target:
   type: workflow

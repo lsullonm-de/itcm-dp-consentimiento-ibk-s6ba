@@ -51,6 +51,9 @@ source:
             # Contador de fechas procesadas (para el mail de éxito) y checkpoint de reanudación
             - var_fechas_procesadas: 0
             - var_ultima_fecha_intentada: ""
+            # Fechas sin archivo en origen (fines de semana, feriados) — se omiten, no son error.
+            # RN-IBK-010: confirmado con el usuario (2026-08-24) que estos huecos son esperados.
+            - var_fechas_sin_archivo: []
 
             # --- MONITORING [etapas.monitoring: true] ---
             - var_METADATA_API_URL: ${METADATA_API_URL}
@@ -268,12 +271,28 @@ source:
                             user: ${var_user}
                           result: integridad_registro_response
 
+                      # [RN-IBK-010] Sin archivo (flag_detener=1) NO aborta el resto del proceso —
+                      # se omite esta fecha y se sigue con la siguiente del rango (reproceso) o se
+                      # termina OK sin cargar nada (normal/manual). El histórico ya quedó matriculado
+                      # arriba en registrar_resultado_integridad, independientemente de esta rama.
                       - evaluar_integridad:
                           switch:
                             - condition: ${integridad_flag_detener == 1}
-                              raise: ${"[INTEGRIDAD] " + integridad_motivo}
+                              next: registrar_fecha_sin_archivo
                             - condition: ${true}
                               next: build_sql_tct_p1
+
+                      - registrar_fecha_sin_archivo:
+                          assign:
+                            - var_fechas_sin_archivo: ${list.concat(var_fechas_sin_archivo, fecha_actual)}
+                          next: log_fecha_sin_archivo
+
+                      - log_fecha_sin_archivo:
+                          call: sys.log
+                          args:
+                            text: ${"[INFO] Sin archivo para folder_date de " + fecha_actual + " — se omite esta fecha. " + integridad_motivo}
+                            severity: INFO
+                          next: fin_iteracion_fecha
 
                       # -------- SP 1: sp_t_consent_transaction_ibk --------
                       # Partido en 3 (no 2) — con p_process_date_ini/end el SP pasó a 11 parámetros
@@ -433,6 +452,13 @@ source:
                       - log_fin_fecha:
                           assign:
                             - var_fechas_procesadas: ${var_fechas_procesadas + 1}
+                          next: fin_iteracion_fecha
+
+                      # Punto de convergencia de ambas ramas (procesada / sin archivo) — último
+                      # step de esta iteración del for, sin next: pasa a la siguiente fecha del rango.
+                      - fin_iteracion_fecha:
+                          assign:
+                            - _fin_iteracion: true
 
               # DQ: verificar si alguna regla crítica falló en la corrida de hoy (agregado — no
               # detiene el pipeline, solo se informa en el mail de éxito). LIMITACIÓN CONOCIDA:
@@ -549,6 +575,18 @@ source:
       # ============================================================
       # 4. NOTIFICACIÓN OK
       # ============================================================
+      # [RN-IBK-010] Fechas sin archivo (omitidas, no error) — se informan en el correo de éxito.
+      - set_fechas_sin_archivo_txt:
+          switch:
+            - condition: ${len(var_fechas_sin_archivo) > 0}
+              assign:
+                - var_fechas_sin_archivo_txt: ${"<p>Fechas sin archivo en origen (omitidas) - "
+                    + string(len(var_fechas_sin_archivo)) + ": "
+                    + text.decode(json.encode(var_fechas_sin_archivo)) + "</p>"}
+            - condition: ${true}
+              assign:
+                - var_fechas_sin_archivo_txt: ""
+
       - set_dq_subject_suffix:
           switch:
             - condition: ${var_dq_fails > 0}
@@ -565,7 +603,8 @@ source:
                 content: ${"<p>Proceso finalizado correctamente. Modo - " + var_modo
                     + ". Fechas procesadas - " + string(var_fechas_procesadas) + "</p>"
                     + "<p>Reglas DQ críticas en estado fail hoy - " + string(var_dq_fails)
-                    + " (ver dq_control para el detalle)</p>"}
+                    + " (ver dq_control para el detalle)</p>"
+                    + var_fechas_sin_archivo_txt}
                 toAddress:
                   - "lsullonm@intercorp.com.pe"   # ⚠️ SOLO PARA PRUEBAS — reemplazar por los destinatarios reales antes de producción
 

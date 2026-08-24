@@ -271,6 +271,21 @@ reglas_negocio:
       sistema), manual (process_date único) y reproceso (process_date_init +
       process_date_fin, ejecutando un ciclo completo por cada día del rango).
     criticidad: media   # regla funcional del Workflow, no verificable con una regla DQ sobre datos
+
+  - id: RN-IBK-010
+    descripcion: >
+      Una fecha sin archivo en la fuente principal (folder_date sin datos — confirmado que
+      ocurre en fines de semana/feriados, RI-IBK-T_CONSENT_TRANSACTION-001) NO detiene el
+      resto del proceso: se omite esa fecha (normal/manual: corrida termina OK sin cargar
+      nada; reproceso: continúa con la siguiente fecha del rango) y se registra en el
+      correo de éxito como fecha omitida — no dispara el correo de error. El histórico de
+      la evaluación de integridad (FAILED, sin datos) igual se matricula en
+      metadata_operational vía RegisterIntegrityResults, solo cambia que ya no aborta el
+      Workflow. El Cloud Scheduler además se ajustó a lunes-viernes para no disparar
+      corridas innecesarias los fines de semana.
+    criticidad: media   # regla de manejo de errores/orquestación, no verificable con una regla DQ sobre datos
+    campo_afectado: orquestación
+    validado_por: lsullon
     campo_afectado: "parámetros de ejecución del Workflow"
     validado_por: lsullon
 
