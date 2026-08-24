@@ -62,6 +62,13 @@ BEGIN
   -- approval_channel_name queda siempre NULL — no tiene origen en t_consent_transaction
   -- (confirmado por el equipo, 2026-08-19). Se conserva la columna por compatibilidad
   -- con el contrato original de ba_customer_consent_group.
+  --
+  -- BUG REAL (2026-08-21): esto era un INNER JOIN contra scope en vez de EXISTS. scope
+  -- (tmp_t_consent_transaction_ibk) tiene UNA FILA POR EVENTO (no una fila por itc_company_id+
+  -- consent_date) — el JOIN multiplicaba cada fila de tct por cada fila de scope que compartiera
+  -- la misma fecha (fan-out), insertando miles de millones de filas duplicadas en vez de ~3.7M.
+  -- scope solo debe usarse para ACOTAR el escaneo (semi-join), nunca para hacer JOIN real de
+  -- columnas — de ahí EXISTS en vez de INNER JOIN.
   SET v_sql = '''
     CREATE OR REPLACE TABLE `''' || v_filtered_path || '''` AS
     SELECT
@@ -79,12 +86,14 @@ BEGIN
       tct.consent_date,
       tct.signed_document
     FROM `''' || v_source_path || '''` tct
-    INNER JOIN `''' || v_scope_path || '''` scope
-      ON  scope.itc_company_id = tct.itc_company_id
-      AND scope.consent_date   = tct.consent_date
     WHERE tct.conset_id = 'CP_2'
       AND tct.consent_type = 'otorgado'
       AND tct.itc_company_id IN ('000','1000')
+      AND EXISTS (
+        SELECT 1 FROM `''' || v_scope_path || '''` scope
+        WHERE scope.itc_company_id = tct.itc_company_id
+          AND scope.consent_date   = tct.consent_date
+      )
   ''';
   EXECUTE IMMEDIATE v_sql;
 
