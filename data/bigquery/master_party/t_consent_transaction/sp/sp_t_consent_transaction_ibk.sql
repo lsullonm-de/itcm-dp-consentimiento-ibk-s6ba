@@ -232,9 +232,9 @@ BEGIN
       conset_transaction_id, customer_id, id, conset_id, documento_legal_id,
       approval_channel_id, employee_id, place_id, consent_type, consent_date,
       signed_document,
-      'LPDP_IBK'          AS record_source,
-      CURRENT_TIMESTAMP() AS load_date,
-      SESSION_USER()      AS creation_user
+      'LPDP_IBK'                        AS record_source,
+      CURRENT_DATETIME('America/Lima') AS load_date,
+      SESSION_USER()                    AS creation_user
     FROM `''' || v_stage_path || '''`
   ''';
   EXECUTE IMMEDIATE v_sql;

@@ -22,7 +22,11 @@ CREATE TABLE IF NOT EXISTS `${project_t_consent_transaction}.${dataset_t_consent
   consent_date DATE OPTIONS(description="Fecha en la que el cliente responde — valor real contenido en el archivo, NO se calcula por offset fijo respecto al folder_date (RN-IBK-004). Campo de partición y llave de DELETE+INSERT junto con itc_company_id"),
   signed_document STRING OPTIONS(description="Ruta donde se almacena el documento firmado por el cliente"),
   record_source STRING OPTIONS(description="Dato de auditoría: aplicativo origen de los datos"),
-  load_date TIMESTAMP OPTIONS(description="Fecha y hora de inserción del registro en el modelo"),
+  -- DATETIME, no TIMESTAMP como indicaba el contrato original (input/ddl_output_t_consent_transaction.txt):
+  -- la tabla real en dev-intercorp-data-storage.master_party ya existía con load_date DATETIME antes de
+  -- este deploy (CREATE TABLE IF NOT EXISTS no la recreó) — confirmado por el error de tipo en el INSERT
+  -- de sp_t_consent_transaction_ibk.sql (2026-08-21). Se documenta aquí lo real, no lo contratado.
+  load_date DATETIME OPTIONS(description="Fecha y hora de inserción del registro en el modelo"),
   creation_user STRING OPTIONS(description="Usuario/SA del proceso de carga que crea el registro en la BD")
 )
 PARTITION BY consent_date
