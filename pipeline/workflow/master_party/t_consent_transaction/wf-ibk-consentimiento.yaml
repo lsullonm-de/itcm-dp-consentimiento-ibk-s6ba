@@ -581,7 +581,7 @@ source:
             - condition: ${len(var_fechas_sin_archivo) > 0}
               assign:
                 - var_fechas_sin_archivo_txt: ${"<p>Fechas sin archivo en origen (omitidas) - "
-                    + string(len(var_fechas_sin_archivo)) + ": "
+                    + string(len(var_fechas_sin_archivo)) + " - "
                     + text.decode(json.encode(var_fechas_sin_archivo)) + "</p>"}
             - condition: ${true}
               assign:
