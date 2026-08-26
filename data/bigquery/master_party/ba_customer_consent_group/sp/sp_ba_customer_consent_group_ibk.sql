@@ -8,9 +8,9 @@
 -- consent_date) que sp_t_consent_transaction_ibk acaba de cargar (tabla de scope
 -- tmp_t_consent_transaction_ibk, que esta SP también elimina al finalizar).
 --
--- Guarda solo el ÚLTIMO evento 'otorgado' por cliente (id) dentro del batch acotado —no el
--- histórico completo— igual que el patrón ya establecido en las SPs hermanas de Interseguro/
--- Interfondos (2026-08-25).
+-- Guarda solo el ÚLTIMO evento 'otorgado' por cliente (id) —no el histórico completo—, pero
+-- el dedup en sí ya lo garantiza sp_t_consent_transaction_ibk.sql (2026-08-26): esta SP solo
+-- filtra CP_2/otorgado, no necesita su propio ROW_NUMBER.
 
 CREATE OR REPLACE PROCEDURE `${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk`(
   -- Tabla destino: ba_customer_consent_group
@@ -74,20 +74,12 @@ BEGIN
   -- scope solo debe usarse para ACOTAR el escaneo (semi-join), nunca para hacer JOIN real de
   -- columnas — de ahí EXISTS en vez de INNER JOIN.
   --
-  -- CAMBIO DE DISEÑO (2026-08-25, confirmado con el usuario): ba_customer_consent_group debe
-  -- reflejar solo el estado ACTUAL por cliente (id), no el histórico completo de eventos
-  -- 'otorgado' — igual que el patrón ya establecido en las SPs hermanas de Interseguro/
-  -- Interfondos (sp_carga_ba_customer_consent_group: ROW_NUMBER() PARTITION BY id ORDER BY
-  -- consent_date DESC). Se usa QUALIFY con el mismo criterio (consent_date, sin hora — el
-  -- usuario decidió explícitamente NO agregar consent_date_time como columna nueva en
-  -- t_consent_transaction solo para desempatar; en empate exacto de fecha, BigQuery elige de
-  -- forma no determinista entre los empatados, igual que ya acepta el patrón de las SPs hermanas).
-  --
-  -- IMPORTANTE: consent_type = 'otorgado' va en el QUALIFY, no en el WHERE. El ranking
-  -- (ROW_NUMBER) debe considerar TODOS los eventos del cliente (otorgado Y rechazado) para
-  -- encontrar el verdaderamente más reciente — si solo filtráramos por 'otorgado' antes de
-  -- rankear, un cliente cuyo último evento real fue 'rechazado' seguiría apareciendo con un
-  -- 'otorgado' más viejo, exactamente el caso que este cambio de diseño busca excluir.
+  -- CAMBIO DE DISEÑO (2026-08-26, confirmado con el usuario): el dedup "último evento por
+  -- cliente" se movió un nivel arriba, a sp_t_consent_transaction_ibk.sql — esa tabla ya
+  -- garantiza una sola fila por cliente (id), sea su estado 'otorgado' o 'rechazado'. Esta SP
+  -- ya NO necesita su propio ROW_NUMBER/QUALIFY: solo filtra CP_2/otorgado sobre una fuente que
+  -- ya viene deduplicada. (Versión anterior 2026-08-25 tenía este ROW_NUMBER aquí mismo — se
+  -- retiró al centralizar la regla en la tabla origen).
   SET v_sql = '''
     CREATE OR REPLACE TABLE `''' || v_filtered_path || '''` AS
     SELECT
@@ -106,14 +98,13 @@ BEGIN
       tct.signed_document
     FROM `''' || v_source_path || '''` tct
     WHERE tct.conset_id = 'CP_2'
+      AND tct.consent_type = 'otorgado'
       AND tct.itc_company_id IN ('000','1000')
       AND EXISTS (
         SELECT 1 FROM `''' || v_scope_path || '''` scope
         WHERE scope.itc_company_id = tct.itc_company_id
           AND scope.consent_date   = tct.consent_date
       )
-    QUALIFY ROW_NUMBER() OVER (PARTITION BY tct.id ORDER BY tct.consent_date DESC) = 1
-      AND tct.consent_type = 'otorgado'
   ''';
   EXECUTE IMMEDIATE v_sql;
 

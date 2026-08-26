@@ -30,10 +30,10 @@ VALUES
    100, true, true, CURRENT_DATE(), SESSION_USER()),
 
   ('DQ-IBK-T_CONSENT_TRANSACTION-003',
-   'sin duplicados de customer_id + consent_date',
-   'sin duplicados de customer_id por itc_company_id + consent_date — cubre RN-IBK-005. Reemplaza el chequeo original por conset_transaction_id (2026-08-21): ese campo viene siempre vacío en el archivo real de Interbank, no es utilizable. customer_id + consent_date es la granularidad disponible en la tabla final (la llave real de carga, party_id + consent_date_time, no se persiste — ver sp_t_consent_transaction_ibk.sql)',
+   'sin duplicados de id',
+   'no debe haber más de 1 fila por id — cubre RN-IBK-011 (2026-08-26): t_consent_transaction guarda solo el último evento por cliente, nunca dos filas para el mismo id. Reemplaza el chequeo anterior por customer_id+itc_company_id+consent_date (2026-08-21, sobre conset_transaction_id antes de eso, ambos ya obsoletos con este cambio de diseño)',
    'duplicidad', 'technical', 'critical',
    '${project_t_consent_transaction}.${dataset_t_consent_transaction}.${table_t_consent_transaction}',
-   'customer_id',
-   'SELECT itc_company_id, consent_date, customer_id, COUNT(*) AS cnt FROM `${project_t_consent_transaction}.${dataset_t_consent_transaction}.t_consent_transaction` GROUP BY itc_company_id, consent_date, customer_id HAVING cnt > 1',
+   'id',
+   'SELECT id, COUNT(*) AS cnt FROM `${project_t_consent_transaction}.${dataset_t_consent_transaction}.t_consent_transaction` GROUP BY id HAVING cnt > 1',
    100, true, true, CURRENT_DATE(), SESSION_USER());

@@ -239,16 +239,33 @@ reglas_negocio:
     campo_afectado: t_consent_transaction
     validado_por: lsullon
 
+  - id: RN-IBK-011
+    descripcion: >
+      t_consent_transaction guarda solo el ÚLTIMO evento (otorgado o rechazado) por cliente
+      (id) — no el historial completo de eventos del archivo (cambio de diseño 2026-08-26,
+      confirmado con el usuario; el contrato original la describía como historial completo
+      de cada evento). Implementado con QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY
+      consent_date DESC) = 1 en sp_t_consent_transaction_ibk.sql, sobre TODOS los eventos
+      resueltos contra iden_itc_party_prd (sin filtrar por consent_type antes de rankear).
+      Como consecuencia, ba_customer_consent_group_ibk.sql ya NO necesita su propio dedup por
+      cliente (RN-IBK-006 actualizada) — solo filtra CP_2/otorgado sobre una fuente que ya
+      viene deduplicada. Se usa consent_date (precisión de día, sin hora) como criterio de
+      orden; el usuario decidió explícitamente NO agregar consent_date_time como columna
+      nueva en t_consent_transaction solo para desempatar — en empate exacto de fecha el
+      desempate es no determinista.
+    criticidad: alta
+    campo_afectado: t_consent_transaction, ba_customer_consent_group
+    validado_por: lsullon
+
   - id: RN-IBK-006
     descripcion: >
       ba_customer_consent_group se genera exclusivamente desde t_consent_transaction
-      (no vuelve a leer el archivo ni la tabla externa), filtrando conset_id = 'CP_2'
-      e itc_company_id IN ('000','1000'). Refleja solo el estado ACTUAL por cliente
-      (id) — se toma el evento más reciente por consent_date (ROW_NUMBER particionado
-      por id) y solo se incluye si ese evento más reciente es consent_type = 'otorgado'
-      (actualizado 2026-08-25: antes insertaba todo el histórico de eventos otorgado;
-      alineado con el patrón ya establecido en las SPs hermanas de Interseguro/
-      Interfondos, que usan el mismo criterio "último evento gana").
+      (no vuelve a leer el archivo ni la tabla externa), filtrando conset_id = 'CP_2',
+      consent_type = 'otorgado' e itc_company_id IN ('000','1000'). No necesita su propio
+      dedup por cliente — t_consent_transaction ya garantiza una sola fila por id (ver
+      RN-IBK-011, actualizado 2026-08-26). Versión intermedia del 2026-08-25 (ROW_NUMBER
+      propio en esta SP) quedó reemplazada al centralizar la regla "último evento gana" en
+      la tabla origen, alineado con el patrón de las SPs hermanas de Interseguro/Interfondos.
     criticidad: alta
     campo_afectado: ba_customer_consent_group
     validado_por: lsullon
@@ -320,7 +337,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "Cruce con iden_itc_party + delete/insert por itc_company_id + consent_date"
+    descripcion: "Cruce con iden_itc_party, se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011) y hace delete/insert por itc_company_id + consent_date"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
@@ -340,7 +357,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_ba_customer_consent_group_ibk.sql
-    descripcion: "Filtra CP_2 desde t_consent_transaction, se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY), inserta solo si ese último evento es otorgado, y hace delete/insert"
+    descripcion: "Filtra CP_2/otorgado desde t_consent_transaction (ya deduplicada por cliente, RN-IBK-011) y hace delete/insert"
 
   - tipo: sp
     archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_dq_ba_customer_consent_group.sql
@@ -466,7 +483,8 @@ restricciones:
   - "RESUELTO (2026-08-21): consent_date_time no se persiste como columna en t_consent_transaction, pero SÍ tiene uso funcional — es parte de la nueva llave de dedup (party_id + consent_date_time) en sp_t_consent_transaction_ibk.sql, ver siguiente restricción"
   - "RESUELTO (2026-08-21): consent_transaction_id viene SIEMPRE vacío en el archivo real de Interbank (confirmado con el equipo, 6.8M filas de muestra en dev, 0% con valor) — no es utilizable como llave. Llave de dedup/llave-nula cambiada de [party_id, consent_transaction_id] a [party_id, consent_date_time] en fuentes[], sp_t_consent_transaction_ibk.sql y DQ-IBK-T_CONSENT_TRANSACTION-003. El campo se sigue seleccionando como conset_transaction_id (columna de auditoría, casi siempre NULL) pero ya no participa en ninguna regla"
   - "RESUELTO: dataset de la tabla externa confirmado como raw_ibk_dlk (proyecto dev-intercorp-data-storage), reemplaza al dataset personal lsullon del DDL de referencia original"
-  - "RESUELTO (2026-08-25): ba_customer_consent_group cambia de 'todo el histórico de eventos otorgado' a 'solo el estado actual por cliente' (último evento por consent_date vía ROW_NUMBER+QUALIFY, PARTITION BY id) — confirmado con el usuario tras comparar con las SPs hermanas de Interseguro/Interfondos, que ya usan ese mismo criterio contra la tabla compartida t_consent_transaction. Se usa consent_date (precisión de día, sin hora) como criterio de orden — el usuario decidió explícitamente NO agregar consent_date_time como columna nueva en t_consent_transaction solo para desempatar; en empate exacto de fecha el desempate es no determinista, aceptado igual que en las SPs hermanas"
+  - "RESUELTO (2026-08-25, SUPERADO 2026-08-26): primera versión del cambio 'último evento gana' se implementó en ba_customer_consent_group_ibk.sql con su propio ROW_NUMBER+QUALIFY. Un día después el usuario pidió mover la regla un nivel arriba — ver siguiente restricción"
+  - "RESUELTO (2026-08-26): la regla 'último evento gana' (RN-IBK-011) se centralizó en t_consent_transaction (no en ba_customer_consent_group) — t_consent_transaction pasa de 'historial completo de cada evento' (definición del contrato original) a 'solo el último evento por cliente', igual que ba_customer_consent_group. ba_customer_consent_group_ibk.sql se simplificó de vuelta: ya no tiene su propio ROW_NUMBER, solo filtra CP_2/otorgado sobre una fuente ya deduplicada. Confirmado con el usuario tras comparar con las SPs hermanas de Interseguro/Interfondos"
   - "RESUELTO: tabla externa se nombra t_consent_transaction_{fecha_archivo}_external, una tabla nueva por fecha (no una tabla estática con CREATE OR REPLACE) — en reprocesos históricos coexisten varias simultáneamente, limpiar por TTL o DROP explícito"
   - "RESUELTO: itc_company_id '000' y '1000' son ambos de Interbank (empresa registrada con 2 códigos) — confirmado por Data Owner"
   - "RESUELTO: iden_itc_party_prd tiene la misma estructura que iden_itc_party (tabla de referencia en data/data_catalog/master_party/iden-itc-party.md) — confirmado por el equipo"

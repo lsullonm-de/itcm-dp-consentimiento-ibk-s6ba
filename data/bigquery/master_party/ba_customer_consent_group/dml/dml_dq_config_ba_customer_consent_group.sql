@@ -18,9 +18,9 @@ VALUES
 
   ('DQ-IBK-BA_CUSTOMER_CONSENT_GROUP-002',
    'sin duplicados de id',
-   'sin duplicados de id por itc_company_id + consent_date — cubre RN-IBK-007',
+   'no debe haber más de 1 fila por id — cubre RN-IBK-007/RN-IBK-011 (2026-08-26): hereda el grano "1 fila por cliente" de t_consent_transaction',
    'duplicidad', 'technical', 'critical',
    '${project_ba_customer_consent_group}.${dataset_ba_customer_consent_group}.${table_ba_customer_consent_group}',
    'id',
-   'SELECT itc_company_id, consent_date, id, COUNT(*) AS cnt FROM `${project_ba_customer_consent_group}.${dataset_ba_customer_consent_group}.ba_customer_consent_group` GROUP BY itc_company_id, consent_date, id HAVING cnt > 1',
+   'SELECT id, COUNT(*) AS cnt FROM `${project_ba_customer_consent_group}.${dataset_ba_customer_consent_group}.ba_customer_consent_group` GROUP BY id HAVING cnt > 1',
    100, true, true, CURRENT_DATE(), SESSION_USER());

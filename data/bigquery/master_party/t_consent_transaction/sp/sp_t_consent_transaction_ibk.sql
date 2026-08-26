@@ -206,6 +206,13 @@ BEGIN
       ON  p.party_id       = a.party_id
       AND p.itc_company_id = a.itc_company_id
     WHERE a.itc_company_id IN ('000','1000')
+    -- CAMBIO DE DISEÑO (2026-08-26, confirmado con el usuario): t_consent_transaction pasa de
+    -- "historial completo de eventos" a "solo el último evento por cliente" (id) — el mismo
+    -- criterio que ya se aplicó a ba_customer_consent_group el 2026-08-25, pero movido un nivel
+    -- arriba: aquí se resuelve una sola vez (independiente del consent_type, cubre 'otorgado' Y
+    -- 'rechazado') y ba_customer_consent_group_ibk.sql ya NO necesita su propio ROW_NUMBER —
+    -- solo filtra CP_2/otorgado sobre esta tabla, que ya viene deduplicada por cliente.
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY a.consent_date DESC) = 1
   ''';
   EXECUTE IMMEDIATE v_sql;
 

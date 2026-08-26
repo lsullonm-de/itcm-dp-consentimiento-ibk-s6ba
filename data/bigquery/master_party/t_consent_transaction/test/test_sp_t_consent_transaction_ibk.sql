@@ -92,6 +92,24 @@ ASSERT v_row_count = 0
 -- "0 filas en ... — no se ejecuta DELETE sin INSERT de reemplazo".
 
 -- ============================================================
+-- T5 (2026-08-26): solo el ÚLTIMO evento por cliente (id) — cambio de diseño, t_consent_transaction
+-- ya no guarda historial completo. No debe haber más de 1 fila por id, sin importar cuántos
+-- eventos distintos traiga el archivo de prueba para esa persona.
+-- ============================================================
+SET v_row_count = (
+  SELECT COUNT(*)
+  FROM (
+    SELECT id, COUNT(*) AS cnt
+    FROM `${project_t_consent_transaction}.test_master_party.t_consent_transaction`
+    GROUP BY id
+    HAVING cnt > 1
+  )
+);
+
+ASSERT v_row_count = 0
+  AS 'T5: no debía haber más de 1 fila por id (solo el último evento por cliente), se obtuvieron ' || CAST(v_row_count AS STRING) || ' ids con más de una fila';
+
+-- ============================================================
 -- Cleanup
 -- ============================================================
 DROP TABLE IF EXISTS `${project_t_consent_transaction}.test_master_party.t_consent_transaction`;

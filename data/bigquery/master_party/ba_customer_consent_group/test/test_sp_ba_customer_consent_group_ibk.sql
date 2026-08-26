@@ -45,46 +45,13 @@ SELECT * FROM UNNEST([
     'CP_1', 'DOC-004', 'WEB',
     'EMP-004', 'PLC-004', 'otorgado',
     DATE '2026-03-30', 'gs://bucket/doc4.pdf'
-  ),
-  -- caso "último evento gana" (2026-08-25): 2 eventos otorgado del mismo cliente en fechas
-  -- distintas -> debe quedar solo 1 fila, con la fecha más reciente (2026-04-15)
-  STRUCT(
-    DATE '2026-04-01', '000', 'INTERBANK',
-    'BU01', 'Banca Personal',
-    'CT-005A', 'CUST-005', 'PARTY-005',
-    'CP_2', 'DOC-005A', 'WEB',
-    'EMP-005', 'PLC-005', 'otorgado',
-    DATE '2026-02-01', 'gs://bucket/doc5a.pdf'
-  ),
-  STRUCT(
-    DATE '2026-04-01', '000', 'INTERBANK',
-    'BU01', 'Banca Personal',
-    'CT-005B', 'CUST-005', 'PARTY-005',
-    'CP_2', 'DOC-005B', 'APP',
-    'EMP-005', 'PLC-005', 'otorgado',
-    DATE '2026-04-15', 'gs://bucket/doc5b.pdf'
-  ),
-  -- caso crítico "último evento gana" (2026-08-25): otorgado viejo + rechazado más reciente del
-  -- mismo cliente -> el cliente NO debe aparecer en absoluto (su estado actual es rechazado),
-  -- aunque tenga un otorgado histórico. Verifica que el ranking no filtre por consent_type ANTES
-  -- de encontrar el evento más reciente.
-  STRUCT(
-    DATE '2026-04-01', '000', 'INTERBANK',
-    'BU01', 'Banca Personal',
-    'CT-006A', 'CUST-006', 'PARTY-006',
-    'CP_2', 'DOC-006A', 'WEB',
-    'EMP-006', 'PLC-006', 'otorgado',
-    DATE '2026-01-10', 'gs://bucket/doc6a.pdf'
-  ),
-  STRUCT(
-    DATE '2026-04-01', '000', 'INTERBANK',
-    'BU01', 'Banca Personal',
-    'CT-006B', 'CUST-006', 'PARTY-006',
-    'CP_2', 'DOC-006B', 'APP',
-    'EMP-006', 'PLC-006', 'rechazado',
-    DATE '2026-04-20', 'gs://bucket/doc6b.pdf'
   )
 ]);
+-- NOTA (2026-08-26): el fixture ya NO incluye casos de "múltiples eventos por el mismo id"
+-- (existían como PARTY-005/006 en la versión 2026-08-25) — esta SP asume que su fuente
+-- (t_consent_transaction) ya viene con una sola fila por cliente, garantizado por
+-- sp_t_consent_transaction_ibk.sql (ver su propio test, T5). Un fixture con id duplicado aquí
+-- ya no representa un escenario real de entrada para esta SP.
 
 -- Scope generado por sp_t_consent_transaction_ibk: itc_company_id + consent_date tocados en la
 -- corrida. Vive en ${project_iden_party}, no en ${project_t_consent_transaction} — ver esa SP.
@@ -116,10 +83,9 @@ CALL `${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk`(
 -- 3. Assertions
 -- ============================================================
 
--- T0: métricas de monitoring — 3 filas válidas (PARTY-001, PARTY-002, PARTY-005) pasan el
--- filtro RN-IBK-006; PARTY-006 se excluye porque su evento más reciente es 'rechazado'
-ASSERT v_write = 3
-  AS 'T0: o_execution_data_write debía ser 3, se obtuvo ' || CAST(v_write AS STRING);
+-- T0: métricas de monitoring — 2 filas válidas (PARTY-001, PARTY-002) pasan el filtro RN-IBK-006
+ASSERT v_write = 2
+  AS 'T0: o_execution_data_write debía ser 2, se obtuvo ' || CAST(v_write AS STRING);
 ASSERT v_read = v_write
   AS 'T0: o_execution_data_read debía igualar o_execution_data_write, se obtuvo read=' || CAST(v_read AS STRING) || ' write=' || CAST(v_write AS STRING);
 
@@ -131,12 +97,12 @@ SET v_row_count = (
 ASSERT v_row_count = 0
   AS 'T1: la fila preexistente PARTY-OLD debía eliminarse en el DELETE por partición, se obtuvo ' || CAST(v_row_count AS STRING);
 
--- T2: solo los 3 casos válidos (CP_2 + último evento otorgado) deben quedar en el output
+-- T2: solo los 2 casos válidos (CP_2 + otorgado) deben quedar en el output
 SET v_row_count = (
   SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
 );
-ASSERT v_row_count = 3
-  AS 'T2: se esperaban 3 filas (PARTY-001, PARTY-002, PARTY-005), se obtuvo ' || CAST(v_row_count AS STRING);
+ASSERT v_row_count = 2
+  AS 'T2: se esperaban 2 filas (PARTY-001, PARTY-002), se obtuvo ' || CAST(v_row_count AS STRING);
 
 -- T3: el caso rechazado y el caso CP_1 no deben aparecer
 SET v_row_count = (
@@ -165,32 +131,6 @@ SET v_row_count = (
 );
 ASSERT v_row_count = 0
   AS 'T5: las tablas temporales de scope deben quedar eliminadas al finalizar el SP, se obtuvieron ' || CAST(v_row_count AS STRING);
-
--- T6 (2026-08-25): PARTY-005 tiene 2 eventos otorgado -> debe quedar 1 sola fila, con la fecha
--- del evento MÁS RECIENTE (2026-04-15), no la más vieja (2026-02-01)
-SET v_row_count = (
-  SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
-  WHERE id = 'PARTY-005'
-);
-ASSERT v_row_count = 1
-  AS 'T6: PARTY-005 debía quedar con exactamente 1 fila (el último evento), se obtuvieron ' || CAST(v_row_count AS STRING);
-
-SET v_row_count = (
-  SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
-  WHERE id = 'PARTY-005' AND consent_date = DATE '2026-04-15'
-);
-ASSERT v_row_count = 1
-  AS 'T6b: PARTY-005 debía quedar con consent_date = 2026-04-15 (el más reciente), no 2026-02-01';
-
--- T7 (2026-08-25, caso crítico): PARTY-006 tiene un otorgado viejo y un rechazado más reciente
--- -> NO debe aparecer en absoluto (su estado actual es rechazado). Si el filtro consent_type
--- se aplicara antes del ranking (bug), PARTY-006 aparecería igual con el otorgado viejo.
-SET v_row_count = (
-  SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
-  WHERE id = 'PARTY-006'
-);
-ASSERT v_row_count = 0
-  AS 'T7: PARTY-006 no debía aparecer (su evento más reciente es rechazado), se obtuvieron ' || CAST(v_row_count AS STRING);
 
 -- ============================================================
 -- Cleanup

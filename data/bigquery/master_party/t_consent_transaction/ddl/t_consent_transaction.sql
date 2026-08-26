@@ -1,4 +1,6 @@
--- Tabla destino: centraliza cada evento de consentimiento/rechazo LPDP de clientes Interbank (IBK)
+-- Tabla destino: centraliza el ÚLTIMO evento de consentimiento/rechazo LPDP por cliente de
+-- Interbank (IBK) — no el historial completo (cambio de diseño 2026-08-26, confirmado con el
+-- usuario; el contrato original la describía como historial completo de cada evento)
 -- Spec: spec-ibk-20260819-001 | Módulo: consentimiento-ibk
 -- Generado por: fac-data-stage-physical-design
 -- Contrato original: input/ddl_output_t_consent_transaction.txt
@@ -32,6 +34,6 @@ CREATE TABLE IF NOT EXISTS `${project_t_consent_transaction}.${dataset_t_consent
 PARTITION BY consent_date
 CLUSTER BY itc_company_name
 OPTIONS(
-  description="Centraliza cada evento de consentimiento/rechazo de tratamiento de datos personales (LPDP) de clientes Interbank (IBK). Carga DELETE+INSERT por itc_company_id + consent_date (RN-IBK-005).",
+  description="Centraliza el último evento (otorgado o rechazado) de consentimiento de tratamiento de datos personales (LPDP) por cliente de Interbank (IBK) — no el historial completo. Carga DELETE+INSERT por itc_company_id + consent_date (RN-IBK-005).",
   labels=[("team","data-platform"),("env","${env}")]
 );
