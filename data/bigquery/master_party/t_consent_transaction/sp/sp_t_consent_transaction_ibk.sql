@@ -61,6 +61,11 @@ BEGIN
   DECLARE v_output_path      STRING;
   DECLARE v_sql              STRING;
   DECLARE v_row_count        INT64;
+  -- Literales de fecha para embeber en el SQL dinámico [RN-IBK-012]: dentro de EXECUTE IMMEDIATE
+  -- no se puede referenciar un parámetro del SP por nombre (ej. p_process_date_ini) — hay que
+  -- concatenar su valor como literal, igual que v_folder_date/v_ext_table_path más abajo.
+  DECLARE v_date_ini_lit     STRING;
+  DECLARE v_date_end_lit     STRING;
 
   SET o_execution_data_read  = 0;
   SET o_execution_data_write = 0;
@@ -72,6 +77,10 @@ BEGIN
   -- El consent_date real de cada registro (usado para el DELETE+INSERT) se lee del propio
   -- contenido del archivo en el paso 5 — NO se deriva de este cálculo [RN-IBK-004].
   SET v_folder_date = FORMAT_DATE('%Y%m%d', DATE_SUB(p_process_date_ini, INTERVAL 1 DAY));
+
+  -- Literales para el filtro de consent_date [RN-IBK-012] — ver DECLARE arriba.
+  SET v_date_ini_lit = FORMAT_DATE('%F', p_process_date_ini);
+  SET v_date_end_lit = FORMAT_DATE('%F', p_process_date_end);
 
   -- ============================================================
   -- 3. CREACIÓN DE LA TABLA EXTERNA TEMPORAL [RN-IBK-001]
@@ -217,7 +226,11 @@ BEGIN
       -- reprocesos de fechas acotadas seguían trayendo basura histórica, incluso consent_date
       -- de 1900). p_process_date_ini/end ahora SÍ filtran los datos, no solo eligen qué carpeta
       -- leer (eso lo sigue haciendo folder_date = p_process_date_ini - 1 día, sin cambios).
-      AND SAFE_CAST(a.consent_date AS DATE) BETWEEN p_process_date_ini AND p_process_date_end
+      -- Los parámetros del SP no son visibles dentro de EXECUTE IMMEDIATE por nombre — se
+      -- concatenan como literal vía v_date_ini_lit/v_date_end_lit (ver DECLARE). Se usa
+      -- DATE("...") con comillas dobles para el argumento, evitando anidar comillas simples
+      -- dentro del string delimitado por ''' que arma toda esta query.
+      AND SAFE_CAST(a.consent_date AS DATE) BETWEEN DATE("''' || v_date_ini_lit || '''") AND DATE("''' || v_date_end_lit || '''")
     -- CAMBIO DE DISEÑO (2026-08-26, confirmado con el usuario): t_consent_transaction pasa de
     -- "historial completo de eventos" a "solo el último evento por cliente" (id) DENTRO del
     -- rango de fechas solicitado — el mismo criterio que ya se aplicó a ba_customer_consent_group
