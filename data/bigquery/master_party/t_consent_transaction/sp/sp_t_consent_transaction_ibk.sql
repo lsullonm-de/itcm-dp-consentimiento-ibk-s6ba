@@ -258,9 +258,10 @@ BEGIN
       -- se adapta automáticamente al desfase real de cada archivo, y excluye la basura histórica
       -- (ej. 1900) porque nunca va a coincidir con el máximo real de un archivo con actividad.
       -- Los parámetros/variables del SP no son visibles dentro de EXECUTE IMMEDIATE por nombre —
-      -- se concatenan como literal vía v_date_ini_lit/v_date_end_lit. Se usa DATE("...") con
-      -- comillas dobles para el argumento, evitando anidar comillas simples dentro del string
-      -- delimitado por ''' que arma toda esta query.
+      -- se concatenan como literal vía v_date_ini_lit/v_date_end_lit. Se usa DATE con comillas
+      -- dobles para el argumento, evitando anidar comillas simples dentro del bloque triple-
+      -- comillado que arma toda esta query (¡nunca escribir tres comillas simples seguidas en
+      -- un comentario aquí adentro — cierran el string antes de tiempo!).
       AND SAFE_CAST(a.consent_date AS DATE) BETWEEN DATE("''' || v_date_ini_lit || '''") AND DATE("''' || v_date_end_lit || '''")
     -- CAMBIO DE DISEÑO (2026-08-26, confirmado con el usuario): t_consent_transaction pasa de
     -- "historial completo de eventos" a "solo el último evento por cliente" (id) DENTRO del
