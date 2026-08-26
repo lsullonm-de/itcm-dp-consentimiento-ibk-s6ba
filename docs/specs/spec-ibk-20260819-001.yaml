@@ -257,6 +257,23 @@ reglas_negocio:
     campo_afectado: t_consent_transaction, ba_customer_consent_group
     validado_por: lsullon
 
+  - id: RN-IBK-012
+    descripcion: >
+      p_process_date_ini/p_process_date_end filtran los DATOS por consent_date, no solo
+      determinan qué carpeta GCS leer (fix 2026-08-26, confirmado con el usuario). Antes,
+      p_process_date_end nunca se usaba en sp_t_consent_transaction_ibk.sql — el archivo
+      completo se insertaba sin filtrar, trayendo basura histórica (incluido consent_date de
+      1900, valor centinela de sistemas legacy de Interbank) en cada reproceso, aunque el rango
+      solicitado fuera acotado. Ahora la query exige
+      SAFE_CAST(consent_date AS DATE) BETWEEN p_process_date_ini AND p_process_date_end,
+      antes del QUALIFY de RN-IBK-011. El Workflow sigue llamando una vez por día con
+      p_process_date_ini = p_process_date_end (ver RN-IBK-011/009) — el rango real efectivo de
+      un reproceso multi-fecha es la UNIÓN de esas llamadas individuales, no un rango pasado
+      en una sola llamada.
+    criticidad: alta
+    campo_afectado: t_consent_transaction
+    validado_por: lsullon
+
   - id: RN-IBK-006
     descripcion: >
       ba_customer_consent_group se genera exclusivamente desde t_consent_transaction
@@ -337,7 +354,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "Cruce con iden_itc_party, se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011) y hace delete/insert por itc_company_id + consent_date"
+    descripcion: "Cruce con iden_itc_party, filtra por consent_date dentro de [p_process_date_ini, p_process_date_end] (RN-IBK-012), se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011) y hace delete/insert por itc_company_id + consent_date"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql

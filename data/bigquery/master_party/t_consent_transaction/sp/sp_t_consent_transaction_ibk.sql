@@ -3,11 +3,17 @@
 -- Generado por: fac-data-stage-coding
 --
 -- Se invoca una vez por fecha a procesar (p_process_date_ini = p_process_date_end, siempre el
--- mismo valor en ambos — este SP no procesa rangos, ver data/rules/bigquery.md). El Workflow
--- decide qué fecha(s) pasar según el modo de ejecución (RN-IBK-009):
+-- mismo valor en ambos — el Workflow llama una vez por día, nunca pasa un rango real en una
+-- sola llamada, ver data/rules/bigquery.md). El Workflow decide qué fecha(s) pasar según el
+-- modo de ejecución (RN-IBK-009):
 --   normal   → fecha = fecha de sistema
 --   manual   → fecha = fecha indicada por el usuario
 --   reproceso → una llamada por cada día de [process_date_init, process_date_fin]
+--
+-- p_process_date_ini decide qué CARPETA leer (folder_date = p_process_date_ini - 1 día).
+-- p_process_date_ini/end TAMBIÉN filtran los DATOS (consent_date real del contenido debe caer
+-- en ese rango) — fix 2026-08-26: antes se insertaba el archivo completo sin filtrar por fecha,
+-- lo que traía basura histórica (incluido consent_date de 1900) en cada reproceso.
 --
 -- NOTA: la tabla temporal tmp_t_consent_transaction_ibk NO se elimina al final de este SP —
 -- sp_ba_customer_consent_group_ibk la usa para acotar su propio DELETE+INSERT (RN-IBK-006) y
@@ -206,12 +212,19 @@ BEGIN
       ON  p.party_id       = a.party_id
       AND p.itc_company_id = a.itc_company_id
     WHERE a.itc_company_id IN ('000','1000')
+      -- FIX REAL (2026-08-26): hasta esta línea, p_process_date_end nunca se usaba — el archivo
+      -- completo se insertaba sin importar su consent_date real (confirmado con el usuario:
+      -- reprocesos de fechas acotadas seguían trayendo basura histórica, incluso consent_date
+      -- de 1900). p_process_date_ini/end ahora SÍ filtran los datos, no solo eligen qué carpeta
+      -- leer (eso lo sigue haciendo folder_date = p_process_date_ini - 1 día, sin cambios).
+      AND SAFE_CAST(a.consent_date AS DATE) BETWEEN p_process_date_ini AND p_process_date_end
     -- CAMBIO DE DISEÑO (2026-08-26, confirmado con el usuario): t_consent_transaction pasa de
-    -- "historial completo de eventos" a "solo el último evento por cliente" (id) — el mismo
-    -- criterio que ya se aplicó a ba_customer_consent_group el 2026-08-25, pero movido un nivel
-    -- arriba: aquí se resuelve una sola vez (independiente del consent_type, cubre 'otorgado' Y
-    -- 'rechazado') y ba_customer_consent_group_ibk.sql ya NO necesita su propio ROW_NUMBER —
-    -- solo filtra CP_2/otorgado sobre esta tabla, que ya viene deduplicada por cliente.
+    -- "historial completo de eventos" a "solo el último evento por cliente" (id) DENTRO del
+    -- rango de fechas solicitado — el mismo criterio que ya se aplicó a ba_customer_consent_group
+    -- el 2026-08-25, pero movido un nivel arriba: aquí se resuelve una sola vez (independiente
+    -- del consent_type, cubre 'otorgado' Y 'rechazado') y ba_customer_consent_group_ibk.sql ya
+    -- NO necesita su propio ROW_NUMBER — solo filtra CP_2/otorgado sobre esta tabla, que ya
+    -- viene deduplicada por cliente.
     QUALIFY ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY a.consent_date DESC) = 1
   ''';
   EXECUTE IMMEDIATE v_sql;
