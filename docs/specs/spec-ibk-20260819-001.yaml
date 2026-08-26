@@ -39,9 +39,9 @@ etapas:
   design: true
   coding: true
   orchestration: true
-  integridad: true   # evaluar activarlo: gate de actualidad sobre el archivo diario IBK
+  integridad: false   # DESACTIVADO (2026-08-26, pedido por el usuario, RN-IBK-018) — el gate y su registro en metadata_operational se quitaron del Workflow, ver RN-IBK-018
   monitoring: true
-  data_quality: true    # activado (2026-08-19) — las 5 reglas ya estaban definidas desde CODING
+  data_quality: false    # DESACTIVADO (2026-08-26, pedido por el usuario, RN-IBK-018) — los 2 SP de DQ y la validación post-loop se quitaron del Workflow, ver RN-IBK-018. SPs y dq_config/dq_control quedan en el repo, sin invocarse
   dataops: true
   compliance: true
   testing: true       # activar solo después de correr InfraOps + Dataops en dev
@@ -342,6 +342,49 @@ reglas_negocio:
     campo_afectado: t_consent_transaction
     validado_por: lsullon
 
+  - id: RN-IBK-018
+    descripcion: >
+      Se retiran del Workflow los pasos de integridad y calidad de datos (pedido por el usuario,
+      2026-08-26): "que se enfoque en procesar e insertar, o bueno, registrar en el API". Se
+      eliminan de wf-ibk-consentimiento.yaml: el gate de integridad por fecha (build_sql_integridad_*,
+      ejecutar_validacion_integridad, registrar_resultado_integridad vía RegisterIntegrityResults),
+      las 2 llamadas a SP de DQ por fecha/corrida (sp_dq_t_consent_transaction,
+      sp_dq_ba_customer_consent_group) y la validación post-loop de reglas DQ críticas
+      (build_sql_validar_dq/validar_dq_criticas, con su resumen en el mail de éxito). El
+      subworkflow RegisterIntegrityResults y el subworkflow genérico SyncBigQueryJob (sin
+      resultados) quedaron sin uso y también se eliminaron del Workflow.
+      Los SP de integridad/DQ (sp_integridad_t_consent_transaction.sql,
+      sp_dq_t_consent_transaction.sql, sp_dq_ba_customer_consent_group.sql) y las tablas
+      dq_config/dq_control NO se borraron del repositorio — solo dejaron de invocarse.
+      DETECCIÓN DE ARCHIVO FALTANTE (RN-IBK-010) SE MANTIENE, pero cambia de mecanismo: antes
+      dependía del SP de integridad (evaluaba actualidad ANTES de llamar a sp_t_consent_transaction_ibk);
+      ahora se reutiliza el RAISE que ya lanzaba sp_t_consent_transaction_ibk.sql cuando la tabla
+      externa tiene 0 filas (ver su punto 4) — el Workflow envuelve la llamada al SP en un
+      try/except, reconoce ese mensaje puntual ("no se ejecuta DELETE sin INSERT de reemplazo")
+      y omite la fecha sin abortar el resto del rango; cualquier otro error se relanza igual que
+      antes (checkpoint + mail de error).
+    criticidad: media
+    campo_afectado: workflow
+    validado_por: lsullon
+
+  - id: RN-IBK-017
+    descripcion: >
+      ba_customer_consent_group pasa de "DELETE+INSERT acotado por itc_company_id + consent_date
+      del scope recién cargado" a un TRUNCATE + INSERT completo (pedido por el usuario,
+      2026-08-26): trunca la tabla y reinserta TODO lo que haya en t_consent_transaction que
+      cumpla conset_id = 'CP_2' AND consent_type = 'otorgado' (RN-IBK-006), sin ningún filtro de
+      fecha ni de scope. sp_ba_customer_consent_group_ibk.sql deja de leer la tabla de scope
+      tmp_t_consent_transaction_ibk_{fecha} (ahora la elimina sp_t_consent_transaction_ibk.sql,
+      que es quien la crea). El Workflow deja de llamar a este SP una vez por cada fecha del
+      rango dentro de iterar_fechas — lo llama UNA sola vez, después de procesar todas las
+      fechas, para no truncar/reconstruir la tabla completa N veces en el mismo reproceso.
+      p_process_date_ini/end y p_dataset_stage quedan en la firma del SP sin usarse para filtrar
+      (decisión explícita del usuario: mantener el parámetro aunque no se use) — el Workflow les
+      pasa el rango real de la corrida solo para trazabilidad en monitoring.
+    criticidad: alta
+    campo_afectado: ba_customer_consent_group
+    validado_por: lsullon
+
   - id: RN-IBK-006
     descripcion: >
       ba_customer_consent_group se genera exclusivamente desde t_consent_transaction
@@ -351,6 +394,8 @@ reglas_negocio:
       RN-IBK-011, actualizado 2026-08-26). Versión intermedia del 2026-08-25 (ROW_NUMBER
       propio en esta SP) quedó reemplazada al centralizar la regla "último evento gana" en
       la tabla origen, alineado con el patrón de las SPs hermanas de Interseguro/Interfondos.
+      DESDE 2026-08-26 (ver RN-IBK-017) el filtro ya no se acota por fecha/scope — corre sobre
+      TODA t_consent_transaction.
     criticidad: alta
     campo_afectado: ba_customer_consent_group
     validado_por: lsullon
@@ -426,11 +471,11 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
-    descripcion: "Gate de integridad (etapas.integridad: true) — actualidad D-1 de consentimiento_ibk_archivo (RI-IBK-...-001), folder_date = p_process_date_ini directo sin offset (RN-IBK-014, debe coincidir con sp_t_consent_transaction_ibk.sql). No escribe tablas, solo OUT params"
+    descripcion: "Gate de integridad — actualidad D-1 de consentimiento_ibk_archivo (RI-IBK-...-001), folder_date = p_process_date_ini directo sin offset (RN-IBK-014). NO se invoca desde el Workflow desde 2026-08-26 (RN-IBK-018, etapas.integridad: false) — el archivo queda en el repo, sin desplegarse/llamarse"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_dq_t_consent_transaction.sql
-    descripcion: "SP DQ (etapas.data_quality: true) — valida las 3 reglas de t_consent_transaction contra dq_config, registra en dq_control"
+    descripcion: "SP DQ — valida las 3 reglas de t_consent_transaction contra dq_config, registra en dq_control. NO se invoca desde el Workflow desde 2026-08-26 (RN-IBK-018, etapas.data_quality: false) — el archivo queda en el repo, sin desplegarse/llamarse"
 
   - tipo: ddl
     archivo: data/bigquery/master_party/ba_customer_consent_group/ddl/ba_customer_consent_group.sql
@@ -442,15 +487,15 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_ba_customer_consent_group_ibk.sql
-    descripcion: "Filtra CP_2/otorgado desde t_consent_transaction (ya deduplicada por cliente, RN-IBK-011) y hace delete/insert. Recibe p_process_date_ini/end solo para el sufijo de fecha de la tabla temporal de scope (RN-IBK-013), no filtra datos por fecha"
+    descripcion: "TRUNCATE + INSERT completo de TODO lo que cumpla CP_2/otorgado en t_consent_transaction, ya deduplicada por cliente (RN-IBK-011) — sin filtro de fecha ni scope (RN-IBK-017). Llamada UNA sola vez por ejecución del Workflow, no por fecha. p_process_date_ini/end y p_dataset_stage quedan en la firma sin usarse para filtrar (decisión del usuario)"
 
   - tipo: sp
     archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_dq_ba_customer_consent_group.sql
-    descripcion: "SP DQ (etapas.data_quality: true) — valida las 2 reglas de ba_customer_consent_group contra dq_config, registra en dq_control"
+    descripcion: "SP DQ — valida las 2 reglas de ba_customer_consent_group contra dq_config, registra en dq_control. NO se invoca desde el Workflow desde 2026-08-26 (RN-IBK-018, etapas.data_quality: false) — el archivo queda en el repo, sin desplegarse/llamarse"
 
   - tipo: workflow
     archivo: pipeline/workflow/master_party/t_consent_transaction/wf-ibk-consentimiento.yaml
-    descripcion: "Orquesta tabla externa + SP1 + SP2; soporta process_date normal/manual/reproceso. Aplica el offset de -1 día solo en modo normal (RN-IBK-014); en reproceso verifica si hay datos previos de Interbank para decidir carga histórica del primer archivo (RN-IBK-015)"
+    descripcion: "Orquesta tabla externa + SP1 (por cada fecha del rango) + SP2 (una sola vez, al final, RN-IBK-017); soporta process_date normal/manual/reproceso. Aplica el offset de -1 día solo en modo normal (RN-IBK-014); en reproceso verifica si hay datos previos de Interbank para decidir carga histórica del primer archivo (RN-IBK-015). Sin gates de integridad/DQ (RN-IBK-018) — solo procesa/inserta y registra en la API de monitoring; fecha sin archivo se detecta por el RAISE propio de SP1"
 
   - tipo: cloud_scheduler
     archivo: pipeline/scheduler/master_party/t_consent_transaction/cs-ibk-consentimiento.yaml
@@ -561,6 +606,8 @@ scheduling:
 # 10. RESTRICCIONES Y SUPUESTOS
 # ------------------------------------------------------------
 restricciones:
+  - "RESUELTO (2026-08-26): se quitan del Workflow los gates de integridad y calidad de datos (etapas.integridad/data_quality pasan a false) — pedido por el usuario, para que el pipeline se enfoque solo en procesar/insertar y registrar en la API de monitoring (RN-IBK-018). La detección de 'fecha sin archivo' (RN-IBK-010) se mantiene, pero ahora se basa en el RAISE propio de sp_t_consent_transaction_ibk.sql en vez de un SP de integridad separado. Los SP de integridad/DQ y las tablas dq_config/dq_control no se borraron, solo dejaron de invocarse"
+  - "RESUELTO (2026-08-26): ba_customer_consent_group pasa de DELETE+INSERT acotado por fecha/scope a TRUNCATE + INSERT completo de TODO t_consent_transaction filtrado por CP_2/otorgado — pedido por el usuario. El Workflow deja de llamar al SP por cada fecha del rango, lo llama una sola vez al final del reproceso (RN-IBK-017)"
   - "RESUELTO (2026-08-26): offset folder_date = process_date - 1 día aplica SOLO en modo normal — pedido por el usuario tras confusión recurrente en manual/reproceso sobre qué carpeta lee cada fecha (RN-IBK-014). El offset se movió del SP al Workflow (step modo_normal)"
   - "RESUELTO (2026-08-26): carga histórica en reproceso — si t_consent_transaction no tiene filas de Interbank, el primer archivo del rango (process_date_init) trae todo su historial, sin el filtro de MAX(consent_date) (RN-IBK-015). Pedido por el usuario para poder hacer un primer poblamiento completo desde un reproceso"
   - "RESUELTO (2026-08-26): record_source en t_consent_transaction pasa de literal fijo 'LPDP_IBK' a 'LPDP_IBK_' + nombre del archivo real (vía pseudo-campo _FILE_NAME) — pedido por el usuario, para poder trazar de qué archivo vino cada fila. Solo t_consent_transaction, ba_customer_consent_group no cambia (RN-IBK-016)"

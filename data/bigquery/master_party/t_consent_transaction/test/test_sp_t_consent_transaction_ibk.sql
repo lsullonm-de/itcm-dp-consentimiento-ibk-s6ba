@@ -124,6 +124,21 @@ ASSERT v_row_count = 0
 -- ============================================================
 
 -- ============================================================
+-- T7 (2026-08-26): la tabla de stage propia (tmp_t_consent_transaction_ibk_{fecha}) debe quedar
+-- eliminada al finalizar el SP — CAMBIO DE DISEÑO: antes la eliminaba sp_ba_customer_consent_group_ibk
+-- (su única consumidora); esa SP dejó de tocarla (pasó a ser un TRUNCATE + INSERT completo, sin
+-- scope por fecha), así que ahora este SP limpia lo suyo. Sufijo _20260401 = FORMAT_DATE('%Y%m%d',
+-- v_fecha_prueba) [RN-IBK-013]. Vive bajo ${project_iden_party}, no bajo project_t_consent_transaction.
+-- ============================================================
+SET v_row_count = (
+  SELECT COUNT(*) FROM `${project_iden_party}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
+  WHERE table_name = 'tmp_t_consent_transaction_ibk_20260401'
+);
+
+ASSERT v_row_count = 0
+  AS 'T7: la tabla de stage tmp_t_consent_transaction_ibk_20260401 debía quedar eliminada al finalizar el SP, se obtuvo ' || CAST(v_row_count AS STRING);
+
+-- ============================================================
 -- Cleanup
 -- ============================================================
 DROP TABLE IF EXISTS `${project_t_consent_transaction}.test_master_party.t_consent_transaction`;

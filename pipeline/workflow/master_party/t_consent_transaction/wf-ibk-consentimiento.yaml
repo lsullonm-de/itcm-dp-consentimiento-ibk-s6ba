@@ -18,13 +18,7 @@ source:
 
             # Stored Procedures (path completo — nunca hardcodeado)
             - var_sp_t_consent_transaction: ${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk
-            - var_sp_integridad_tct: ${project_operation}.${dataset_sp}.sp_integridad_t_consent_transaction
             - var_sp_ba_customer_consent_group: ${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk
-            - var_sp_dq_tct: ${project_operation}.${dataset_sp}.sp_dq_t_consent_transaction
-            - var_sp_dq_bccg: ${project_operation}.${dataset_sp}.sp_dq_ba_customer_consent_group
-
-            # DATA QUALITY [etapas.data_quality: true]
-            - var_dataset_dq: ${dataset_dq}
 
             # Fuente: consentimiento_ibk_archivo (tabla externa dinámica)
             - var_project_archivo: ${project_consentimiento_ibk_archivo}
@@ -68,7 +62,6 @@ source:
             - execution_data_read: 0
             - execution_data_write: 0
             - object_last_load_date: null
-            - var_dq_fails: 0
 
             # Email body — inicializar siempre
             - email_body: {}
@@ -173,11 +166,13 @@ source:
             - var_execution_type: ${text.to_upper(var_modo)}
 
       # ============================================================
-      # 3. EJECUCIÓN — un ciclo [SP1 → SP2] por cada fecha en var_process_dates
+      # 3. EJECUCIÓN — SP1 por cada fecha en var_process_dates, SP2 UNA sola vez al final
       # ============================================================
-      # NOTA: las dos SP se llaman SIEMPRE en secuencia estricta, nunca en paralelo — SP2
-      # depende de la tabla de scope (tmp_t_consent_transaction_ibk) que deja SP1 y es quien
-      # la elimina al terminar (ver cabecera de ambos SPs en data/bigquery/.../sp/).
+      # SP1 (sp_t_consent_transaction_ibk) se llama una vez por cada fecha del rango, en
+      # secuencia estricta. SP2 (sp_ba_customer_consent_group_ibk) ya NO se llama por fecha
+      # [CAMBIO DE DISEÑO 2026-08-26]: es un TRUNCATE + INSERT completo, se llama una única vez
+      # después de terminar iterar_fechas (ver ese bloque más abajo). Cada SP limpia su propia
+      # tabla de stage al terminar (ver cabecera de ambos SPs en data/bigquery/.../sp/).
       # Si una fecha del rango falla, el except detiene el resto del reproceso — las fechas
       # anteriores ya quedaron confirmadas (cada SP hace su propio DELETE+INSERT transaccional).
       - ejecutar:
@@ -255,102 +250,6 @@ source:
                               assign:
                                 - var_es_esta_fecha_historica: false
 
-                      # -------- GATE DE INTEGRIDAD [etapas.integridad: true] --------
-                      # Actualidad D-1 de la fuente principal (consentimiento_ibk_archivo).
-                      # El SP no escribe nada en BigQuery — decide con o_flag_detener si se continúa.
-                      # registro_resultados: true → el resultado se matricula en metadata_operational
-                      # vía registrar_resultado_integridad, más abajo.
-                      - build_sql_integridad_p1:
-                          assign:
-                            # p_process_date_ini = p_process_date_end = fecha_actual — este SP
-                            # siempre evalúa una única fecha (data/rules/bigquery.md).
-                            - sql_integridad_p1: ${"DECLARE v_flag_detener INT64 DEFAULT 0; "
-                                + "DECLARE v_motivo_detencion STRING DEFAULT ''; "
-                                + "DECLARE v_resultado_json STRING DEFAULT '[]'; "
-                                + "CALL `" + var_sp_integridad_tct + "`("
-                                + "DATE '" + fecha_actual + "'"
-                                + ", DATE '" + fecha_actual + "'"
-                                + ", '" + var_project_archivo + "'"
-                                + ", '" + var_dataset_archivo + "'"}
-
-                      - build_sql_integridad_p2:
-                          assign:
-                            - sql_integridad_p2: ${", v_flag_detener, v_motivo_detencion, v_resultado_json); "
-                                + "SELECT v_flag_detener AS flag_detener"
-                                + ", v_motivo_detencion AS motivo_detencion"
-                                + ", v_resultado_json AS resultado_json"}
-
-                      - build_sql_integridad:
-                          assign:
-                            - query_integridad: ${sql_integridad_p1 + sql_integridad_p2}
-
-                      - log_query_integridad:
-                          call: sys.log
-                          args:
-                            text: ${"[BUILD] query_integridad = " + query_integridad}
-                            severity: INFO
-
-                      - ejecutar_validacion_integridad:
-                          call: SyncBigQueryJobWithResults
-                          args:
-                            query: ${query_integridad}
-                            project_id: ${v_billing_project}
-                          result: resultado_integridad
-
-                      - extraer_resultado_integridad:
-                          assign:
-                            - integridad_flag_detener: ${int(resultado_integridad.rows[0].f[0].v)}
-                            - integridad_motivo: ${resultado_integridad.rows[0].f[1].v}
-                            - integridad_resultados: ${json.decode(resultado_integridad.rows[0].f[2].v)}
-
-                      - log_resultado_integridad:
-                          call: sys.log
-                          args:
-                            json:
-                              fecha: ${fecha_actual}
-                              flag_detener: ${integridad_flag_detener}
-                              motivo: ${integridad_motivo}
-                            severity: INFO
-
-                      # Histórico — corre SIEMPRE, antes del punto de corte (incluida la corrida
-                      # que se detiene). registro_resultados: true (etapas.monitoring habilitado).
-                      - registrar_resultado_integridad:
-                          call: RegisterIntegrityResults
-                          args:
-                            api_url: ${var_METADATA_API_URL}
-                            process_code: ${var_process_code}
-                            execution_id: ${var_execution_id}
-                            task_code: ${var_sp_integridad_tct}
-                            process_date: ${fecha_actual}
-                            flag_detener: ${integridad_flag_detener}
-                            motivo_detencion: ${integridad_motivo}
-                            resultados: ${integridad_resultados}
-                            user: ${var_user}
-                          result: integridad_registro_response
-
-                      # [RN-IBK-010] Sin archivo (flag_detener=1) NO aborta el resto del proceso —
-                      # se omite esta fecha y se sigue con la siguiente del rango (reproceso) o se
-                      # termina OK sin cargar nada (normal/manual). El histórico ya quedó matriculado
-                      # arriba en registrar_resultado_integridad, independientemente de esta rama.
-                      - evaluar_integridad:
-                          switch:
-                            - condition: ${integridad_flag_detener == 1}
-                              next: registrar_fecha_sin_archivo
-                            - condition: ${true}
-                              next: build_sql_tct_p1
-
-                      - registrar_fecha_sin_archivo:
-                          assign:
-                            - var_fechas_sin_archivo: ${list.concat(var_fechas_sin_archivo, fecha_actual)}
-                          next: log_fecha_sin_archivo
-
-                      - log_fecha_sin_archivo:
-                          call: sys.log
-                          args:
-                            text: ${"[INFO] Sin archivo para folder_date de " + fecha_actual + " — se omite esta fecha. " + integridad_motivo}
-                            severity: INFO
-                          next: fin_iteracion_fecha
-
                       # -------- SP 1: sp_t_consent_transaction_ibk --------
                       # Partido en 3 (no 2) — con p_process_date_ini/end el SP pasó a 11 parámetros
                       # y sql_tct_p1 solo quedaba a 26 bytes del límite de 400 por expresión.
@@ -394,20 +293,41 @@ source:
                             text: ${"[BUILD] query_tct = " + query_tct}
                             severity: INFO
 
+                      # invoque_sp_tct queda envuelto en su propio try/except (CAMBIO DE DISEÑO
+                      # 2026-08-26, quitados los gates de integridad/DQ): antes, una fecha sin
+                      # archivo se detectaba ANTES de llamar a este SP, vía el SP de integridad
+                      # (etapas.integridad, eliminado). Ahora sp_t_consent_transaction_ibk.sql ya
+                      # lanza su propio RAISE cuando la tabla externa tiene 0 filas (ver su punto
+                      # 4) — se reutiliza ESE error para decidir "sin archivo, sigue con la
+                      # siguiente fecha" (RN-IBK-010) en vez de un chequeo previo separado.
                       - invoque_sp_tct:
-                          call: TrackedBigQueryJobWithResults
-                          args:
-                            api_url: ${var_METADATA_API_URL}
-                            process_code: ${var_process_code}
-                            execution_id: ${var_execution_id}
-                            task_code: ${var_sp_t_consent_transaction}
-                            execution_type: ${var_execution_type}
-                            process_date_init: ${fecha_actual}
-                            process_date_end: ${fecha_actual}
-                            user: ${var_user}
-                            query: ${query_tct}
-                            project_id: ${v_billing_project}
-                          result: tracked_result_tct
+                          try:
+                            steps:
+                              - invoque_sp_tct_call:
+                                  call: TrackedBigQueryJobWithResults
+                                  args:
+                                    api_url: ${var_METADATA_API_URL}
+                                    process_code: ${var_process_code}
+                                    execution_id: ${var_execution_id}
+                                    task_code: ${var_sp_t_consent_transaction}
+                                    execution_type: ${var_execution_type}
+                                    process_date_init: ${fecha_actual}
+                                    process_date_end: ${fecha_actual}
+                                    user: ${var_user}
+                                    query: ${query_tct}
+                                    project_id: ${v_billing_project}
+                                  result: tracked_result_tct
+                          except:
+                            as: e_tct
+                            steps:
+                              # Distingue "sin archivo" (mensaje conocido del RAISE del SP, ver su
+                              # punto 4) de un error real — solo el primero se omite en silencio.
+                              - evaluar_error_tct:
+                                  switch:
+                                    - condition: ${"status" in e_tct and "errorResult" in e_tct.status and text.match_regex(e_tct.status.errorResult.message, "no se ejecuta DELETE sin INSERT de reemplazo")}
+                                      next: registrar_fecha_sin_archivo
+                                    - condition: ${true}
+                                      raise: ${e_tct}
 
                       - set_metricas_tct:
                           assign:
@@ -415,114 +335,24 @@ source:
                             - execution_data_write: ${tracked_result_tct.execution_data_write}
                             - object_last_load_date: ${tracked_result_tct.object_last_load_date}
 
-                      # -------- DQ: sp_dq_t_consent_transaction [etapas.data_quality: true] --------
-                      - build_sql_dq_tct:
-                          assign:
-                            - query_dq_tct: ${"CALL `" + var_sp_dq_tct + "`("
-                                + "'" + var_project_tct + "'"
-                                + ", '" + var_dataset_tct + "'"
-                                + ", '" + var_table_tct + "'"
-                                + ", DATE '" + fecha_actual + "')"}
-
-                      - log_query_dq_tct:
-                          call: sys.log
-                          args:
-                            text: ${"[BUILD] query_dq_tct = " + query_dq_tct}
-                            severity: INFO
-
-                      - ejecutar_dq_tct:
-                          call: SyncBigQueryJob
-                          args:
-                            query: ${query_dq_tct}
-                            project_id: ${v_billing_project}
-                          result: resultado_dq_tct
-
-                      # -------- SP 2: sp_ba_customer_consent_group_ibk --------
-                      # Partido en 3 (no 2) — con p_process_date_ini/end [RN-IBK-013, sufijo de
-                      # tabla temporal contra choques entre ejecuciones concurrentes] el SP pasó
-                      # a 11 parámetros.
-                      - build_sql_bccg_p1:
-                          assign:
-                            # p_process_date_ini = p_process_date_end = fecha_actual — debe
-                            # coincidir con lo que usó sp_t_consent_transaction_ibk para esta
-                            # misma fecha (mismo sufijo de tabla temporal, RN-IBK-013).
-                            - sql_bccg_p1: ${"DECLARE v_read INT64 DEFAULT 0; "
-                                + "DECLARE v_write INT64 DEFAULT 0; "
-                                + "CALL `" + var_sp_ba_customer_consent_group + "`("
-                                + "DATE '" + fecha_actual + "'"
-                                + ", DATE '" + fecha_actual + "'"
-                                + ", '" + var_project_bccg + "'"}
-
-                      - build_sql_bccg_p2:
-                          assign:
-                            - sql_bccg_p2: ${", '" + var_dataset_bccg + "'"
-                                + ", '" + var_table_bccg + "'"
-                                + ", '" + var_project_tct + "'"
-                                + ", '" + var_dataset_tct + "'"
-                                + ", '" + var_table_tct + "'"}
-
-                      - build_sql_bccg_p3:
-                          assign:
-                            - sql_bccg_p3: ${", '" + var_dataset_stage + "'"
-                                + ", v_read, v_write); "
-                                + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
-
-                      - build_sql_bccg:
-                          assign:
-                            - query_bccg: ${sql_bccg_p1 + sql_bccg_p2 + sql_bccg_p3}
-
-                      - log_query_bccg:
-                          call: sys.log
-                          args:
-                            text: ${"[BUILD] query_bccg = " + query_bccg}
-                            severity: INFO
-
-                      - invoque_sp_bccg:
-                          call: TrackedBigQueryJobWithResults
-                          args:
-                            api_url: ${var_METADATA_API_URL}
-                            process_code: ${var_process_code}
-                            execution_id: ${var_execution_id}
-                            task_code: ${var_sp_ba_customer_consent_group}
-                            execution_type: ${var_execution_type}
-                            process_date_init: ${fecha_actual}
-                            process_date_end: ${fecha_actual}
-                            user: ${var_user}
-                            query: ${query_bccg}
-                            project_id: ${v_billing_project}
-                          result: tracked_result_bccg
-
-                      - set_metricas_bccg:
-                          assign:
-                            - execution_data_read: ${tracked_result_bccg.execution_data_read}
-                            - execution_data_write: ${tracked_result_bccg.execution_data_write}
-                            - object_last_load_date: ${tracked_result_bccg.object_last_load_date}
-
-                      # -------- DQ: sp_dq_ba_customer_consent_group [etapas.data_quality: true] --------
-                      - build_sql_dq_bccg:
-                          assign:
-                            - query_dq_bccg: ${"CALL `" + var_sp_dq_bccg + "`("
-                                + "'" + var_project_bccg + "'"
-                                + ", '" + var_dataset_bccg + "'"
-                                + ", '" + var_table_bccg + "'"
-                                + ", DATE '" + fecha_actual + "')"}
-
-                      - log_query_dq_bccg:
-                          call: sys.log
-                          args:
-                            text: ${"[BUILD] query_dq_bccg = " + query_dq_bccg}
-                            severity: INFO
-
-                      - ejecutar_dq_bccg:
-                          call: SyncBigQueryJob
-                          args:
-                            query: ${query_dq_bccg}
-                            project_id: ${v_billing_project}
-                          result: resultado_dq_bccg
-
                       - log_fin_fecha:
                           assign:
                             - var_fechas_procesadas: ${var_fechas_procesadas + 1}
+                          next: fin_iteracion_fecha
+
+                      # [RN-IBK-010] Sin archivo NO aborta el resto del proceso — se omite esta
+                      # fecha y se sigue con la siguiente del rango (reproceso) o se termina OK
+                      # sin cargar nada (normal/manual).
+                      - registrar_fecha_sin_archivo:
+                          assign:
+                            - var_fechas_sin_archivo: ${list.concat(var_fechas_sin_archivo, fecha_actual)}
+                          next: log_fecha_sin_archivo
+
+                      - log_fecha_sin_archivo:
+                          call: sys.log
+                          args:
+                            text: ${"[INFO] Sin archivo para folder_date de " + fecha_actual + " — se omite esta fecha."}
+                            severity: INFO
                           next: fin_iteracion_fecha
 
                       # Punto de convergencia de ambas ramas (procesada / sin archivo) — último
@@ -531,32 +361,68 @@ source:
                           assign:
                             - _fin_iteracion: true
 
-              # DQ: verificar si alguna regla crítica falló en la corrida de hoy (agregado — no
-              # detiene el pipeline, solo se informa en el mail de éxito). LIMITACIÓN CONOCIDA:
-              # dq_control.execution_date no distingue por execution_id — si se corre más de una
-              # vez el mismo día (ej. normal + un reproceso manual), este conteo mezcla ambas.
-              - build_sql_validar_dq:
+              # -------- SP 2: sp_ba_customer_consent_group_ibk [CAMBIO DE DISEÑO 2026-08-26] --------
+              # Ya NO se llama por fecha dentro de iterar_fechas: pasó a ser un TRUNCATE + INSERT
+              # de TODO t_consent_transaction filtrado por CP_2/otorgado (espejo completo, sin
+              # acotar por fecha ni por scope) — se ejecuta UNA sola vez, aquí, después de procesar
+              # todas las fechas del rango. Llamarla por fecha truncaría/reconstruiría la tabla
+              # completa N veces en el mismo reproceso (ver cabecera del SP). p_process_date_ini/end
+              # ya no filtran datos dentro del SP (se mantienen en la firma por decisión del
+              # usuario) — aquí se les pasa el rango real de esta corrida solo para trazabilidad
+              # en monitoring.
+              - build_sql_bccg_p1:
                   assign:
-                    - query_validar_dq: ${"SELECT COUNT(*) AS fails FROM `" + v_billing_project + "."
-                        + var_dataset_dq + ".dq_control` WHERE execution_date = CURRENT_DATE() AND dq_status = 'fail'"}
+                    - sql_bccg_p1: ${"DECLARE v_read INT64 DEFAULT 0; "
+                        + "DECLARE v_write INT64 DEFAULT 0; "
+                        + "CALL `" + var_sp_ba_customer_consent_group + "`("
+                        + "DATE '" + var_process_dates[0] + "'"
+                        + ", DATE '" + var_process_dates[len(var_process_dates) - 1] + "'"
+                        + ", '" + var_project_bccg + "'"}
 
-              - validar_dq_criticas:
-                  call: SyncBigQueryJobWithResults
-                  args:
-                    query: ${query_validar_dq}
-                    project_id: ${v_billing_project}
-                  result: resultado_dq_criticas
-
-              - extraer_dq_fails:
+              - build_sql_bccg_p2:
                   assign:
-                    - var_dq_fails: ${int(resultado_dq_criticas.rows[0].f[0].v)}
+                    - sql_bccg_p2: ${", '" + var_dataset_bccg + "'"
+                        + ", '" + var_table_bccg + "'"
+                        + ", '" + var_project_tct + "'"
+                        + ", '" + var_dataset_tct + "'"
+                        + ", '" + var_table_tct + "'"}
 
-              - log_dq_fails:
+              - build_sql_bccg_p3:
+                  assign:
+                    - sql_bccg_p3: ${", '" + var_dataset_stage + "'"
+                        + ", v_read, v_write); "
+                        + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
+
+              - build_sql_bccg:
+                  assign:
+                    - query_bccg: ${sql_bccg_p1 + sql_bccg_p2 + sql_bccg_p3}
+
+              - log_query_bccg:
                   call: sys.log
                   args:
-                    json:
-                      dq_fails_hoy: ${var_dq_fails}
+                    text: ${"[BUILD] query_bccg = " + query_bccg}
                     severity: INFO
+
+              - invoque_sp_bccg:
+                  call: TrackedBigQueryJobWithResults
+                  args:
+                    api_url: ${var_METADATA_API_URL}
+                    process_code: ${var_process_code}
+                    execution_id: ${var_execution_id}
+                    task_code: ${var_sp_ba_customer_consent_group}
+                    execution_type: ${var_execution_type}
+                    process_date_init: ${var_process_dates[0]}
+                    process_date_end: ${var_process_dates[len(var_process_dates) - 1]}
+                    user: ${var_user}
+                    query: ${query_bccg}
+                    project_id: ${v_billing_project}
+                  result: tracked_result_bccg
+
+              - set_metricas_bccg:
+                  assign:
+                    - execution_data_read: ${tracked_result_bccg.execution_data_read}
+                    - execution_data_write: ${tracked_result_bccg.execution_data_write}
+                    - object_last_load_date: ${tracked_result_bccg.object_last_load_date}
 
               # MONITORING: marca el proceso como SUCCESS una vez procesadas todas las fechas
               - update_process_success:
@@ -658,23 +524,12 @@ source:
               assign:
                 - var_fechas_sin_archivo_txt: ""
 
-      - set_dq_subject_suffix:
-          switch:
-            - condition: ${var_dq_fails > 0}
-              assign:
-                - var_subject_ok: "[IBK-CONSENTIMIENTO] Centralización LPDP [⚠️ OK CON DQ FAILS]"
-            - condition: ${true}
-              assign:
-                - var_subject_ok: "[IBK-CONSENTIMIENTO] Centralización LPDP [✅ OK]"
-
       - notificar_ok:
           assign:
             - email_body:
-                subject: ${var_subject_ok}
+                subject: "[IBK-CONSENTIMIENTO] Centralización LPDP [✅ OK]"
                 content: ${"<p>Proceso finalizado correctamente. Modo - " + var_modo
                     + ". Fechas procesadas - " + string(var_fechas_procesadas) + "</p>"
-                    + "<p>Reglas DQ críticas en estado fail hoy - " + string(var_dq_fails)
-                    + " (ver dq_control para el detalle)</p>"
                     + var_fechas_sin_archivo_txt}
                 toAddress:
                   - "lsullonm@intercorp.com.pe"   # ⚠️ SOLO PARA PRUEBAS — reemplazar por los destinatarios reales antes de producción
@@ -717,30 +572,8 @@ source:
   # ============================================================
   # SUBWORKFLOWS REUTILIZABLES
   # ============================================================
-  SyncBigQueryJob:
-    params: [query, project_id]
-    steps:
-      - JobQuery:
-          call: googleapis.bigquery.v2.jobs.query
-          args:
-            projectId: ${project_id}
-            body:
-              query: ${query}
-              useLegacySql: false
-          result: jobQueryResponse
-
-      - JobWait:
-          call: BigQueryJobState
-          args:
-            job_id: ${jobQueryResponse.jobReference.jobId}
-            project_id: ${project_id}
-          result: jobGetResponse
-
-      - Return:
-          return: ${jobGetResponse}
-
-  # Versión extendida de SyncBigQueryJob que retorna los resultados del query — usada por el
-  # gate de integridad para leer los OUT del SP (etapas.integridad: true)
+  # Ejecuta un query síncrono contra BigQuery y devuelve los resultados (usada para leer los OUT
+  # de los SP y para el chequeo de carga histórica).
   SyncBigQueryJobWithResults:
     params: [query, project_id]
     steps:
@@ -867,8 +700,7 @@ source:
               - raise_error:
                   raise: ${e}
 
-  # MONITORING — nunca debe romper el pipeline: atrapa su propio error y loguea WARNING
-  # (mismo patrón que RegisterIntegrityResults).
+  # MONITORING — nunca debe romper el pipeline: atrapa su propio error y loguea WARNING.
   CreateExecution:
     params:
       - api_url
@@ -971,7 +803,7 @@ source:
           return: ${api_response.body}
 
   # MONITORING — nunca debe romper el pipeline ni tapar el error original: atrapa su propio
-  # error y loguea WARNING (mismo patrón que RegisterIntegrityResults). Es especialmente crítico
+  # error y loguea WARNING. Es especialmente crítico
   # aquí porque este sub-workflow se invoca también desde el except principal (update_process_failed)
   # — si la API de metadata falla justo ahí, no debe perderse el error real que causó la falla.
   UpdateProcessStatus:
@@ -1009,51 +841,6 @@ source:
                   call: sys.log
                   args:
                     text: ${"[MONITORING] No se pudo actualizar el estado del proceso - " + json.encode_to_string(e)}
-                    severity: WARNING
-              - return_error:
-                  return: null
-
-      - return_response:
-          return: ${api_response.body}
-
-  # INTEGRIDAD [etapas.integridad: true, registro_resultados: true] — persiste el resultado del
-  # gate en metadata_operational. Nunca rompe el pipeline: atrapa su propio error y loguea WARNING.
-  RegisterIntegrityResults:
-    params:
-      - api_url
-      - process_code
-      - execution_id
-      - task_code
-      - process_date
-      - flag_detener
-      - motivo_detencion
-      - resultados
-      - user
-    steps:
-      - call_api:
-          try:
-            call: http.post
-            args:
-              url: ${api_url + "/api/v1/pipeline-management/pipelines/" + process_code + "/integrity-execution/creation"}
-              auth:
-                type: OIDC
-                audience: ${api_url}
-              body:
-                execution_id: ${execution_id}
-                task_code: ${task_code}
-                process_date: ${process_date}
-                flag_detener: ${flag_detener}
-                motivo_detencion: ${motivo_detencion}
-                resultados: ${resultados}
-                creation_user: ${user}
-            result: api_response
-          except:
-            as: e
-            steps:
-              - log_registro_fallido:
-                  call: sys.log
-                  args:
-                    text: ${"[INTEGRIDAD] No se pudo registrar el resultado - " + json.encode_to_string(e)}
                     severity: WARNING
               - return_error:
                   return: null

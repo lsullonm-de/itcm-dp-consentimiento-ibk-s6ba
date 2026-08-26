@@ -1,7 +1,10 @@
 -- Test: sp_ba_customer_consent_group_ibk
 -- Spec: spec-ibk-20260819-001 | Ejecutar en fac-data-stage-testing, dataset de test aislado
 
-DECLARE v_fecha_prueba DATE DEFAULT DATE '2026-04-01';   -- debe coincidir con el sufijo de las tablas temporales [RN-IBK-013]
+-- v_fecha_prueba ya no filtra nada dentro del SP (CAMBIO DE DISEÑO 2026-08-26: TRUNCATE + INSERT
+-- completo, sin scope por fecha) — se sigue pasando solo porque el parámetro se mantuvo en la
+-- firma (decisión del usuario), para trazabilidad en monitoring.
+DECLARE v_fecha_prueba DATE DEFAULT DATE '2026-04-01';
 DECLARE v_row_count    INT64;
 DECLARE v_read         INT64;   -- MONITORING: o_execution_data_read
 DECLARE v_write        INT64;   -- MONITORING: o_execution_data_write
@@ -46,6 +49,17 @@ SELECT * FROM UNNEST([
     'CP_1', 'DOC-004', 'WEB',
     'EMP-004', 'PLC-004', 'otorgado',
     DATE '2026-03-30', 'gs://bucket/doc4.pdf'
+  ),
+  -- caso válido con consent_date MUY antiguo (2020) -> debe pasar el filtro igual: prueba que
+  -- el SP ya NO filtra por fecha/scope [CAMBIO DE DISEÑO 2026-08-26, "quitamos el filtro de
+  -- consent_date" — ver T5].
+  STRUCT(
+    DATE '2026-04-01', '000', 'INTERBANK',
+    'BU01', 'Banca Personal',
+    'CT-005', 'CUST-005', 'PARTY-005',
+    'CP_2', 'DOC-005', 'WEB',
+    'EMP-005', 'PLC-005', 'otorgado',
+    DATE '2020-01-15', 'gs://bucket/doc5.pdf'
   )
 ]);
 -- NOTA (2026-08-26): el fixture ya NO incluye casos de "múltiples eventos por el mismo id"
@@ -54,14 +68,8 @@ SELECT * FROM UNNEST([
 -- sp_t_consent_transaction_ibk.sql (ver su propio test, T5). Un fixture con id duplicado aquí
 -- ya no representa un escenario real de entrada para esta SP.
 
--- Scope generado por sp_t_consent_transaction_ibk: itc_company_id + consent_date tocados en la
--- corrida. Vive en ${project_iden_party}, no en ${project_t_consent_transaction} — ver esa SP.
--- Sufijo _20260401 = FORMAT_DATE('%Y%m%d', v_fecha_prueba) [RN-IBK-013].
-CREATE OR REPLACE TABLE `${project_iden_party}.test_stage_tmp.tmp_t_consent_transaction_ibk_20260401` AS
-SELECT DISTINCT itc_company_id, consent_date
-FROM `${project_t_consent_transaction}.test_master_party.t_consent_transaction`;
-
--- Fila preexistente en la partición que el DELETE+INSERT debe reemplazar
+-- Fila preexistente que el TRUNCATE + INSERT completo debe reemplazar (CAMBIO DE DISEÑO
+-- 2026-08-26: ya no es un DELETE+INSERT por partición, es un espejo completo de la tabla).
 CREATE OR REPLACE TABLE `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group` AS
 SELECT
   DATE '2026-04-01' AS process_date, '000' AS itc_company_id, 'INTERBANK' AS itc_company_name,
@@ -86,26 +94,27 @@ CALL `${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk`(
 -- 3. Assertions
 -- ============================================================
 
--- T0: métricas de monitoring — 2 filas válidas (PARTY-001, PARTY-002) pasan el filtro RN-IBK-006
-ASSERT v_write = 2
-  AS 'T0: o_execution_data_write debía ser 2, se obtuvo ' || CAST(v_write AS STRING);
+-- T0: métricas de monitoring — 3 filas válidas (PARTY-001, PARTY-002, PARTY-005) pasan el
+-- filtro RN-IBK-006, sin importar la antigüedad de consent_date (PARTY-005 es de 2020)
+ASSERT v_write = 3
+  AS 'T0: o_execution_data_write debía ser 3, se obtuvo ' || CAST(v_write AS STRING);
 ASSERT v_read = v_write
   AS 'T0: o_execution_data_read debía igualar o_execution_data_write, se obtuvo read=' || CAST(v_read AS STRING) || ' write=' || CAST(v_write AS STRING);
 
--- T1: la fila preexistente (PARTY-OLD) debe haber sido reemplazada por el DELETE+INSERT
+-- T1: la fila preexistente (PARTY-OLD) debe haber sido eliminada por el TRUNCATE
 SET v_row_count = (
   SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
   WHERE id = 'PARTY-OLD'
 );
 ASSERT v_row_count = 0
-  AS 'T1: la fila preexistente PARTY-OLD debía eliminarse en el DELETE por partición, se obtuvo ' || CAST(v_row_count AS STRING);
+  AS 'T1: la fila preexistente PARTY-OLD debía eliminarse con el TRUNCATE, se obtuvo ' || CAST(v_row_count AS STRING);
 
--- T2: solo los 2 casos válidos (CP_2 + otorgado) deben quedar en el output
+-- T2: solo los 3 casos válidos (CP_2 + otorgado) deben quedar en el output
 SET v_row_count = (
   SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
 );
-ASSERT v_row_count = 2
-  AS 'T2: se esperaban 2 filas (PARTY-001, PARTY-002), se obtuvo ' || CAST(v_row_count AS STRING);
+ASSERT v_row_count = 3
+  AS 'T2: se esperaban 3 filas (PARTY-001, PARTY-002, PARTY-005), se obtuvo ' || CAST(v_row_count AS STRING);
 
 -- T3: el caso rechazado y el caso CP_1 no deben aparecer
 SET v_row_count = (
@@ -123,18 +132,16 @@ SET v_row_count = (
 ASSERT v_row_count = 0
   AS 'T4: approval_channel_name debe ser siempre NULL, se obtuvo ' || CAST(v_row_count AS STRING) || ' filas no nulas';
 
--- T5: las tablas temporales de scope se limpiaron al finalizar — ambas viven bajo
--- ${project_iden_party} (dataset de stage), no bajo project_ba_customer_consent_group.
--- Nombres con sufijo de fecha [RN-IBK-013] — deben coincidir con v_fecha_prueba.
+-- T5: NO debe filtrar por fecha/scope [CAMBIO DE DISEÑO 2026-08-26] — PARTY-005, con un
+-- consent_date de 2020 (muy fuera de cualquier ventana de proceso), debe quedar igual que
+-- PARTY-001/002. Esta SP ya no toca ninguna tabla de scope (la elimina sp_t_consent_transaction_ibk,
+-- ver su propio test).
 SET v_row_count = (
-  SELECT COUNT(*) FROM `${project_iden_party}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
-  WHERE table_name = 'tmp_t_consent_transaction_ibk_20260401'
-) + (
-  SELECT COUNT(*) FROM `${project_iden_party}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
-  WHERE table_name = 'tmp_ba_customer_consent_group_ibk_20260401'
+  SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
+  WHERE id = 'PARTY-005'
 );
-ASSERT v_row_count = 0
-  AS 'T5: las tablas temporales de scope deben quedar eliminadas al finalizar el SP, se obtuvieron ' || CAST(v_row_count AS STRING);
+ASSERT v_row_count = 1
+  AS 'T5: PARTY-005 (consent_date 2020-01-15) debía quedar igual, sin filtro de fecha — se obtuvo ' || CAST(v_row_count AS STRING);
 
 -- ============================================================
 -- Cleanup

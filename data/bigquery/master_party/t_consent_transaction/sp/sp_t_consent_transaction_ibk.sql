@@ -24,9 +24,11 @@
 -- — se toma TODO el historial del archivo. Reservado para el primer archivo de un reproceso
 -- cuando t_consent_transaction todavía no tiene ninguna fila de Interbank (carga inicial).
 --
--- NOTA: la tabla temporal tmp_t_consent_transaction_ibk NO se elimina al final de este SP —
--- sp_ba_customer_consent_group_ibk la usa para acotar su propio DELETE+INSERT (RN-IBK-006) y
--- es quien la elimina al terminar. Si este SP se llama sin encadenar el segundo, limpiar a mano.
+-- NOTA (2026-08-26): la tabla temporal tmp_t_consent_transaction_ibk_{fecha} la elimina este
+-- mismo SP al finalizar (ver punto 7). Antes la eliminaba sp_ba_customer_consent_group_ibk (por
+-- ser su única consumidora), pero esa SP dejó de acotar por fecha/scope (pasó a ser un TRUNCATE +
+-- INSERT de toda la tabla, llamado una sola vez por ejecución del Workflow, no una vez por fecha)
+-- — ya no toca esta tabla en absoluto, así que cada SP limpia lo suyo.
 
 CREATE OR REPLACE PROCEDURE `${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk`(
   -- Este SP siempre procesa una única fecha (RN-IBK-001: una tabla externa por fecha) — el
@@ -348,6 +350,10 @@ BEGIN
   SET v_sql = '''SELECT COUNT(1) FROM `''' || v_stage_path || '''`''';
   EXECUTE IMMEDIATE v_sql INTO o_execution_data_read;
 
-  -- tmp_t_consent_transaction_ibk se deja viva a propósito — ver nota de cabecera.
+  -- ============================================================
+  -- 7. LIMPIEZA — tabla de stage propia (ver nota de cabecera, 2026-08-26)
+  -- ============================================================
+  SET v_sql = '''DROP TABLE IF EXISTS `''' || v_stage_path || '''`''';
+  EXECUTE IMMEDIATE v_sql;
 
 END;
