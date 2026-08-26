@@ -1,9 +1,10 @@
 -- Test: sp_ba_customer_consent_group_ibk
 -- Spec: spec-ibk-20260819-001 | Ejecutar en fac-data-stage-testing, dataset de test aislado
 
-DECLARE v_row_count INT64;
-DECLARE v_read       INT64;   -- MONITORING: o_execution_data_read
-DECLARE v_write      INT64;   -- MONITORING: o_execution_data_write
+DECLARE v_fecha_prueba DATE DEFAULT DATE '2026-04-01';   -- debe coincidir con el sufijo de las tablas temporales [RN-IBK-013]
+DECLARE v_row_count    INT64;
+DECLARE v_read         INT64;   -- MONITORING: o_execution_data_read
+DECLARE v_write        INT64;   -- MONITORING: o_execution_data_write
 
 -- ============================================================
 -- 1. Setup: t_consent_transaction de prueba (fuente única, RN-IBK-006)
@@ -55,7 +56,8 @@ SELECT * FROM UNNEST([
 
 -- Scope generado por sp_t_consent_transaction_ibk: itc_company_id + consent_date tocados en la
 -- corrida. Vive en ${project_iden_party}, no en ${project_t_consent_transaction} — ver esa SP.
-CREATE OR REPLACE TABLE `${project_iden_party}.test_stage_tmp.tmp_t_consent_transaction_ibk` AS
+-- Sufijo _20260401 = FORMAT_DATE('%Y%m%d', v_fecha_prueba) [RN-IBK-013].
+CREATE OR REPLACE TABLE `${project_iden_party}.test_stage_tmp.tmp_t_consent_transaction_ibk_20260401` AS
 SELECT DISTINCT itc_company_id, consent_date
 FROM `${project_t_consent_transaction}.test_master_party.t_consent_transaction`;
 
@@ -73,6 +75,7 @@ SELECT
 -- 2. Invocar el SP
 -- ============================================================
 CALL `${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk`(
+  v_fecha_prueba, v_fecha_prueba,
   '${project_ba_customer_consent_group}', 'test_master_party', 'ba_customer_consent_group',
   '${project_t_consent_transaction}', 'test_master_party', 't_consent_transaction',
   'test_stage_tmp',
@@ -121,13 +124,14 @@ ASSERT v_row_count = 0
   AS 'T4: approval_channel_name debe ser siempre NULL, se obtuvo ' || CAST(v_row_count AS STRING) || ' filas no nulas';
 
 -- T5: las tablas temporales de scope se limpiaron al finalizar — ambas viven bajo
--- ${project_iden_party} (dataset de stage), no bajo project_ba_customer_consent_group
+-- ${project_iden_party} (dataset de stage), no bajo project_ba_customer_consent_group.
+-- Nombres con sufijo de fecha [RN-IBK-013] — deben coincidir con v_fecha_prueba.
 SET v_row_count = (
   SELECT COUNT(*) FROM `${project_iden_party}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
-  WHERE table_name = 'tmp_t_consent_transaction_ibk'
+  WHERE table_name = 'tmp_t_consent_transaction_ibk_20260401'
 ) + (
   SELECT COUNT(*) FROM `${project_iden_party}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
-  WHERE table_name = 'tmp_ba_customer_consent_group_ibk'
+  WHERE table_name = 'tmp_ba_customer_consent_group_ibk_20260401'
 );
 ASSERT v_row_count = 0
   AS 'T5: las tablas temporales de scope deben quedar eliminadas al finalizar el SP, se obtuvieron ' || CAST(v_row_count AS STRING);

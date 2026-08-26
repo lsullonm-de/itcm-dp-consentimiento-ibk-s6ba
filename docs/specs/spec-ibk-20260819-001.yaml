@@ -274,6 +274,22 @@ reglas_negocio:
     campo_afectado: t_consent_transaction
     validado_por: lsullon
 
+  - id: RN-IBK-013
+    descripcion: >
+      Las tablas temporales de scope (tmp_t_consent_transaction_ibk, tmp_ba_customer_consent_group_ibk)
+      llevan un sufijo de fecha (YYYYMMDD de p_process_date_ini) en su nombre — fix 2026-08-26,
+      pedido por el usuario al revisar el diseño tras el fix de RN-IBK-012. Antes el nombre era
+      fijo, compartido por CUALQUIER fecha o ejecución del Workflow: dos ejecuciones concurrentes
+      (ej. el Cloud Scheduler disparando el modo normal mientras corre un reproceso manual) se
+      pisarían la misma tabla física. sp_ba_customer_consent_group_ibk.sql ahora recibe
+      p_process_date_ini/p_process_date_end como sus 2 primeros parámetros (antes no los tenía)
+      únicamente para calcular este sufijo — no filtra datos por fecha (eso ya lo hace
+      sp_t_consent_transaction_ibk.sql, RN-IBK-012); debe pasar el mismo valor que usó la llamada
+      anterior a sp_t_consent_transaction_ibk.sql para la misma fecha del Workflow.
+    criticidad: media
+    campo_afectado: t_consent_transaction, ba_customer_consent_group
+    validado_por: lsullon
+
   - id: RN-IBK-006
     descripcion: >
       ba_customer_consent_group se genera exclusivamente desde t_consent_transaction
@@ -354,7 +370,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "Cruce con iden_itc_party, filtra por consent_date dentro de [p_process_date_ini, p_process_date_end] (RN-IBK-012), se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011) y hace delete/insert por itc_company_id + consent_date"
+    descripcion: "Cruce con iden_itc_party, filtra por consent_date dentro de [p_process_date_ini, p_process_date_end] (RN-IBK-012), se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011), hace delete/insert por itc_company_id + consent_date, y usa una tabla temporal con sufijo de fecha (RN-IBK-013) para no chocar con ejecuciones concurrentes"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
@@ -374,7 +390,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_ba_customer_consent_group_ibk.sql
-    descripcion: "Filtra CP_2/otorgado desde t_consent_transaction (ya deduplicada por cliente, RN-IBK-011) y hace delete/insert"
+    descripcion: "Filtra CP_2/otorgado desde t_consent_transaction (ya deduplicada por cliente, RN-IBK-011) y hace delete/insert. Recibe p_process_date_ini/end solo para el sufijo de fecha de la tabla temporal de scope (RN-IBK-013), no filtra datos por fecha"
 
   - tipo: sp
     archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_dq_ba_customer_consent_group.sql
@@ -510,7 +526,7 @@ restricciones:
   - "Política ante archivo ausente en el folder_date esperado no definida — no debe ejecutarse DELETE sin INSERT de reemplazo"
   - "RESUELTO: project_operation/project_analytics/project_billing y dataset_sp/dataset_stage/dataset_dq en env_dev.json apuntan a un proyecto/dataset operativo compartido (no exclusivo del módulo) — confirmado por el equipo, es el patrón de despliegue esperado para este tipo de proceso, no un resto de otro módulo"
   - "RESUELTO: service_account_job en env_dev.json es una SA compartida ya provisionada con acceso a las tablas de este módulo — confirmado por el equipo. seguridad.permisos ahora referencia ${service_account_job} en vez de un literal distinto"
-  - "EXCEPCIÓN ACEPTADA (fac-data-rules-check, 2026-08-19, REGLA 2/3): las tablas temporales tmp_t_consent_transaction_ibk y tmp_ba_customer_consent_group_ibk usan el sufijo de nombre hardcodeado (no ${table_tmp_...}) en sp_t_consent_transaction_ibk.sql y sp_ba_customer_consent_group_ibk.sql. Son tablas efímeras internas, compartidas únicamente entre esos 2 SPs del mismo módulo, no configurables ni distintas entre ambientes (project/dataset sí son variables — ${project_output}/${dataset_stage} — solo el sufijo de tabla es literal). Se documenta como excepción en vez de crear 6 variables Dataops nuevas (project_/dataset_/table_ x 2 tablas) para un detalle de implementación interno"
+  - "EXCEPCIÓN ACEPTADA (fac-data-rules-check, 2026-08-19, REGLA 2/3): las tablas temporales tmp_t_consent_transaction_ibk y tmp_ba_customer_consent_group_ibk usan el PREFIJO de nombre hardcodeado (no ${table_tmp_...}) en sp_t_consent_transaction_ibk.sql y sp_ba_customer_consent_group_ibk.sql. Son tablas efímeras internas, compartidas únicamente entre esos 2 SPs del mismo módulo, no configurables ni distintas entre ambientes (project/dataset sí son variables — ${project_output}/${dataset_stage} — solo el prefijo de tabla es literal). Se documenta como excepción en vez de crear 6 variables Dataops nuevas (project_/dataset_/table_ x 2 tablas) para un detalle de implementación interno. ACTUALIZADO 2026-08-26 (RN-IBK-013): ambos nombres ahora llevan además un sufijo de FECHA dinámico (YYYYMMDD), que sí varía por ejecución — el prefijo sigue siendo la única parte literal/hardcodeada"
 
 # ------------------------------------------------------------
 # 11. MONITORING (etapas.monitoring: true, activado 2026-08-19)

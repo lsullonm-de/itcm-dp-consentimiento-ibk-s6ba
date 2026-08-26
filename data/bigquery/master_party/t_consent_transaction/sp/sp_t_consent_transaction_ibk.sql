@@ -66,6 +66,10 @@ BEGIN
   -- concatenar su valor como literal, igual que v_folder_date/v_ext_table_path más abajo.
   DECLARE v_date_ini_lit     STRING;
   DECLARE v_date_end_lit     STRING;
+  -- Sufijo de fecha para las tablas temporales [RN-IBK-013] — evita choques entre ejecuciones
+  -- concurrentes (ej. el scheduler normal disparando mientras corre un reproceso manual): antes
+  -- el nombre era fijo (tmp_t_consent_transaction_ibk), compartido por CUALQUIER fecha/ejecución.
+  DECLARE v_process_date_lit STRING;
 
   SET o_execution_data_read  = 0;
   SET o_execution_data_write = 0;
@@ -81,6 +85,9 @@ BEGIN
   -- Literales para el filtro de consent_date [RN-IBK-012] — ver DECLARE arriba.
   SET v_date_ini_lit = FORMAT_DATE('%F', p_process_date_ini);
   SET v_date_end_lit = FORMAT_DATE('%F', p_process_date_end);
+
+  -- Fecha del proceso (YYYYMMDD) para el sufijo de las tablas temporales — ver punto 5 más abajo.
+  SET v_process_date_lit = FORMAT_DATE('%Y%m%d', p_process_date_ini);
 
   -- ============================================================
   -- 3. CREACIÓN DE LA TABLA EXTERNA TEMPORAL [RN-IBK-001]
@@ -154,13 +161,15 @@ BEGIN
   -- multiplicaría filas si la persona también está registrada en otras empresas del grupo.
   -- SUPUESTO A VALIDAR con datos reales una vez haya acceso BQ (ver TODO).
   SET v_iden_party_path = p_project_iden_party || '.' || p_dataset_iden_party || '.' || p_table_iden_party;
-  -- Sufijo de tabla hardcodeado a propósito (excepción aceptada, ver restricciones del spec,
+  -- Prefijo de tabla hardcodeado a propósito (excepción aceptada, ver restricciones del spec,
   -- fac-data-rules-check REGLA 2/3): tabla efímera interna compartida solo entre este SP y
-  -- sp_ba_customer_consent_group_ibk.sql, no varía entre ambientes.
+  -- sp_ba_customer_consent_group_ibk.sql, no varía entre ambientes. El sufijo de FECHA
+  -- (v_process_date_lit, RN-IBK-013) sí es dinámico — evita que dos ejecuciones concurrentes
+  -- (ej. scheduler normal + reproceso manual corriendo al mismo tiempo) se pisen la tabla.
   -- Proyecto resuelto vía ${project_iden_party} (Dataops, en deploy) y no con p_project_output:
   -- el dataset de stage (p_dataset_stage) vive físicamente bajo el proyecto de iden_party
   -- (dev-intercorp-data-operation), no bajo el proyecto de salida de t_consent_transaction.
-  SET v_stage_path = '${project_iden_party}' || '.' || p_dataset_stage || '.tmp_t_consent_transaction_ibk';
+  SET v_stage_path = '${project_iden_party}' || '.' || p_dataset_stage || '.tmp_t_consent_transaction_ibk_' || v_process_date_lit;
 
   SET v_sql = '''
     CREATE OR REPLACE TABLE `''' || v_stage_path || '''` AS

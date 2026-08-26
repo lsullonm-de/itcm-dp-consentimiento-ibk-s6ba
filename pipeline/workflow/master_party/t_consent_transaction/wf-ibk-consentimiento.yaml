@@ -378,27 +378,38 @@ source:
                           result: resultado_dq_tct
 
                       # -------- SP 2: sp_ba_customer_consent_group_ibk --------
+                      # Partido en 3 (no 2) — con p_process_date_ini/end [RN-IBK-013, sufijo de
+                      # tabla temporal contra choques entre ejecuciones concurrentes] el SP pasó
+                      # a 11 parámetros.
                       - build_sql_bccg_p1:
                           assign:
+                            # p_process_date_ini = p_process_date_end = fecha_actual — debe
+                            # coincidir con lo que usó sp_t_consent_transaction_ibk para esta
+                            # misma fecha (mismo sufijo de tabla temporal, RN-IBK-013).
                             - sql_bccg_p1: ${"DECLARE v_read INT64 DEFAULT 0; "
                                 + "DECLARE v_write INT64 DEFAULT 0; "
                                 + "CALL `" + var_sp_ba_customer_consent_group + "`("
-                                + "'" + var_project_bccg + "'"
-                                + ", '" + var_dataset_bccg + "'"
+                                + "DATE '" + fecha_actual + "'"
+                                + ", DATE '" + fecha_actual + "'"
+                                + ", '" + var_project_bccg + "'"}
+
+                      - build_sql_bccg_p2:
+                          assign:
+                            - sql_bccg_p2: ${", '" + var_dataset_bccg + "'"
                                 + ", '" + var_table_bccg + "'"
                                 + ", '" + var_project_tct + "'"
                                 + ", '" + var_dataset_tct + "'"
                                 + ", '" + var_table_tct + "'"}
 
-                      - build_sql_bccg_p2:
+                      - build_sql_bccg_p3:
                           assign:
-                            - sql_bccg_p2: ${", '" + var_dataset_stage + "'"
+                            - sql_bccg_p3: ${", '" + var_dataset_stage + "'"
                                 + ", v_read, v_write); "
                                 + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
 
                       - build_sql_bccg:
                           assign:
-                            - query_bccg: ${sql_bccg_p1 + sql_bccg_p2}
+                            - query_bccg: ${sql_bccg_p1 + sql_bccg_p2 + sql_bccg_p3}
 
                       - log_query_bccg:
                           call: sys.log

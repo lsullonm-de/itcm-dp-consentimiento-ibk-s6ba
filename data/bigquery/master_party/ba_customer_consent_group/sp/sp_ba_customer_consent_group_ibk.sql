@@ -3,16 +3,24 @@
 -- Generado por: fac-data-stage-coding
 --
 -- Se invoca inmediatamente después de sp_t_consent_transaction_ibk dentro del mismo Workflow,
--- para la misma fecha. No vuelve a leer el archivo ni la tabla externa (RN-IBK-006):
--- toma como fuente única t_consent_transaction, acotado a las particiones (itc_company_id +
--- consent_date) que sp_t_consent_transaction_ibk acaba de cargar (tabla de scope
--- tmp_t_consent_transaction_ibk, que esta SP también elimina al finalizar).
+-- para la misma fecha (p_process_date_ini/end deben coincidir con la llamada anterior —
+-- RN-IBK-013, sufijo de tabla temporal). No vuelve a leer el archivo ni la tabla externa
+-- (RN-IBK-006): toma como fuente única t_consent_transaction, acotado a las particiones
+-- (itc_company_id + consent_date) que sp_t_consent_transaction_ibk acaba de cargar (tabla de
+-- scope tmp_t_consent_transaction_ibk_{fecha}, que esta SP también elimina al finalizar).
 --
 -- Guarda solo el ÚLTIMO evento 'otorgado' por cliente (id) —no el histórico completo—, pero
 -- el dedup en sí ya lo garantiza sp_t_consent_transaction_ibk.sql (2026-08-26): esta SP solo
 -- filtra CP_2/otorgado, no necesita su propio ROW_NUMBER.
 
 CREATE OR REPLACE PROCEDURE `${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk`(
+  -- Fecha del proceso (RN-IBK-013) — este SP no filtra datos por fecha (eso ya lo hizo
+  -- sp_t_consent_transaction_ibk, RN-IBK-012), solo la necesita para el sufijo de la tabla
+  -- temporal de scope: evita que dos ejecuciones concurrentes (scheduler normal + reproceso
+  -- manual, por ejemplo) se pisen la misma tabla. Siempre ini = end, igual que las otras SPs.
+  p_process_date_ini DATE,
+  p_process_date_end DATE,
+
   -- Tabla destino: ba_customer_consent_group
   p_project_output   STRING,
   p_dataset_output   STRING,
@@ -36,26 +44,32 @@ BEGIN
   -- ============================================================
   -- 1. DECLARACIÓN DE VARIABLES
   -- ============================================================
-  DECLARE v_sql            STRING;
-  DECLARE v_scope_path     STRING;   -- tmp_t_consent_transaction_ibk, generada por el SP anterior
-  DECLARE v_source_path    STRING;
-  DECLARE v_output_path    STRING;
-  DECLARE v_filtered_path  STRING;
+  DECLARE v_sql              STRING;
+  DECLARE v_scope_path       STRING;   -- tmp_t_consent_transaction_ibk_{fecha}, generada por el SP anterior
+  DECLARE v_source_path      STRING;
+  DECLARE v_output_path      STRING;
+  DECLARE v_filtered_path    STRING;
+  DECLARE v_process_date_lit STRING;   -- YYYYMMDD, sufijo de las tablas temporales [RN-IBK-013]
 
   SET o_execution_data_read  = 0;
   SET o_execution_data_write = 0;
 
-  -- Sufijos de tabla hardcodeados a propósito (excepción aceptada, ver restricciones del spec,
+  SET v_process_date_lit = FORMAT_DATE('%Y%m%d', p_process_date_ini);
+
+  -- Prefijos de tabla hardcodeados a propósito (excepción aceptada, ver restricciones del spec,
   -- fac-data-rules-check REGLA 2/3): tablas efímeras internas de este módulo, no varían entre
   -- ambientes. El dataset de stage (p_dataset_stage) vive físicamente bajo ${project_iden_party}
   -- (dev-intercorp-data-operation), no bajo p_project_output (dev-intercorp-data-storage) — el
   -- dataset "demo_migracion" de stage no existe en ese proyecto. Aplica a AMBAS tablas de stage,
   -- no solo a la que genera sp_t_consent_transaction_ibk.sql (bug real 2026-08-21: v_filtered_path
-  -- seguía usando p_project_output y falló con "Dataset ... was not found").
-  SET v_scope_path    = '${project_iden_party}' || '.' || p_dataset_stage  || '.tmp_t_consent_transaction_ibk';
+  -- seguía usando p_project_output y falló con "Dataset ... was not found"). El sufijo de FECHA
+  -- (v_process_date_lit, RN-IBK-013) evita que dos ejecuciones concurrentes se pisen la tabla —
+  -- debe coincidir exactamente con el que usó sp_t_consent_transaction_ibk.sql para esta misma
+  -- fecha (misma fórmula: FORMAT_DATE('%Y%m%d', p_process_date_ini)).
+  SET v_scope_path    = '${project_iden_party}' || '.' || p_dataset_stage  || '.tmp_t_consent_transaction_ibk_' || v_process_date_lit;
   SET v_source_path   = p_project_source || '.' || p_dataset_source || '.' || p_table_source;
   SET v_output_path   = p_project_output || '.' || p_dataset_output || '.' || p_table_output;
-  SET v_filtered_path = '${project_iden_party}' || '.' || p_dataset_stage  || '.tmp_ba_customer_consent_group_ibk';
+  SET v_filtered_path = '${project_iden_party}' || '.' || p_dataset_stage  || '.tmp_ba_customer_consent_group_ibk_' || v_process_date_lit;
 
   -- ============================================================
   -- 2. FILTRO DE NEGOCIO [RN-IBK-006] — solo el ÚLTIMO evento por cliente
