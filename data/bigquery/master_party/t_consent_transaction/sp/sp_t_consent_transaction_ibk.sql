@@ -10,10 +10,12 @@
 --   manual   → fecha = fecha indicada por el usuario
 --   reproceso → una llamada por cada día de [process_date_init, process_date_fin]
 --
--- p_process_date_ini decide qué CARPETA leer (folder_date = p_process_date_ini - 1 día).
--- p_process_date_ini/end TAMBIÉN filtran los DATOS (consent_date real del contenido debe caer
--- en ese rango) — fix 2026-08-26: antes se insertaba el archivo completo sin filtrar por fecha,
--- lo que traía basura histórica (incluido consent_date de 1900) en cada reproceso.
+-- p_process_date_ini decide qué CARPETA leer (folder_date = p_process_date_ini - 1 día) y,
+-- junto con p_process_date_end, el sufijo de las tablas temporales (RN-IBK-013).
+-- Los DATOS se filtran por consent_date = v_max_consent_date (el MÁXIMO real del archivo,
+-- calculado en el punto 4b) — NO contra p_process_date_ini/end directamente: un primer intento
+-- (2026-08-26) comparó contra esos parámetros y falló con datos reales, porque el desfase entre
+-- folder_date y el consent_date de contenido resultó variable ENTRE ARCHIVOS (RN-IBK-012).
 --
 -- NOTA: la tabla temporal tmp_t_consent_transaction_ibk NO se elimina al final de este SP —
 -- sp_ba_customer_consent_group_ibk la usa para acotar su propio DELETE+INSERT (RN-IBK-006) y
@@ -61,9 +63,12 @@ BEGIN
   DECLARE v_output_path      STRING;
   DECLARE v_sql              STRING;
   DECLARE v_row_count        INT64;
-  -- Literales de fecha para embeber en el SQL dinámico [RN-IBK-012]: dentro de EXECUTE IMMEDIATE
-  -- no se puede referenciar un parámetro del SP por nombre (ej. p_process_date_ini) — hay que
-  -- concatenar su valor como literal, igual que v_folder_date/v_ext_table_path más abajo.
+  -- Fecha real más reciente del archivo [RN-IBK-012, corregido 2026-08-26] — calculada, no
+  -- asumida a partir de p_process_date_ini/end (ver punto 4b).
+  DECLARE v_max_consent_date DATE;
+  -- Literales de fecha para embeber en el SQL dinámico: dentro de EXECUTE IMMEDIATE no se puede
+  -- referenciar una variable/parámetro por nombre — hay que concatenar su valor como literal,
+  -- igual que v_folder_date/v_ext_table_path más abajo.
   DECLARE v_date_ini_lit     STRING;
   DECLARE v_date_end_lit     STRING;
   -- Sufijo de fecha para las tablas temporales [RN-IBK-013] — evita choques entre ejecuciones
@@ -82,11 +87,10 @@ BEGIN
   -- contenido del archivo en el paso 5 — NO se deriva de este cálculo [RN-IBK-004].
   SET v_folder_date = FORMAT_DATE('%Y%m%d', DATE_SUB(p_process_date_ini, INTERVAL 1 DAY));
 
-  -- Literales para el filtro de consent_date [RN-IBK-012] — ver DECLARE arriba.
-  SET v_date_ini_lit = FORMAT_DATE('%F', p_process_date_ini);
-  SET v_date_end_lit = FORMAT_DATE('%F', p_process_date_end);
-
-  -- Fecha del proceso (YYYYMMDD) para el sufijo de las tablas temporales — ver punto 5 más abajo.
+  -- Fecha del proceso (YYYYMMDD) para el sufijo de las tablas temporales [RN-IBK-013].
+  -- (v_date_ini_lit/v_date_end_lit para el filtro de consent_date [RN-IBK-012] se calculan
+  -- más abajo, en el punto 4b, a partir del MAX(consent_date) real del archivo — no de
+  -- p_process_date_ini/end, que resultó no ser una referencia confiable, ver esa sección).
   SET v_process_date_lit = FORMAT_DATE('%Y%m%d', p_process_date_ini);
 
   -- ============================================================
@@ -150,6 +154,22 @@ BEGIN
       v_ext_table_path, v_folder_date
     );
   END IF;
+
+  -- ============================================================
+  -- 4b. FECHA DE REFERENCIA REAL DEL ARCHIVO [RN-IBK-012, corregido 2026-08-26]
+  -- ============================================================
+  -- El primer intento de RN-IBK-012 comparaba consent_date contra p_process_date_ini/end
+  -- (calculado a partir de folder_date) — falló con datos reales: el desfase entre folder_date
+  -- y el consent_date real del contenido NO es constante (confirmado con los 3 archivos de dev:
+  -- uno con desfase -1 día, dos con desfase 0). No existe ninguna fecha calculada externamente
+  -- que sea confiable. En vez de asumirla, se calcula el MAX(consent_date) REAL del archivo y se
+  -- usa como referencia — se adapta a cualquier desfase, y de paso excluye directamente la basura
+  -- histórica tipo 1900 (nunca va a ser el máximo real de un archivo con actividad genuina).
+  SET v_sql = '''SELECT SAFE_CAST(MAX(consent_date) AS DATE) FROM `''' || v_ext_table_path || '''`''';
+  EXECUTE IMMEDIATE v_sql INTO v_max_consent_date;
+
+  SET v_date_ini_lit = FORMAT_DATE('%F', v_max_consent_date);
+  SET v_date_end_lit = FORMAT_DATE('%F', v_max_consent_date);
 
   -- ============================================================
   -- 5. RESOLUCIÓN DE id UNIFICADO ITC [RN-IBK-003]
@@ -230,15 +250,17 @@ BEGIN
       ON  p.party_id       = a.party_id
       AND p.itc_company_id = a.itc_company_id
     WHERE a.itc_company_id IN ('000','1000')
-      -- FIX REAL (2026-08-26): hasta esta línea, p_process_date_end nunca se usaba — el archivo
-      -- completo se insertaba sin importar su consent_date real (confirmado con el usuario:
-      -- reprocesos de fechas acotadas seguían trayendo basura histórica, incluso consent_date
-      -- de 1900). p_process_date_ini/end ahora SÍ filtran los datos, no solo eligen qué carpeta
-      -- leer (eso lo sigue haciendo folder_date = p_process_date_ini - 1 día, sin cambios).
-      -- Los parámetros del SP no son visibles dentro de EXECUTE IMMEDIATE por nombre — se
-      -- concatenan como literal vía v_date_ini_lit/v_date_end_lit (ver DECLARE). Se usa
-      -- DATE("...") con comillas dobles para el argumento, evitando anidar comillas simples
-      -- dentro del string delimitado por ''' que arma toda esta query.
+      -- FIX REAL (2026-08-26, 2ª iteración): comparar contra p_process_date_ini/end fallaba con
+      -- datos reales — el desfase entre folder_date y el consent_date de contenido resultó ser
+      -- variable ENTRE ARCHIVOS (confirmado: -1 día en un archivo, 0 en otros dos), no hay
+      -- ninguna fecha calculada externamente que sea confiable. Se usa en su lugar
+      -- v_max_consent_date (calculado en el punto 4b, MAX(consent_date) real de este archivo) —
+      -- se adapta automáticamente al desfase real de cada archivo, y excluye la basura histórica
+      -- (ej. 1900) porque nunca va a coincidir con el máximo real de un archivo con actividad.
+      -- Los parámetros/variables del SP no son visibles dentro de EXECUTE IMMEDIATE por nombre —
+      -- se concatenan como literal vía v_date_ini_lit/v_date_end_lit. Se usa DATE("...") con
+      -- comillas dobles para el argumento, evitando anidar comillas simples dentro del string
+      -- delimitado por ''' que arma toda esta query.
       AND SAFE_CAST(a.consent_date AS DATE) BETWEEN DATE("''' || v_date_ini_lit || '''") AND DATE("''' || v_date_end_lit || '''")
     -- CAMBIO DE DISEÑO (2026-08-26, confirmado con el usuario): t_consent_transaction pasa de
     -- "historial completo de eventos" a "solo el último evento por cliente" (id) DENTRO del

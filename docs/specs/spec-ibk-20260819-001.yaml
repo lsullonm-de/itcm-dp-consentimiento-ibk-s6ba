@@ -259,17 +259,23 @@ reglas_negocio:
 
   - id: RN-IBK-012
     descripcion: >
-      p_process_date_ini/p_process_date_end filtran los DATOS por consent_date, no solo
-      determinan qué carpeta GCS leer (fix 2026-08-26, confirmado con el usuario). Antes,
-      p_process_date_end nunca se usaba en sp_t_consent_transaction_ibk.sql — el archivo
-      completo se insertaba sin filtrar, trayendo basura histórica (incluido consent_date de
-      1900, valor centinela de sistemas legacy de Interbank) en cada reproceso, aunque el rango
-      solicitado fuera acotado. Ahora la query exige
-      SAFE_CAST(consent_date AS DATE) BETWEEN p_process_date_ini AND p_process_date_end,
-      antes del QUALIFY de RN-IBK-011. El Workflow sigue llamando una vez por día con
-      p_process_date_ini = p_process_date_end (ver RN-IBK-011/009) — el rango real efectivo de
-      un reproceso multi-fecha es la UNIÓN de esas llamadas individuales, no un rango pasado
-      en una sola llamada.
+      Los DATOS se filtran por consent_date antes de insertar — no se inserta el archivo
+      completo sin filtrar (bug real 2026-08-19 a 2026-08-26: antes de este fix, cada reproceso
+      traía basura histórica, incluido consent_date de 1900, valor centinela de sistemas legacy
+      de Interbank). Historia de 2 iteraciones:
+      1ª iteración (fallida): filtrar contra p_process_date_ini/p_process_date_end (calculados a
+      partir de folder_date = process_date - 1). Falló con datos reales — el desfase entre
+      folder_date y el consent_date de contenido resultó variable ENTRE ARCHIVOS (confirmado:
+      -1 día en un archivo, 0 en otros dos de la misma semana) — no existe ninguna fecha
+      calculada externamente que sea confiable.
+      2ª iteración (vigente, pedida por el usuario): se calcula v_max_consent_date =
+      SAFE_CAST(MAX(consent_date) AS DATE) directamente del archivo (tabla externa), ANTES del
+      cruce con iden_party, y se filtra consent_date = v_max_consent_date. Se adapta
+      automáticamente al desfase real de cada archivo (sea cual sea) y excluye la basura
+      histórica sin necesitar ningún parámetro externo, porque un valor centinela como 1900
+      nunca va a ser el máximo real de un archivo con actividad genuina. Se aplica antes del
+      QUALIFY de RN-IBK-011. p_process_date_ini/end ya NO participan en el filtro de datos — solo
+      se usan para folder_date (RN-IBK-002) y el sufijo de tablas temporales (RN-IBK-013).
     criticidad: alta
     campo_afectado: t_consent_transaction
     validado_por: lsullon
@@ -370,7 +376,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "Cruce con iden_itc_party, filtra por consent_date dentro de [p_process_date_ini, p_process_date_end] (RN-IBK-012), se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011), hace delete/insert por itc_company_id + consent_date, y usa una tabla temporal con sufijo de fecha (RN-IBK-013) para no chocar con ejecuciones concurrentes"
+    descripcion: "Cruce con iden_itc_party, filtra por consent_date = MAX(consent_date) real del archivo (RN-IBK-012), se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011), hace delete/insert por itc_company_id + consent_date, y usa una tabla temporal con sufijo de fecha (RN-IBK-013) para no chocar con ejecuciones concurrentes"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
