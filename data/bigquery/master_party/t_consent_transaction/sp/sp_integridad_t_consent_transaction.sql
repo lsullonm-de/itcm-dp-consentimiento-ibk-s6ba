@@ -47,8 +47,11 @@ BEGIN
   -- ============================================================
   -- RI-IBK-T_CONSENT_TRANSACTION-001 (actualidad, fuente: consentimiento_ibk_archivo, detener_proceso)
   -- ============================================================
-  -- dias_tolerancia = 1 → coincide con RN-IBK-002 (folder_date = process_date - 1 día)
-  SET v_folder_date = FORMAT_DATE('%Y%m%d', DATE_SUB(p_process_date_ini, INTERVAL 1 DAY));
+  -- folder_date = p_process_date_ini DIRECTAMENTE [RN-IBK-014, 2026-08-26] — el offset de 1 día
+  -- (modo normal, fecha de sistema → archivo de ayer) ya lo aplica el Workflow antes de llamar
+  -- a este SP; en manual/reproceso la fecha que llega ya es la carpeta exacta. Debe coincidir
+  -- siempre con el cálculo de sp_t_consent_transaction_ibk.sql (misma tabla externa).
+  SET v_folder_date = FORMAT_DATE('%Y%m%d', p_process_date_ini);
   SET v_ext_table_path = p_project_archivo || '.' || p_dataset_archivo
                          || '.t_consent_transaction_' || v_folder_date || '_external';
   SET v_gcs_uri = 'gs://${gcs_bucket_consentimiento_ibk_archivo}/data/m_consent/current/' || v_folder_date

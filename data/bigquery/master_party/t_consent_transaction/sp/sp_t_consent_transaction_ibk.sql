@@ -6,16 +6,23 @@
 -- mismo valor en ambos — el Workflow llama una vez por día, nunca pasa un rango real en una
 -- sola llamada, ver data/rules/bigquery.md). El Workflow decide qué fecha(s) pasar según el
 -- modo de ejecución (RN-IBK-009):
---   normal   → fecha = fecha de sistema
---   manual   → fecha = fecha indicada por el usuario
---   reproceso → una llamada por cada día de [process_date_init, process_date_fin]
+--   normal   → fecha = fecha de sistema - 1 día (el offset lo aplica el Workflow, no este SP)
+--   manual   → fecha = fecha indicada por el usuario, SIN offset
+--   reproceso → una llamada por cada día de [process_date_init, process_date_fin], SIN offset
 --
--- p_process_date_ini decide qué CARPETA leer (folder_date = p_process_date_ini - 1 día) y,
--- junto con p_process_date_end, el sufijo de las tablas temporales (RN-IBK-013).
+-- p_process_date_ini/end representan DIRECTAMENTE la carpeta a leer (folder_date =
+-- p_process_date_ini, sin restarle un día) [RN-IBK-014, 2026-08-26]. Antes este SP restaba 1
+-- día siempre — eso solo tiene sentido para el modo normal (fecha de sistema, el archivo de
+-- ayer), no cuando el usuario ya indica una fecha específica en manual/reproceso. El offset
+-- ahora vive en el Workflow (step modo_normal), no aquí.
+--
 -- Los DATOS se filtran por consent_date = v_max_consent_date (el MÁXIMO real del archivo,
 -- calculado en el punto 4b) — NO contra p_process_date_ini/end directamente: un primer intento
 -- (2026-08-26) comparó contra esos parámetros y falló con datos reales, porque el desfase entre
 -- folder_date y el consent_date de contenido resultó variable ENTRE ARCHIVOS (RN-IBK-012).
+-- EXCEPCIÓN: si p_carga_historica = TRUE (RN-IBK-015), no se aplica ningún filtro de consent_date
+-- — se toma TODO el historial del archivo. Reservado para el primer archivo de un reproceso
+-- cuando t_consent_transaction todavía no tiene ninguna fila de Interbank (carga inicial).
 --
 -- NOTA: la tabla temporal tmp_t_consent_transaction_ibk NO se elimina al final de este SP —
 -- sp_ba_customer_consent_group_ibk la usa para acotar su propio DELETE+INSERT (RN-IBK-006) y
@@ -24,6 +31,7 @@
 CREATE OR REPLACE PROCEDURE `${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk`(
   -- Este SP siempre procesa una única fecha (RN-IBK-001: una tabla externa por fecha) — el
   -- Workflow pasa el mismo valor en ambos parámetros (ini = end), según data/rules/bigquery.md.
+  -- Representan la carpeta a leer DIRECTAMENTE — ver nota de cabecera [RN-IBK-014].
   p_process_date_ini    DATE,
   p_process_date_end    DATE,
 
@@ -43,6 +51,11 @@ CREATE OR REPLACE PROCEDURE `${project_operation}.${dataset_sp}.sp_t_consent_tra
 
   -- Stage
   p_dataset_stage       STRING,
+
+  -- Carga histórica [RN-IBK-015]: TRUE solo para el primer archivo de un reproceso cuando
+  -- t_consent_transaction no tiene ninguna fila de Interbank todavía — omite el filtro de
+  -- consent_date, trae TODO el historial del archivo. El Workflow decide este valor, no el SP.
+  p_carga_historica     BOOL,
 
   -- MONITORING [etapas.monitoring: true] — filas leídas/escritas de esta ejecución
   OUT o_execution_data_read   INT64,
@@ -71,6 +84,10 @@ BEGIN
   -- igual que v_folder_date/v_ext_table_path más abajo.
   DECLARE v_date_ini_lit     STRING;
   DECLARE v_date_end_lit     STRING;
+  -- Cláusula de filtro de consent_date, armada condicionalmente [RN-IBK-015]: vacía si
+  -- p_carga_historica = TRUE (trae todo el historial del archivo), o el filtro por
+  -- v_max_consent_date en caso contrario (ver punto 4b).
+  DECLARE v_date_filter_clause STRING;
   -- Sufijo de fecha para las tablas temporales [RN-IBK-013] — evita choques entre ejecuciones
   -- concurrentes (ej. el scheduler normal disparando mientras corre un reproceso manual): antes
   -- el nombre era fijo (tmp_t_consent_transaction_ibk), compartido por CUALQUIER fecha/ejecución.
@@ -80,12 +97,14 @@ BEGIN
   SET o_execution_data_write = 0;
 
   -- ============================================================
-  -- 2. CÁLCULO DE FECHAS [RN-IBK-002]
+  -- 2. CÁLCULO DE FECHAS [RN-IBK-002, ajustado 2026-08-26 — RN-IBK-014]
   -- ============================================================
-  -- folder_date = process_date - 1 día. Este offset SOLO determina qué archivo/carpeta leer.
+  -- folder_date = p_process_date_ini DIRECTAMENTE, sin restar un día — el offset de 1 día
+  -- (fecha de sistema → archivo de ayer) ya lo aplicó el Workflow ANTES de llamar a este SP,
+  -- solo para el modo normal. En manual/reproceso la fecha que llega ya es la carpeta exacta.
   -- El consent_date real de cada registro (usado para el DELETE+INSERT) se lee del propio
   -- contenido del archivo en el paso 5 — NO se deriva de este cálculo [RN-IBK-004].
-  SET v_folder_date = FORMAT_DATE('%Y%m%d', DATE_SUB(p_process_date_ini, INTERVAL 1 DAY));
+  SET v_folder_date = FORMAT_DATE('%Y%m%d', p_process_date_ini);
 
   -- Fecha del proceso (YYYYMMDD) para el sufijo de las tablas temporales [RN-IBK-013].
   -- (v_date_ini_lit/v_date_end_lit para el filtro de consent_date [RN-IBK-012] se calculan
@@ -165,11 +184,24 @@ BEGIN
   -- que sea confiable. En vez de asumirla, se calcula el MAX(consent_date) REAL del archivo y se
   -- usa como referencia — se adapta a cualquier desfase, y de paso excluye directamente la basura
   -- histórica tipo 1900 (nunca va a ser el máximo real de un archivo con actividad genuina).
-  SET v_sql = '''SELECT SAFE_CAST(MAX(consent_date) AS DATE) FROM `''' || v_ext_table_path || '''`''';
-  EXECUTE IMMEDIATE v_sql INTO v_max_consent_date;
+  --
+  -- EXCEPCIÓN [RN-IBK-015, 2026-08-26]: si p_carga_historica = TRUE, no se calcula ni se aplica
+  -- ningún filtro — v_date_filter_clause queda vacío y el archivo se carga completo. Reservado
+  -- para el primer archivo de un reproceso cuando t_consent_transaction todavía no tiene ninguna
+  -- fila de Interbank (el Workflow decide esto, ver wf-ibk-consentimiento.yaml).
+  IF p_carga_historica THEN
+    SET v_date_filter_clause = '';
+  ELSE
+    SET v_sql = '''SELECT SAFE_CAST(MAX(consent_date) AS DATE) FROM `''' || v_ext_table_path || '''`''';
+    EXECUTE IMMEDIATE v_sql INTO v_max_consent_date;
 
-  SET v_date_ini_lit = FORMAT_DATE('%F', v_max_consent_date);
-  SET v_date_end_lit = FORMAT_DATE('%F', v_max_consent_date);
+    SET v_date_ini_lit = FORMAT_DATE('%F', v_max_consent_date);
+    SET v_date_end_lit = FORMAT_DATE('%F', v_max_consent_date);
+
+    -- String simple (no triple-comillado) — los dobles comillas internas no necesitan escape
+    -- dentro de un literal delimitado por comillas simples.
+    SET v_date_filter_clause = ' AND SAFE_CAST(a.consent_date AS DATE) BETWEEN DATE("' || v_date_ini_lit || '") AND DATE("' || v_date_end_lit || '")';
+  END IF;
 
   -- ============================================================
   -- 5. RESOLUCIÓN DE id UNIFICADO ITC [RN-IBK-003]
@@ -209,7 +241,8 @@ BEGIN
       a.place_id                         AS place_id,
       a.consent_type                     AS consent_type,
       SAFE_CAST(a.consent_date AS DATE)  AS consent_date,
-      a.signed_document                  AS signed_document
+      a.signed_document                  AS signed_document,
+      a.source_file_name                 AS source_file_name
     FROM (
       -- [RI-IBK-T_CONSENT_TRANSACTION-002/003] excluir duplicados y llave nula de la fuente
       -- principal — patrón obligatorio de @.claude/data/standard/data-integrity.md Sección 4.
@@ -223,6 +256,10 @@ BEGIN
       SELECT * EXCEPT(rn)
       FROM (
         SELECT t.*,
+          -- _FILE_NAME es un pseudo-campo de BigQuery para external tables sobre GCS — no lo
+          -- cubre "t.*", hay que seleccionarlo explícito. Solo el nombre del archivo (sin ruta),
+          -- para armar record_source = LPDP_IBK_{archivo} más abajo [RN-IBK-016, 2026-08-26].
+          REGEXP_EXTRACT(t._FILE_NAME, r'[^/]+$') AS source_file_name,
           ROW_NUMBER() OVER (
             PARTITION BY party_id, consent_date_time
             ORDER BY load_date DESC
@@ -250,19 +287,11 @@ BEGIN
       ON  p.party_id       = a.party_id
       AND p.itc_company_id = a.itc_company_id
     WHERE a.itc_company_id IN ('000','1000')
-      -- FIX REAL (2026-08-26, 2ª iteración): comparar contra p_process_date_ini/end fallaba con
-      -- datos reales — el desfase entre folder_date y el consent_date de contenido resultó ser
-      -- variable ENTRE ARCHIVOS (confirmado: -1 día en un archivo, 0 en otros dos), no hay
-      -- ninguna fecha calculada externamente que sea confiable. Se usa en su lugar
-      -- v_max_consent_date (calculado en el punto 4b, MAX(consent_date) real de este archivo) —
-      -- se adapta automáticamente al desfase real de cada archivo, y excluye la basura histórica
-      -- (ej. 1900) porque nunca va a coincidir con el máximo real de un archivo con actividad.
-      -- Los parámetros/variables del SP no son visibles dentro de EXECUTE IMMEDIATE por nombre —
-      -- se concatenan como literal vía v_date_ini_lit/v_date_end_lit. Se usa DATE con comillas
-      -- dobles para el argumento, evitando anidar comillas simples dentro del bloque triple-
-      -- comillado que arma toda esta query (¡nunca escribir tres comillas simples seguidas en
-      -- un comentario aquí adentro — cierran el string antes de tiempo!).
-      AND SAFE_CAST(a.consent_date AS DATE) BETWEEN DATE("''' || v_date_ini_lit || '''") AND DATE("''' || v_date_end_lit || '''")
+      -- v_date_filter_clause ya viene armado desde el punto 4b — vacío si p_carga_historica,
+      -- o " AND SAFE_CAST(...) BETWEEN DATE(...) AND DATE(...)" en caso contrario. Se concatena
+      -- entero de una vez (nunca escribir comillas triples dentro de un comentario aquí adentro
+      -- — cierran el string antes de tiempo, ya pasó una vez).
+      ''' || v_date_filter_clause || '''
     -- CAMBIO DE DISEÑO (2026-08-26, confirmado con el usuario): t_consent_transaction pasa de
     -- "historial completo de eventos" a "solo el último evento por cliente" (id) DENTRO del
     -- rango de fechas solicitado — el mismo criterio que ya se aplicó a ba_customer_consent_group
@@ -291,7 +320,8 @@ BEGIN
   ''';
   EXECUTE IMMEDIATE v_sql;
 
-  -- record_source: literal 'LPDP_IBK' — confirmar con el equipo si debe ser otro valor estándar
+  -- record_source = LPDP_IBK_{nombre del archivo de carga} [RN-IBK-016, 2026-08-26] — antes era
+  -- el literal fijo 'LPDP_IBK'. source_file_name viene de _FILE_NAME (paso 5, vía v_stage_path).
   SET v_sql = '''
     INSERT INTO `''' || v_output_path || '''`
     (process_date, itc_company_id, itc_company_name, business_unit_id, business_unit,
@@ -303,9 +333,9 @@ BEGIN
       conset_transaction_id, customer_id, id, conset_id, documento_legal_id,
       approval_channel_id, employee_id, place_id, consent_type, consent_date,
       signed_document,
-      'LPDP_IBK'                        AS record_source,
-      CURRENT_DATETIME('America/Lima') AS load_date,
-      SESSION_USER()                    AS creation_user
+      'LPDP_IBK_' || source_file_name    AS record_source,
+      CURRENT_DATETIME('America/Lima')   AS load_date,
+      SESSION_USER()                     AS creation_user
     FROM `''' || v_stage_path || '''`
   ''';
   EXECUTE IMMEDIATE v_sql;

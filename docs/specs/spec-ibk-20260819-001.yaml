@@ -207,7 +207,9 @@ reglas_negocio:
   - id: RN-IBK-002
     descripcion: >
       El {YYYYMMDD} de la ruta GCS y del nombre de la tabla externa se calcula como
-      process_date - 1 día (asumido según ejemplo de negocio; confirmar exactitud del offset).
+      process_date - 1 día SOLO en modo normal (fecha de sistema) — actualizado 2026-08-26,
+      ver RN-IBK-014: en manual/reproceso la fecha indicada por el usuario es la carpeta exacta,
+      sin restarle un día.
     criticidad: media   # regla de cálculo de parámetros de ejecución, no verificable con una regla DQ sobre datos
     campo_afectado: "ruta GCS / nombre tabla externa"
     validado_por: lsullon
@@ -296,6 +298,50 @@ reglas_negocio:
     campo_afectado: t_consent_transaction, ba_customer_consent_group
     validado_por: lsullon
 
+  - id: RN-IBK-014
+    descripcion: >
+      El offset de -1 día (folder_date = process_date - 1, RN-IBK-002) aplica SOLO en modo
+      normal (fecha de sistema, RN-IBK-009) — pedido por el usuario (2026-08-26) tras confusión
+      recurrente sobre qué carpeta lee cada fecha en manual/reproceso. Antes el offset se aplicaba
+      siempre, dentro de los SPs (sp_t_consent_transaction_ibk.sql, sp_integridad_t_consent_transaction.sql).
+      Ahora: el Workflow aplica el offset SOLO al calcular la fecha en modo_normal (step
+      modo_normal, DATE_SUB(CURRENT_DATE(...), INTERVAL 1 DAY)); en manual/reproceso la fecha que
+      indica el usuario se usa TAL CUAL como nombre de carpeta. Ambos SPs ahora reciben
+      p_process_date_ini ya como el folder_date definitivo — ninguno resta un día internamente.
+    criticidad: alta
+    campo_afectado: "ruta GCS / nombre tabla externa"
+    validado_por: lsullon
+
+  - id: RN-IBK-015
+    descripcion: >
+      Carga histórica en reproceso (pedido por el usuario, 2026-08-26): si t_consent_transaction
+      no tiene ninguna fila con itc_company_id IN ('000','1000') al iniciar un reproceso, el
+      PRIMER archivo del rango (process_date_init) se carga SIN el filtro de consent_date de
+      RN-IBK-012 — trae TODO el historial real del archivo, no solo el último evento por fecha.
+      El resto de fechas del mismo rango (process_date_init+1 en adelante) sigue el
+      comportamiento normal (RN-IBK-012). Implementado con un nuevo parámetro
+      p_carga_historica BOOL en sp_t_consent_transaction_ibk.sql; el Workflow decide su valor
+      con un chequeo previo (SELECT COUNT(1) ... WHERE itc_company_id IN ('000','1000')) — solo
+      se ejecuta en modo reproceso, nunca en normal/manual. RN-IBK-011 (último evento por
+      cliente) sigue aplicando incluso durante la carga histórica — la diferencia es que compite
+      entre TODOS los eventos del archivo, no solo entre los del día MAX(consent_date).
+    criticidad: alta
+    campo_afectado: t_consent_transaction
+    validado_por: lsullon
+
+  - id: RN-IBK-016
+    descripcion: >
+      record_source en t_consent_transaction = 'LPDP_IBK_' || {nombre del archivo de carga}
+      (pedido por el usuario, 2026-08-26) — antes era el literal fijo 'LPDP_IBK'. El nombre del
+      archivo se obtiene del pseudo-campo _FILE_NAME de BigQuery (propio de external tables sobre
+      GCS, no cubierto por SELECT *, hay que seleccionarlo explícito), recortado a solo el nombre
+      del archivo sin la ruta (REGEXP_EXTRACT(_FILE_NAME, r'[^/]+$')). Ejemplo:
+      LPDP_IBK_T_IN_LPDP_CONSENTIMIENTO_20260813.txt.gz. Solo aplica a t_consent_transaction —
+      ba_customer_consent_group mantiene su propio literal 'LPDP_IBK' sin cambios (no se pidió).
+    criticidad: media
+    campo_afectado: t_consent_transaction
+    validado_por: lsullon
+
   - id: RN-IBK-006
     descripcion: >
       ba_customer_consent_group se genera exclusivamente desde t_consent_transaction
@@ -376,11 +422,11 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "Cruce con iden_itc_party, filtra por consent_date = MAX(consent_date) real del archivo (RN-IBK-012), se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011), hace delete/insert por itc_company_id + consent_date, y usa una tabla temporal con sufijo de fecha (RN-IBK-013) para no chocar con ejecuciones concurrentes"
+    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party, filtra por consent_date = MAX(consent_date) real del archivo salvo carga histórica (p_carga_historica, RN-IBK-015), se queda solo con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011), hace delete/insert por itc_company_id + consent_date, arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), y usa una tabla temporal con sufijo de fecha (RN-IBK-013) para no chocar con ejecuciones concurrentes"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
-    descripcion: "Gate de integridad (etapas.integridad: true) — actualidad D-1 de consentimiento_ibk_archivo (RI-IBK-...-001). No escribe tablas, solo OUT params"
+    descripcion: "Gate de integridad (etapas.integridad: true) — actualidad D-1 de consentimiento_ibk_archivo (RI-IBK-...-001), folder_date = p_process_date_ini directo sin offset (RN-IBK-014, debe coincidir con sp_t_consent_transaction_ibk.sql). No escribe tablas, solo OUT params"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_dq_t_consent_transaction.sql
@@ -404,7 +450,7 @@ componentes:
 
   - tipo: workflow
     archivo: pipeline/workflow/master_party/t_consent_transaction/wf-ibk-consentimiento.yaml
-    descripcion: "Orquesta tabla externa + SP1 + SP2; soporta process_date normal/manual/reproceso"
+    descripcion: "Orquesta tabla externa + SP1 + SP2; soporta process_date normal/manual/reproceso. Aplica el offset de -1 día solo en modo normal (RN-IBK-014); en reproceso verifica si hay datos previos de Interbank para decidir carga histórica del primer archivo (RN-IBK-015)"
 
   - tipo: cloud_scheduler
     archivo: pipeline/scheduler/master_party/t_consent_transaction/cs-ibk-consentimiento.yaml
@@ -515,6 +561,9 @@ scheduling:
 # 10. RESTRICCIONES Y SUPUESTOS
 # ------------------------------------------------------------
 restricciones:
+  - "RESUELTO (2026-08-26): offset folder_date = process_date - 1 día aplica SOLO en modo normal — pedido por el usuario tras confusión recurrente en manual/reproceso sobre qué carpeta lee cada fecha (RN-IBK-014). El offset se movió del SP al Workflow (step modo_normal)"
+  - "RESUELTO (2026-08-26): carga histórica en reproceso — si t_consent_transaction no tiene filas de Interbank, el primer archivo del rango (process_date_init) trae todo su historial, sin el filtro de MAX(consent_date) (RN-IBK-015). Pedido por el usuario para poder hacer un primer poblamiento completo desde un reproceso"
+  - "RESUELTO (2026-08-26): record_source en t_consent_transaction pasa de literal fijo 'LPDP_IBK' a 'LPDP_IBK_' + nombre del archivo real (vía pseudo-campo _FILE_NAME) — pedido por el usuario, para poder trazar de qué archivo vino cada fila. Solo t_consent_transaction, ba_customer_consent_group no cambia (RN-IBK-016)"
   - "Offset folder_date = process_date - 1 día asumido de un único ejemplo de negocio — confirmar con Interbank (RN-IBK-002)"
   - "consent_date de contenido no tiene offset fijo (~2 días, variable) — se lee del archivo, no se calcula (RN-IBK-004)"
   - "RESUELTO: approval_channel_name en ba_customer_consent_group queda siempre NULL — no hay origen en t_consent_transaction, confirmado por el equipo. Campo conservado por compatibilidad con el contrato original"

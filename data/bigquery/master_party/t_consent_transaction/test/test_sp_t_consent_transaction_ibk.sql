@@ -5,8 +5,8 @@
 -- (gs://${gcs_bucket_consentimiento_ibk_archivo}/...). No es simulable con datos en memoria como
 -- el resto de SPs del framework. Para correr este test end-to-end en dev se necesita:
 --   1. Un archivo .txt.gz de prueba subido a la ruta
---      gs://${gcs_bucket_consentimiento_ibk_archivo}/data/m_consent/current/{fecha_prueba-1d}/{cualquier-uuid}/
---      T_IN_LPDP_CONSENTIMIENTO_{fecha_prueba-1d}.txt.gz
+--      gs://${gcs_bucket_consentimiento_ibk_archivo}/data/m_consent/current/{fecha_prueba}/{cualquier-uuid}/
+--      T_IN_LPDP_CONSENTIMIENTO_{fecha_prueba}.txt.gz
 --      (dev usa gs://dev-demo-raw-sales-xrt9/... — bucket propio del dev, no el real de IBK,
 --      porque service_account_job no tiene storage.objectViewer sobre p-ibkbi-rdp-stg-dlk-us-suoh)
 --   2. Al menos una fila con party_id que exista en iden_itc_party_prd para itc_company_id
@@ -15,7 +15,9 @@
 -- Mientras ese fixture no exista, este archivo documenta las aserciones esperadas — no se
 -- puede ejecutar tal cual. Ver TODO.md.
 
-DECLARE v_fecha_prueba   DATE DEFAULT DATE '2026-04-02';   -- flujo manual — folder_date = 2026-04-01
+-- v_fecha_prueba = la CARPETA directamente [RN-IBK-014, 2026-08-26] — el SP ya no le resta 1
+-- día (ese offset ahora solo lo aplica el Workflow, y solo en modo normal).
+DECLARE v_fecha_prueba   DATE DEFAULT DATE '2026-04-01';
 DECLARE v_row_count      INT64;
 DECLARE v_read           INT64;   -- MONITORING: o_execution_data_read
 DECLARE v_write          INT64;   -- MONITORING: o_execution_data_write
@@ -29,6 +31,7 @@ CALL `${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk`(
   '${project_iden_party}', '${dataset_iden_party}', '${table_iden_party}',
   '${project_t_consent_transaction}', 'test_master_party', 't_consent_transaction',
   'test_stage_tmp',
+  false,   -- p_carga_historica [RN-IBK-015]: prueba de comportamiento normal, no bootstrap
   v_read, v_write
 );
 
@@ -68,6 +71,7 @@ CALL `${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk`(
   '${project_iden_party}', '${dataset_iden_party}', '${table_iden_party}',
   '${project_t_consent_transaction}', 'test_master_party', 't_consent_transaction',
   'test_stage_tmp',
+  false,   -- p_carga_historica [RN-IBK-015]
   v_read, v_write
 );
 
@@ -108,6 +112,16 @@ SET v_row_count = (
 
 ASSERT v_row_count = 0
   AS 'T5: no debía haber más de 1 fila por id (solo el último evento por cliente), se obtuvieron ' || CAST(v_row_count AS STRING) || ' ids con más de una fila';
+
+-- ============================================================
+-- T6 (2026-08-26): p_carga_historica = TRUE debe traer TODO el historial del archivo, sin
+-- filtrar por consent_date. Requiere limpiar t_consent_transaction antes de esta llamada
+-- (CALL con p_carga_historica = true) y comparar COUNT(DISTINCT consent_date) > 1 — con
+-- p_carga_historica = false (T1) el archivo de prueba solo debería aportar 1 consent_date
+-- (el MAX real), con true debería aportar todas las fechas distintas que traiga el archivo.
+-- Verificar manualmente, no automatizado aquí (requiere control fino sobre el estado previo
+-- de la tabla, que las demás pruebas de este archivo no necesitan).
+-- ============================================================
 
 -- ============================================================
 -- Cleanup

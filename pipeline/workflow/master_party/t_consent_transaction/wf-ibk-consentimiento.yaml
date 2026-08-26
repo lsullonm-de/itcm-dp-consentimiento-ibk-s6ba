@@ -98,13 +98,16 @@ source:
               next: modo_normal
 
       # ---- Modo normal: fecha de sistema actual (America/Lima) ----
+      # [RN-IBK-014, 2026-08-26] El offset de -1 día (archivo de ayer) se aplica AQUÍ, no en el
+      # SP — var_process_dates queda con la carpeta real a leer, igual que manual/reproceso
+      # (que nunca llevan offset, la fecha que manda el usuario ya es la carpeta exacta).
       - modo_normal:
           call: googleapis.bigquery.v2.jobs.query
           args:
             projectId: ${v_billing_project}
             body:
               useLegacySql: false
-              query: "SELECT FORMAT_DATE('%F', CURRENT_DATE('America/Lima')) AS fecha"
+              query: "SELECT FORMAT_DATE('%F', DATE_SUB(CURRENT_DATE('America/Lima'), INTERVAL 1 DAY)) AS fecha"
           result: bqFechaHoy
           next: set_fecha_normal
 
@@ -180,6 +183,47 @@ source:
       - ejecutar:
           try:
             steps:
+              # -------- CARGA HISTÓRICA [RN-IBK-015, 2026-08-26] — solo en reproceso --------
+              # Dentro del try: si esta consulta falla, debe pasar por el mismo manejo de
+              # errores (correo, checkpoint) que el resto del proceso, no caer sin control.
+              # Si t_consent_transaction todavía no tiene ninguna fila de Interbank, el PRIMER
+              # archivo del rango (process_date_init) se carga completo (sin filtro de
+              # consent_date) — el resto del rango sigue el comportamiento normal.
+              - inicializar_carga_historica:
+                  assign:
+                    - var_carga_historica: false
+
+              - verificar_datos_ibk_existentes:
+                  switch:
+                    - condition: ${var_modo == "reproceso"}
+                      next: build_sql_check_ibk
+                    - condition: ${true}
+                      next: iterar_fechas
+
+              - build_sql_check_ibk:
+                  assign:
+                    - query_check_ibk: ${"SELECT COUNT(1) AS cnt FROM `" + var_project_tct + "." + var_dataset_tct + "." + var_table_tct + "` WHERE itc_company_id IN ('000','1000')"}
+
+              - ejecutar_check_ibk:
+                  call: SyncBigQueryJobWithResults
+                  args:
+                    query: ${query_check_ibk}
+                    project_id: ${v_billing_project}
+                  result: resultado_check_ibk
+
+              - evaluar_carga_historica:
+                  assign:
+                    - var_carga_historica: ${int(resultado_check_ibk.rows[0].f[0].v) == 0}
+
+              - log_carga_historica:
+                  call: sys.log
+                  args:
+                    json:
+                      modo: ${var_modo}
+                      carga_historica: ${var_carga_historica}
+                      motivo: "reproceso — sin filas previas de Interbank en t_consent_transaction"
+                    severity: INFO
+
               - iterar_fechas:
                   for:
                     value: fecha_actual
@@ -197,6 +241,19 @@ source:
                       - set_checkpoint_fecha:
                           assign:
                             - var_ultima_fecha_intentada: ${fecha_actual}
+
+                      # [RN-IBK-015] Carga histórica SOLO para el primer archivo del rango
+                      # (fecha_actual == _param_init), y solo si var_carga_historica = true
+                      # (reproceso sin datos previos de Interbank). Cualquier otra fecha del
+                      # mismo reproceso usa el comportamiento normal.
+                      - evaluar_carga_historica_fecha:
+                          switch:
+                            - condition: ${var_carga_historica AND fecha_actual == _param_init}
+                              assign:
+                                - var_es_esta_fecha_historica: true
+                            - condition: ${true}
+                              assign:
+                                - var_es_esta_fecha_historica: false
 
                       # -------- GATE DE INTEGRIDAD [etapas.integridad: true] --------
                       # Actualidad D-1 de la fuente principal (consentimiento_ibk_archivo).
@@ -320,7 +377,10 @@ source:
 
                       - build_sql_tct_p3:
                           assign:
+                            # p_carga_historica [RN-IBK-015] — BOOL, sin comillas (string(bool)
+                            # da "true"/"false", literal SQL válido, no un STRING).
                             - sql_tct_p3: ${", '" + var_dataset_stage + "'"
+                                + ", " + string(var_es_esta_fecha_historica)
                                 + ", v_read, v_write); "
                                 + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
 
