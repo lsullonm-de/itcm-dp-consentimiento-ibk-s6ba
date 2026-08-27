@@ -7,6 +7,12 @@
 -- COMPLETO por cliente (ya NO "solo el último evento", RN-IBK-011 revertida) — el cruce por
 -- party_id ÚNICAMENTE (sin igualar itc_company_id, RN-IBK-019) SÍ se mantiene.
 --
+-- FIXES (2026-08-27, RN-IBK-021): (a) el cruce por party_id ahora filtra DESPUÉS del match a
+-- itc_company_id IN ('000','1000') sobre el lado de iden_party — descarta registros de otras
+-- empresas del grupo; (b) el DELETE de la carga final es por (itc_company_id, record_source),
+-- NO por consent_date — evita que dos archivos con el mismo MAX(consent_date) se borren entre sí
+-- (ver T8).
+--
 -- ⚠️ LIMITACIÓN CONOCIDA: este SP crea una EXTERNAL TABLE sobre un archivo real en GCS
 -- (gs://${gcs_bucket_consentimiento_ibk_archivo}/...). No es simulable con datos en memoria como
 -- el resto de SPs del framework. Para correr este test end-to-end en dev se necesita:
@@ -107,10 +113,10 @@ ASSERT v_row_count = 0
 -- HISTORIAL COMPLETO por cliente, ya NO solo el último evento. Si un mismo id aparece en
 -- archivos de fechas DISTINTAS (ej. otorgado el día X, revocado el día Y), ambas filas deben
 -- convivir en la tabla, una por cada consent_date real — el DELETE+INSERT es por
--- (itc_company_id, consent_date), nunca colapsa por id. No automatizado aquí (requiere procesar
--- 2 fechas de prueba distintas con el mismo party_id) — verificar manualmente: tras procesar
--- 2 archivos de prueba con un id repetido en fechas distintas, confirmar
--- COUNT(*) FROM t_consent_transaction WHERE id = '<ese id>' >= 2.
+-- (itc_company_id, record_source) [RN-IBK-021], nunca colapsa por id. No automatizado aquí
+-- (requiere procesar 2 fechas de prueba distintas con el mismo party_id) — verificar
+-- manualmente: tras procesar 2 archivos de prueba con un id repetido en fechas distintas,
+-- confirmar COUNT(*) FROM t_consent_transaction WHERE id = '<ese id>' >= 2.
 -- ============================================================
 
 -- ============================================================
@@ -135,6 +141,22 @@ SET v_row_count = (
 
 ASSERT v_row_count = 0
   AS 'T7: la tabla de stage tmp_t_consent_transaction_ibk_20260401 debía quedar eliminada al finalizar el SP, se obtuvo ' || CAST(v_row_count AS STRING);
+
+-- ============================================================
+-- T8 (2026-08-27, RN-IBK-021 — corrige la colisión real confirmada entre
+-- t_consent_transaction_20260813_external y ..._20260814_external, mismo MAX(consent_date)):
+-- procesar dos folder_dates DISTINTOS cuyos archivos calculen el MISMO v_max_consent_date real
+-- NO debe hacer que el segundo borre las filas insertadas por el primero. No automatizado aquí
+-- (requiere 2 archivos de prueba con MAX(consent_date) idéntico pero contenido/record_source
+-- distinto) — verificar manualmente:
+--   1. Procesar folder_date A (su archivo trae MAX(consent_date) = X) — anotar
+--      COUNT(*) FROM t_consent_transaction WHERE consent_date = X.
+--   2. Procesar folder_date B, con un archivo de prueba armado para que su propio
+--      MAX(consent_date) sea TAMBIÉN X.
+--   3. Confirmar que las filas de A (identificables por su record_source, que embebe el
+--      folder_date A) siguen presentes — el COUNT(*) WHERE consent_date = X debe ser
+--      >= lo anotado en el paso 1, nunca caer a solo lo que aportó B.
+-- ============================================================
 
 -- ============================================================
 -- Cleanup

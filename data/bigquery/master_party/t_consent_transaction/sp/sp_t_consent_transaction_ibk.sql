@@ -268,7 +268,12 @@ BEGIN
     ) a
     INNER JOIN (
       -- [RI-IBK-T_CONSENT_TRANSACTION-004/005] excluir duplicados (se queda con el registro
-      -- más reciente por process_date) y llave nula de iden_party
+      -- más reciente por process_date) y llave nula de iden_party. Filtro por itc_company_id
+      -- IN ('000','1000') AGREGADO 2026-08-27 (pedido por el usuario): el cruce sigue siendo
+      -- por party_id únicamente (RN-IBK-019, no se toca), pero recién SOBRE ese match se
+      -- descartan los registros de iden_party de OTRAS empresas (Interseguro, Interfondos,
+      -- etc.) — antes no se filtraban y una persona con registro en otra empresa además de
+      -- Interbank podía colarse en t_consent_transaction con ese otro itc_company_id.
       SELECT * EXCEPT(rn)
       FROM (
         SELECT t.*,
@@ -278,6 +283,7 @@ BEGIN
           ) AS rn
         FROM `''' || v_iden_party_path || '''` t
         WHERE party_id IS NOT NULL AND itc_company_id IS NOT NULL
+          AND itc_company_id IN ('000','1000')
       )
       WHERE rn = 1
     ) p
@@ -296,19 +302,33 @@ BEGIN
   EXECUTE IMMEDIATE v_sql;
 
   -- ============================================================
-  -- 6. DELETE + INSERT EN LA TABLA FINAL [RN-IBK-004] [RN-IBK-005]
+  -- 6. DELETE + INSERT EN LA TABLA FINAL [RN-IBK-004] [RN-IBK-021]
   -- ============================================================
-  -- Se eliminan solo las particiones (itc_company_id, consent_date) presentes en el batch —
-  -- consent_date es el valor real de cada registro del archivo, no un offset calculado.
+  -- CORREGIDO 2026-08-27 (RN-IBK-021) — BUG REAL confirmado con datos de dev: el DELETE por
+  -- (itc_company_id, consent_date) asumía que cada consent_date "pertenece" a un solo archivo,
+  -- pero dos folder_dates DISTINTOS pueden calcular el mismo v_max_consent_date real (confirmado:
+  -- t_consent_transaction_20260813_external y t_consent_transaction_20260814_external, ambos con
+  -- MAX(consent_date) = 2026-08-13) — al procesar el segundo archivo, su DELETE borraba TODO lo
+  -- que el primero acababa de insertar para esa fecha, aunque fueran archivos distintos. Pérdida
+  -- de datos real.
+  --
+  -- FIX: el DELETE ahora es por record_source (identifica el ARCHIVO que insertó cada fila, vía
+  -- source_file_name — el nombre del archivo embebe el folder_date, es determinístico por fecha
+  -- de carpeta), no por consent_date. Así, reprocesar la MISMA fecha sigue siendo idempotente
+  -- (reemplaza exactamente lo que ese mismo archivo insertó antes), pero un archivo NUEVO nunca
+  -- toca las filas insertadas por OTRO archivo, así compartan el mismo consent_date real.
+  -- Costo aceptado: si dos archivos distintos traen genuinamente al mismo cliente con el mismo
+  -- consent_date, ahora pueden convivir 2 filas en vez de que el segundo reemplace al primero —
+  -- preferible a perder datos silenciosamente.
   SET v_output_path = p_project_output || '.' || p_dataset_output || '.' || p_table_output;
 
   SET v_sql = '''
     DELETE FROM `''' || v_output_path || '''` t
-    WHERE EXISTS (
-      SELECT 1 FROM `''' || v_stage_path || '''` s
-      WHERE s.itc_company_id = t.itc_company_id
-        AND s.consent_date   = t.consent_date
-    )
+    WHERE t.itc_company_id IN ('000','1000')
+      AND EXISTS (
+        SELECT 1 FROM `''' || v_stage_path || '''` s
+        WHERE t.record_source = 'LPDP_IBK_' || s.source_file_name
+      )
   ''';
   EXECUTE IMMEDIATE v_sql;
 

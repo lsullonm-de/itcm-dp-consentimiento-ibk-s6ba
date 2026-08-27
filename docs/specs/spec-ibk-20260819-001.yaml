@@ -237,8 +237,11 @@ reglas_negocio:
 
   - id: RN-IBK-005
     descripcion: >
-      RESTAURADA por RN-IBK-020 (2026-08-27, rollback de RN-IBK-019) — este DELETE por
-      itc_company_id + consent_date vuelve a ser el vigente:
+      RESTAURADA por RN-IBK-020 (2026-08-27, rollback de RN-IBK-019) y luego CORREGIDA por
+      RN-IBK-021 (mismo día) — el DELETE ya NO es por (itc_company_id, consent_date), es por
+      (itc_company_id, record_source) — ver RN-IBK-021, causaba pérdida de datos real entre
+      archivos que comparten el mismo MAX(consent_date). Texto original (ya no vigente en el
+      detalle, se deja por historial):
       Carga a t_consent_transaction es DELETE + INSERT: se eliminan los registros de
       itc_company_id + consent_date(s) presentes en el batch antes de insertar los nuevos.
     criticidad: alta
@@ -451,6 +454,34 @@ reglas_negocio:
     campo_afectado: t_consent_transaction, ba_customer_consent_group
     validado_por: lsullon
 
+  - id: RN-IBK-021
+    descripcion: >
+      2 fixes pedidos por el usuario (2026-08-27), en sp_t_consent_transaction_ibk.sql:
+      (1) FILTRO DE EMPRESA DESPUÉS DEL CRUCE POR party_id: el cruce contra iden_itc_party_prd
+      sigue siendo SOLO por party_id (RN-IBK-019, sin excluir nada — trae los ~6-7M matches), pero
+      ahora, sobre ese resultado, se descartan los registros de iden_party de empresas que NO sean
+      '000'/'1000' (WHERE itc_company_id IN ('000','1000') dentro del dedup de iden_party). Antes
+      no existía ese filtro: una persona con registro en OTRA empresa del grupo (Interseguro,
+      Interfondos, etc.) además de Interbank podía colarse en t_consent_transaction con ese otro
+      itc_company_id — nunca se había filtrado, solo se filtraba el itc_company_id del ARCHIVO
+      (siempre '000'), no el de iden_party.
+      (2) DELETE POR record_source, NO POR consent_date — BUG REAL confirmado con datos de dev:
+      dos folder_dates DISTINTOS pueden calcular el mismo v_max_consent_date real (confirmado:
+      t_consent_transaction_20260813_external y ..._20260814_external, ambos con
+      MAX(consent_date) = 2026-08-13) — con el DELETE anterior (por itc_company_id + consent_date,
+      RN-IBK-005), al procesar el segundo archivo su DELETE borraba TODO lo que el primero acababa
+      de insertar para esa fecha, aunque fueran archivos distintos (pérdida real de ~3.9M filas
+      confirmada). Fix: el DELETE ahora es por (itc_company_id, record_source) — record_source
+      identifica el ARCHIVO que insertó cada fila (vía source_file_name, que embebe el folder_date
+      de forma determinística) — reprocesar la MISMA fecha sigue siendo idempotente, pero un
+      archivo nuevo nunca toca las filas insertadas por OTRO archivo, así compartan el mismo
+      consent_date real. Costo aceptado: si dos archivos distintos traen genuinamente al mismo
+      cliente con el mismo consent_date, ahora pueden convivir 2 filas (antes el segundo
+      reemplazaba al primero) — preferible a perder datos silenciosamente.
+    criticidad: alta
+    campo_afectado: t_consent_transaction
+    validado_por: lsullon
+
   - id: RN-IBK-017
     descripcion: >
       ba_customer_consent_group pasa de "DELETE+INSERT acotado por itc_company_id + consent_date
@@ -554,7 +585,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party SOLO por party_id (RN-IBK-019, sin excluir nada), filtra por consent_date = MAX(consent_date) real del archivo salvo carga histórica (p_carga_historica, RN-IBK-015), hace delete/insert por itc_company_id + consent_date (RN-IBK-005) — guarda el HISTORIAL COMPLETO por cliente, sin QUALIFY (RN-IBK-020, rollback de RN-IBK-011), arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), y usa una tabla temporal con sufijo de fecha (RN-IBK-013)"
+    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party SOLO por party_id (RN-IBK-019, sin excluir nada), filtrando DESPUÉS del match a itc_company_id IN ('000','1000') (RN-IBK-021), filtra por consent_date = MAX(consent_date) real del archivo salvo carga histórica (p_carga_historica, RN-IBK-015), hace delete/insert por (itc_company_id, record_source) — no por consent_date, evita colisión entre archivos con el mismo MAX(consent_date), RN-IBK-021 — guarda el HISTORIAL COMPLETO por cliente, sin QUALIFY (RN-IBK-020, rollback de RN-IBK-011), arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), y usa una tabla temporal con sufijo de fecha (RN-IBK-013)"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
@@ -693,6 +724,7 @@ scheduling:
 # 10. RESTRICCIONES Y SUPUESTOS
 # ------------------------------------------------------------
 restricciones:
+  - "RESUELTO (2026-08-27): 2 fixes en sp_t_consent_transaction_ibk.sql (RN-IBK-021), pedidos por el usuario tras revisar la lógica del rollback — (a) el cruce con iden_party sigue siendo solo por party_id, pero ahora se filtra a itc_company_id IN ('000','1000') DESPUÉS del match, evitando que registros de otras empresas del grupo se cuelen en t_consent_transaction; (b) el DELETE de la carga final pasa de ser por (itc_company_id, consent_date) a (itc_company_id, record_source) — corrige de raíz la colisión real confirmada entre t_consent_transaction_20260813_external y ..._20260814_external (mismo MAX(consent_date), el segundo borraba lo insertado por el primero)"
   - "RESUELTO (2026-08-27): rollback parcial de RN-IBK-019 (RN-IBK-020), pedido por el usuario — se elimina t_consent_transaction_raw y sp_centralizar_t_consent_transaction_ibk.sql (vivieron menos de un día); sp_t_consent_transaction_ibk.sql vuelve a hacer todo directo por cada fecha del rango, con carga histórica (RN-IBK-015) y filtro MAX(consent_date) (RN-IBK-012) restaurados. t_consent_transaction vuelve a guardar el historial completo por cliente (RN-IBK-011 revertida) — un id puede tener varias filas, una por cada consent_date real. ba_customer_consent_group_ibk.sql recupera su propio QUALIFY de último evento (cuidado: se calcula sobre TODOS los consent_type antes de exigir 'otorgado', para no quedarse con un otorgado viejo si el cliente revocó después). NO se revierte: el cruce por party_id únicamente (sin itc_company_id) y el DELETE por empresa en ambas tablas de salida"
   - "RESUELTO (2026-08-26): rediseño completo de la carga a t_consent_transaction (RN-IBK-019), pedido por el usuario tras 2 hallazgos reales el mismo día — (a) el cruce por party_id + itc_company_id (RN-IBK-003) excluía ~2.78M filas de personas con doble registro en iden_party (una bajo '000', otra bajo '1000'); (b) dos folder_dates distintos con el mismo MAX(consent_date) real hacían que el segundo pisara los datos insertados por el primero. Fix: nueva tabla t_consent_transaction_raw (todo archivo se guarda completo, sin cruzar ni filtrar), nueva SP sp_centralizar_t_consent_transaction_ibk.sql (cruza SOLO por party_id, sin excluir nada, y centraliza ÚNICAMENTE el archivo de la última fecha del rango), DELETE por empresa en vez de por fecha/TRUNCATE en ambas tablas de salida. RN-IBK-003/005/012/015 quedan superadas (ver su texto)"
   - "RESUELTO (2026-08-26): se quitan del Workflow los gates de integridad y calidad de datos (etapas.integridad/data_quality pasan a false) — pedido por el usuario, para que el pipeline se enfoque solo en procesar/insertar y registrar en la API de monitoring (RN-IBK-018). La detección de 'fecha sin archivo' (RN-IBK-010) se mantiene, pero ahora se basa en el RAISE propio de sp_t_consent_transaction_ibk.sql en vez de un SP de integridad separado. Los SP de integridad/DQ y las tablas dq_config/dq_control no se borraron, solo dejaron de invocarse"
