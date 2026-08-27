@@ -24,7 +24,6 @@
   "project_t_consent_transaction": "dev-intercorp-data-storage",
   "dataset_t_consent_transaction": "master_party",
   "table_t_consent_transaction": "t_consent_transaction",
-  "table_t_consent_transaction_raw": "t_consent_transaction_raw",
 
   "project_ba_customer_consent_group": "dev-intercorp-data-storage",
   "dataset_ba_customer_consent_group": "master_party",

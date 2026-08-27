@@ -237,8 +237,8 @@ reglas_negocio:
 
   - id: RN-IBK-005
     descripcion: >
-      SUPERADA por RN-IBK-019 (2026-08-26) — el DELETE en t_consent_transaction ahora es por
-      itc_company_id ÚNICAMENTE (no por consent_date). Se deja este texto por historial:
+      RESTAURADA por RN-IBK-020 (2026-08-27, rollback de RN-IBK-019) — este DELETE por
+      itc_company_id + consent_date vuelve a ser el vigente:
       Carga a t_consent_transaction es DELETE + INSERT: se eliminan los registros de
       itc_company_id + consent_date(s) presentes en el batch antes de insertar los nuevos.
     criticidad: alta
@@ -247,6 +247,9 @@ reglas_negocio:
 
   - id: RN-IBK-011
     descripcion: >
+      SUPERADA por RN-IBK-020 (2026-08-27, rollback pedido por el usuario) — t_consent_transaction
+      vuelve a guardar el HISTORIAL COMPLETO por cliente; la dedup "último evento" se movió a
+      ba_customer_consent_group_ibk.sql (ver esa SP). Se deja este texto por historial:
       t_consent_transaction guarda solo el ÚLTIMO evento (otorgado o rechazado) por cliente
       (id) — no el historial completo de eventos del archivo (cambio de diseño 2026-08-26,
       confirmado con el usuario; el contrato original la describía como historial completo
@@ -265,10 +268,8 @@ reglas_negocio:
 
   - id: RN-IBK-012
     descripcion: >
-      SUPERADA por RN-IBK-019 (2026-08-26) — ya no se filtra por ningún consent_date: la tabla
-      raw guarda el archivo completo (incluida la basura histórica tipo 1900, ahí sí sin
-      importar porque raw no es la tabla final) y la centralización trae TODO el archivo de la
-      última fecha, sin filtro. Se deja este texto por historial:
+      RESTAURADA por RN-IBK-020 (2026-08-27, rollback de RN-IBK-019) — este filtro por
+      MAX(consent_date) vuelve a ser el vigente:
       Los DATOS se filtran por consent_date antes de insertar — no se inserta el archivo
       completo sin filtrar (bug real 2026-08-19 a 2026-08-26: antes de este fix, cada reproceso
       traía basura histórica, incluido consent_date de 1900, valor centinela de sistemas legacy
@@ -295,11 +296,10 @@ reglas_negocio:
       Las tablas temporales de este módulo llevan un sufijo de fecha (YYYYMMDD) en su nombre —
       fix 2026-08-26, para que dos ejecuciones concurrentes (ej. el Cloud Scheduler disparando el
       modo normal mientras corre un reproceso manual) no se pisen la misma tabla física.
-      ACTUALIZADO por RN-IBK-019 (2026-08-26): sp_t_consent_transaction_ibk.sql y
-      sp_ba_customer_consent_group_ibk.sql YA NO usan tablas temporales de scope (el primero
-      escribe directo a raw, el segundo hace DELETE+INSERT directo, sin tabla intermedia) — el
-      único que sigue aplicando este patrón es sp_centralizar_t_consent_transaction_ibk.sql, con
-      su tabla tmp_centralizar_t_consent_transaction_ibk_{folder_date}.
+      Con RN-IBK-020 (2026-08-27, rollback de RN-IBK-019): sp_t_consent_transaction_ibk.sql
+      vuelve a usar su tabla de scope tmp_t_consent_transaction_ibk_{fecha} (que ella misma
+      elimina al terminar). sp_ba_customer_consent_group_ibk.sql sigue sin usar ninguna tabla de
+      scope (hace DELETE por empresa + INSERT directo, RN-IBK-017/019).
     criticidad: media
     campo_afectado: t_consent_transaction
     validado_por: lsullon
@@ -320,11 +320,9 @@ reglas_negocio:
 
   - id: RN-IBK-015
     descripcion: >
-      SUPERADA por RN-IBK-019 (2026-08-26) — dejó de tener sentido: ahora TODO archivo se carga
-      completo a raw (sin filtro de fecha) y la centralización siempre trae el archivo completo
-      de la última fecha, sin distinguir "primer archivo de un reproceso sin datos previos" de
-      cualquier otro caso. p_carga_historica se eliminó de sp_t_consent_transaction_ibk.sql. Se
-      deja este texto por historial:
+      RESTAURADA por RN-IBK-020 (2026-08-27, rollback de RN-IBK-019) — vuelve a existir
+      p_carga_historica en sp_t_consent_transaction_ibk.sql y el chequeo previo en el Workflow.
+      Texto vigente:
       Carga histórica en reproceso (pedido por el usuario, 2026-08-26): si t_consent_transaction
       no tiene ninguna fila con itc_company_id IN ('000','1000') al iniciar un reproceso, el
       PRIMER archivo del rango (process_date_init) se carga SIN el filtro de consent_date de
@@ -380,6 +378,12 @@ reglas_negocio:
 
   - id: RN-IBK-019
     descripcion: >
+      PARCIALMENTE REVERTIDA por RN-IBK-020 (2026-08-27, rollback pedido por el usuario, ver esa
+      entrada) — de los 4 cambios de abajo, se REVIRTIERON el (1) y el (2): ya no existe
+      t_consent_transaction_raw ni sp_centralizar_t_consent_transaction_ibk.sql,
+      sp_t_consent_transaction_ibk.sql vuelve a escribir directo en t_consent_transaction por
+      cada fecha del rango. Los cambios (3) (cruce solo por party_id) y (4) (DELETE por empresa)
+      SÍ SIGUEN VIGENTES, no se revirtieron. Se deja el texto original completo por historial:
       REDISEÑO COMPLETO de la carga hacia t_consent_transaction (pedido por el usuario,
       2026-08-26) — 4 cambios juntos:
       (1) NUEVA TABLA t_consent_transaction_raw: cada archivo procesado (cada fecha del rango)
@@ -417,6 +421,36 @@ reglas_negocio:
     campo_afectado: t_consent_transaction, ba_customer_consent_group
     validado_por: lsullon
 
+  - id: RN-IBK-020
+    descripcion: >
+      ROLLBACK parcial de RN-IBK-019 (pedido por el usuario, 2026-08-27) — 3 cambios juntos:
+      (1) Se elimina la tabla t_consent_transaction_raw y la SP
+      sp_centralizar_t_consent_transaction_ibk.sql (vivieron menos de un día). SP1
+      (sp_t_consent_transaction_ibk.sql) vuelve a hacer TODO directo (tabla externa + cruce +
+      DELETE/INSERT) por cada fecha del rango, escribiendo directo en t_consent_transaction — se
+      restauran la carga histórica (RN-IBK-015) y el filtro por MAX(consent_date) (RN-IBK-012),
+      ambos con su comportamiento original de antes de RN-IBK-019.
+      (2) t_consent_transaction vuelve a guardar el HISTORIAL COMPLETO por cliente (RN-IBK-011
+      queda superada): si un id aparece otorgado, luego revocado, luego otorgado de nuevo (en
+      archivos/fechas distintas), las 3 filas conviven en la tabla, una por cada consent_date
+      real — el DELETE+INSERT es por (itc_company_id, consent_date), nunca colapsa por id.
+      (3) Como t_consent_transaction ya no garantiza 1 fila por cliente,
+      ba_customer_consent_group_ibk.sql RECUPERA su propio QUALIFY ROW_NUMBER() OVER
+      (PARTITION BY id ORDER BY consent_date DESC) = 1 (como antes de RN-IBK-011, 2026-08-25) —
+      con un cuidado importante: el ROW_NUMBER se calcula sobre TODOS los eventos de conset_id
+      = 'CP_2' del cliente (cualquier consent_type), y RECIÉN sobre la fila con rn=1 se exige
+      consent_type = 'otorgado'. Filtrar consent_type ANTES de calcular el ROW_NUMBER sería un
+      bug: se podría quedar con un 'otorgado' viejo aunque el cliente haya revocado después. Si
+      el último evento real del cliente es 'rechazado', no debe aparecer en
+      ba_customer_consent_group aunque haya tenido un 'otorgado' antes.
+      NO SE REVIERTEN de RN-IBK-019: el cruce con iden_party sigue siendo SOLO por party_id (sin
+      igualar itc_company_id — "no excluir nada" sigue vigente) y ba_customer_consent_group_ibk.sql
+      sigue haciendo DELETE por empresa (nunca TRUNCATE) + INSERT completo, llamado una sola vez
+      por ejecución del Workflow (no por fecha).
+    criticidad: alta
+    campo_afectado: t_consent_transaction, ba_customer_consent_group
+    validado_por: lsullon
+
   - id: RN-IBK-017
     descripcion: >
       ba_customer_consent_group pasa de "DELETE+INSERT acotado por itc_company_id + consent_date
@@ -426,13 +460,15 @@ reglas_negocio:
       ACTUALIZADO por RN-IBK-019 (mismo día): el paso previo de limpieza pasó de TRUNCATE a
       DELETE WHERE itc_company_id IN ('000','1000') — un TRUNCATE borraría filas de otras
       empresas que la tabla pudiera tener. sp_ba_customer_consent_group_ibk.sql deja de leer la
-      tabla de scope tmp_t_consent_transaction_ibk_{fecha} (ver RN-IBK-013, actualizada). El
-      Workflow deja de llamar a este SP una vez por cada fecha del rango dentro de
-      iterar_fechas — lo llama UNA sola vez, después de centralizar (RN-IBK-019), para no
-      reconstruir la tabla completa N veces en el mismo reproceso. p_process_date_ini/end y
-      p_dataset_stage quedan en la firma del SP sin usarse para filtrar (decisión explícita del
-      usuario: mantener el parámetro aunque no se use) — el Workflow les pasa
-      var_ultima_fecha_cargada (RN-IBK-019) solo para trazabilidad en monitoring.
+      tabla de scope tmp_t_consent_transaction_ibk_{fecha} (ver RN-IBK-013). El Workflow deja de
+      llamar a este SP una vez por cada fecha del rango dentro de iterar_fechas — lo llama UNA
+      sola vez, después de terminar el loop de fechas, para no reconstruir la tabla completa N
+      veces en el mismo reproceso. p_process_date_ini/end y p_dataset_stage quedan en la firma
+      del SP sin usarse para filtrar (decisión explícita del usuario: mantener el parámetro
+      aunque no se use) — el Workflow les pasa var_process_dates[0]/var_process_dates[len(...)-1]
+      solo para trazabilidad en monitoring. RECUPERA su propio QUALIFY de último evento por
+      cliente con RN-IBK-020 (rollback de RN-IBK-011, ver esa entrada) — ya no puede asumir que
+      t_consent_transaction viene con 1 sola fila por id.
     criticidad: alta
     campo_afectado: ba_customer_consent_group
     validado_por: lsullon
@@ -441,13 +477,12 @@ reglas_negocio:
     descripcion: >
       ba_customer_consent_group se genera exclusivamente desde t_consent_transaction
       (no vuelve a leer el archivo ni la tabla externa), filtrando conset_id = 'CP_2',
-      consent_type = 'otorgado' e itc_company_id IN ('000','1000'). No necesita su propio
-      dedup por cliente — t_consent_transaction ya garantiza una sola fila por id (ver
-      RN-IBK-011, actualizado 2026-08-26). Versión intermedia del 2026-08-25 (ROW_NUMBER
-      propio en esta SP) quedó reemplazada al centralizar la regla "último evento gana" en
-      la tabla origen, alineado con el patrón de las SPs hermanas de Interseguro/Interfondos.
-      DESDE 2026-08-26 (ver RN-IBK-017) el filtro ya no se acota por fecha/scope — corre sobre
-      TODA t_consent_transaction.
+      consent_type = 'otorgado' e itc_company_id IN ('000','1000'). DESDE RN-IBK-020
+      (2026-08-27, rollback de RN-IBK-011) SÍ necesita su propio dedup por cliente —
+      t_consent_transaction volvió a guardar el historial completo, ya no garantiza 1 fila por
+      id — ver el QUALIFY propio de sp_ba_customer_consent_group_ibk.sql (mismo patrón que las
+      SPs hermanas de Interseguro/Interfondos). DESDE 2026-08-26 (ver RN-IBK-017) el filtro ya
+      no se acota por fecha/scope — corre sobre TODA t_consent_transaction.
     criticidad: alta
     campo_afectado: ba_customer_consent_group
     validado_por: lsullon
@@ -511,11 +546,7 @@ componentes:
 
   - tipo: ddl
     archivo: data/bigquery/master_party/t_consent_transaction/ddl/t_consent_transaction.sql
-    descripcion: "Tabla destino particionada por consent_date, clustered por itc_company_name"
-
-  - tipo: ddl
-    archivo: data/bigquery/master_party/t_consent_transaction/ddl/t_consent_transaction_raw.sql
-    descripcion: "Tabla raw (RN-IBK-019, nueva 2026-08-26) — particionada por folder_date, clustered por itc_company_id. Guarda TODOS los eventos de cada archivo IBK procesado, sin cruzar con iden_party ni colapsar por cliente. La llena sp_t_consent_transaction_ibk.sql, una vez por cada fecha del rango"
+    descripcion: "Tabla destino particionada por consent_date, clustered por itc_company_name. Guarda el HISTORIAL COMPLETO por cliente (RN-IBK-020)"
 
   - tipo: ddl
     archivo: data/bigquery/master_party/t_consent_transaction/alter/alter_t_consent_transaction_20260819_001.sql
@@ -523,11 +554,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "REDISEÑADO 2026-08-26 (RN-IBK-019): folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Ya NO cruza con iden_party ni escribe en t_consent_transaction — solo crea la tabla externa y vuelca el archivo TAL CUAL (dedup RI-IBK-002/003, arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME, RN-IBK-016) a t_consent_transaction_raw. DELETE+INSERT idempotente por folder_date. Se llama una vez por cada fecha del rango"
-
-  - tipo: sp
-    archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_centralizar_t_consent_transaction_ibk.sql
-    descripcion: "NUEVO 2026-08-26 (RN-IBK-019) — lee t_consent_transaction_raw de UN folder_date (la última fecha que sí tuvo archivo), cruza contra iden_itc_party_prd por party_id ÚNICAMENTE (sin igualar itc_company_id — cada coincidencia genera su propia fila), se queda con el último evento por cliente (ROW_NUMBER + QUALIFY, RN-IBK-011), hace DELETE por itc_company_id + INSERT en t_consent_transaction. Usa tabla temporal con sufijo de fecha (RN-IBK-013). Se llama UNA sola vez por ejecución del Workflow, después de iterar_fechas"
+    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party SOLO por party_id (RN-IBK-019, sin excluir nada), filtra por consent_date = MAX(consent_date) real del archivo salvo carga histórica (p_carga_historica, RN-IBK-015), hace delete/insert por itc_company_id + consent_date (RN-IBK-005) — guarda el HISTORIAL COMPLETO por cliente, sin QUALIFY (RN-IBK-020, rollback de RN-IBK-011), arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), y usa una tabla temporal con sufijo de fecha (RN-IBK-013)"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
@@ -547,7 +574,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_ba_customer_consent_group_ibk.sql
-    descripcion: "DELETE por itc_company_id (NUNCA TRUNCATE, RN-IBK-019) + INSERT completo de TODO lo que cumpla CP_2/otorgado en t_consent_transaction, ya deduplicada por cliente (RN-IBK-011) — sin filtro de fecha ni scope (RN-IBK-017). Llamada UNA sola vez por ejecución del Workflow, justo después de centralizar. p_process_date_ini/end y p_dataset_stage quedan en la firma sin usarse para filtrar (decisión del usuario)"
+    descripcion: "DELETE por itc_company_id (NUNCA TRUNCATE, RN-IBK-019) + INSERT completo de TODO lo que cumpla CP_2/otorgado en t_consent_transaction — sin filtro de fecha ni scope (RN-IBK-017). Con su PROPIO QUALIFY de último evento por cliente (RN-IBK-020, rollback de RN-IBK-011: t_consent_transaction ya no viene deduplicada). Llamada UNA sola vez por ejecución del Workflow, al final del loop de fechas. p_process_date_ini/end y p_dataset_stage quedan en la firma sin usarse para filtrar (decisión del usuario)"
 
   - tipo: sp
     archivo: data/bigquery/master_party/ba_customer_consent_group/sp/sp_dq_ba_customer_consent_group.sql
@@ -555,7 +582,7 @@ componentes:
 
   - tipo: workflow
     archivo: pipeline/workflow/master_party/t_consent_transaction/wf-ibk-consentimiento.yaml
-    descripcion: "REDISEÑADO 2026-08-26 (RN-IBK-019): orquesta tabla externa + SP1-raw (por cada fecha del rango, escribe en t_consent_transaction_raw) + centralizar + SP2 (una sola vez cada uno, al final, con el archivo de la última fecha que sí tuvo archivo); soporta process_date normal/manual/reproceso. Aplica el offset de -1 día solo en modo normal (RN-IBK-014). Sin gates de integridad/DQ (RN-IBK-018) ni carga histórica (RN-IBK-015, obsoleta) — solo procesa/inserta y registra en la API de monitoring; fecha sin archivo se detecta por el RAISE propio de SP1-raw"
+    descripcion: "Orquesta tabla externa + SP1 (por cada fecha del rango, directo a t_consent_transaction) + SP2 (una sola vez, al final, RN-IBK-017); soporta process_date normal/manual/reproceso. Aplica el offset de -1 día solo en modo normal (RN-IBK-014); en reproceso verifica si hay datos previos de Interbank para decidir carga histórica del primer archivo (RN-IBK-015). Sin gates de integridad/DQ (RN-IBK-018) — solo procesa/inserta y registra en la API de monitoring; fecha sin archivo se detecta por el RAISE propio de SP1"
 
   - tipo: cloud_scheduler
     archivo: pipeline/scheduler/master_party/t_consent_transaction/cs-ibk-consentimiento.yaml
@@ -666,6 +693,7 @@ scheduling:
 # 10. RESTRICCIONES Y SUPUESTOS
 # ------------------------------------------------------------
 restricciones:
+  - "RESUELTO (2026-08-27): rollback parcial de RN-IBK-019 (RN-IBK-020), pedido por el usuario — se elimina t_consent_transaction_raw y sp_centralizar_t_consent_transaction_ibk.sql (vivieron menos de un día); sp_t_consent_transaction_ibk.sql vuelve a hacer todo directo por cada fecha del rango, con carga histórica (RN-IBK-015) y filtro MAX(consent_date) (RN-IBK-012) restaurados. t_consent_transaction vuelve a guardar el historial completo por cliente (RN-IBK-011 revertida) — un id puede tener varias filas, una por cada consent_date real. ba_customer_consent_group_ibk.sql recupera su propio QUALIFY de último evento (cuidado: se calcula sobre TODOS los consent_type antes de exigir 'otorgado', para no quedarse con un otorgado viejo si el cliente revocó después). NO se revierte: el cruce por party_id únicamente (sin itc_company_id) y el DELETE por empresa en ambas tablas de salida"
   - "RESUELTO (2026-08-26): rediseño completo de la carga a t_consent_transaction (RN-IBK-019), pedido por el usuario tras 2 hallazgos reales el mismo día — (a) el cruce por party_id + itc_company_id (RN-IBK-003) excluía ~2.78M filas de personas con doble registro en iden_party (una bajo '000', otra bajo '1000'); (b) dos folder_dates distintos con el mismo MAX(consent_date) real hacían que el segundo pisara los datos insertados por el primero. Fix: nueva tabla t_consent_transaction_raw (todo archivo se guarda completo, sin cruzar ni filtrar), nueva SP sp_centralizar_t_consent_transaction_ibk.sql (cruza SOLO por party_id, sin excluir nada, y centraliza ÚNICAMENTE el archivo de la última fecha del rango), DELETE por empresa en vez de por fecha/TRUNCATE en ambas tablas de salida. RN-IBK-003/005/012/015 quedan superadas (ver su texto)"
   - "RESUELTO (2026-08-26): se quitan del Workflow los gates de integridad y calidad de datos (etapas.integridad/data_quality pasan a false) — pedido por el usuario, para que el pipeline se enfoque solo en procesar/insertar y registrar en la API de monitoring (RN-IBK-018). La detección de 'fecha sin archivo' (RN-IBK-010) se mantiene, pero ahora se basa en el RAISE propio de sp_t_consent_transaction_ibk.sql en vez de un SP de integridad separado. Los SP de integridad/DQ y las tablas dq_config/dq_control no se borraron, solo dejaron de invocarse"
   - "RESUELTO (2026-08-26): ba_customer_consent_group pasa de DELETE+INSERT acotado por fecha/scope a TRUNCATE + INSERT completo de TODO t_consent_transaction filtrado por CP_2/otorgado — pedido por el usuario. El Workflow deja de llamar al SP por cada fecha del rango, lo llama una sola vez al final del reproceso (RN-IBK-017)"

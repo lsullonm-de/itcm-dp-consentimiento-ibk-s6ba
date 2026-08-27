@@ -18,23 +18,16 @@ source:
 
             # Stored Procedures (path completo — nunca hardcodeado)
             - var_sp_t_consent_transaction: ${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk
-            - var_sp_centralizar_tct: ${project_operation}.${dataset_sp}.sp_centralizar_t_consent_transaction_ibk
             - var_sp_ba_customer_consent_group: ${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk
 
             # Fuente: consentimiento_ibk_archivo (tabla externa dinámica)
             - var_project_archivo: ${project_consentimiento_ibk_archivo}
             - var_dataset_archivo: ${dataset_consentimiento_ibk_archivo}
 
-            # Fuente: iden_party (iden_itc_party_prd) — solo la usa sp_centralizar_t_consent_transaction_ibk
+            # Fuente: iden_party (iden_itc_party_prd)
             - var_project_iden_party: ${project_iden_party}
             - var_dataset_iden_party: ${dataset_iden_party}
             - var_table_iden_party: ${table_iden_party}
-
-            # Raw: t_consent_transaction_raw [RN-IBK-019] — vive en el mismo proyecto/dataset que
-            # t_consent_transaction (dev-intercorp-data-storage.master_party)
-            - var_project_tct_raw: ${project_t_consent_transaction}
-            - var_dataset_tct_raw: ${dataset_t_consent_transaction}
-            - var_table_tct_raw: ${table_t_consent_transaction_raw}
 
             # Output 1: t_consent_transaction
             - var_project_tct: ${project_t_consent_transaction}
@@ -46,16 +39,12 @@ source:
             - var_dataset_bccg: ${dataset_ba_customer_consent_group}
             - var_table_bccg: ${table_ba_customer_consent_group}
 
-            # Stage — solo lo usa sp_centralizar_t_consent_transaction_ibk
+            # Stage compartido entre los 2 SPs (tablas tmp_*)
             - var_dataset_stage: ${dataset_stage}
 
             # Contador de fechas procesadas (para el mail de éxito) y checkpoint de reanudación
             - var_fechas_procesadas: 0
             - var_ultima_fecha_intentada: ""
-            # Última fecha que SÍ tuvo archivo (se cargó a raw) — la que se centraliza al final
-            # [RN-IBK-019]. Puede ser distinta de process_date_fin si las últimas fechas del
-            # rango no tuvieran archivo (RN-IBK-010). "" mientras ninguna fecha se haya cargado.
-            - var_ultima_fecha_cargada: ""
             # Fechas sin archivo en origen (fines de semana, feriados) — se omiten, no son error.
             # RN-IBK-010: confirmado con el usuario (2026-08-24) que estos huecos son esperados.
             - var_fechas_sin_archivo: []
@@ -177,20 +166,60 @@ source:
             - var_execution_type: ${text.to_upper(var_modo)}
 
       # ============================================================
-      # 3. EJECUCIÓN — raw por cada fecha, centralizar + SP2 UNA sola vez al final [RN-IBK-019]
+      # 3. EJECUCIÓN — SP1 por cada fecha en var_process_dates, SP2 UNA sola vez al final
       # ============================================================
-      # sp_t_consent_transaction_ibk (raw) se llama una vez por cada fecha del rango, en
-      # secuencia estricta — solo vuelca el archivo tal cual a t_consent_transaction_raw, sin
-      # cruzar contra iden_party. Al terminar el loop, sp_centralizar_t_consent_transaction_ibk
-      # y sp_ba_customer_consent_group_ibk se llaman UNA sola vez cada uno, usando el archivo de
-      # la ÚLTIMA fecha que sí tuvo archivo (var_ultima_fecha_cargada) — el resto de fechas del
-      # rango quedan solo en raw, con fines de trazabilidad (ver cabecera de los 3 SP en
-      # data/bigquery/.../sp/).
+      # ROLLBACK (2026-08-27, RN-IBK-020): revierte RN-IBK-019 — SP1 (sp_t_consent_transaction_ibk)
+      # vuelve a hacer TODO directo (tabla externa + cruce + DELETE/INSERT) por cada fecha del
+      # rango, en secuencia estricta, escribiendo directo en t_consent_transaction (sin tabla raw
+      # ni SP de centralización). SP2 (sp_ba_customer_consent_group_ibk) sigue llamándose UNA sola
+      # vez, después de terminar iterar_fechas (RN-IBK-017, no se revierte). Cada SP limpia su
+      # propia tabla de stage al terminar (ver cabecera de ambos SPs en data/bigquery/.../sp/).
       # Si una fecha del rango falla, el except detiene el resto del reproceso — las fechas
-      # anteriores ya quedaron confirmadas en raw (DELETE+INSERT transaccional por archivo).
+      # anteriores ya quedaron confirmadas (cada SP hace su propio DELETE+INSERT transaccional).
       - ejecutar:
           try:
             steps:
+              # -------- CARGA HISTÓRICA [RN-IBK-015] — solo en reproceso --------
+              # Dentro del try: si esta consulta falla, debe pasar por el mismo manejo de
+              # errores (correo, checkpoint) que el resto del proceso, no caer sin control.
+              # Si t_consent_transaction todavía no tiene ninguna fila de Interbank, el PRIMER
+              # archivo del rango (process_date_init) se carga completo (sin filtro de
+              # consent_date) — el resto del rango sigue el comportamiento normal.
+              - inicializar_carga_historica:
+                  assign:
+                    - var_carga_historica: false
+
+              - verificar_datos_ibk_existentes:
+                  switch:
+                    - condition: ${var_modo == "reproceso"}
+                      next: build_sql_check_ibk
+                    - condition: ${true}
+                      next: iterar_fechas
+
+              - build_sql_check_ibk:
+                  assign:
+                    - query_check_ibk: ${"SELECT COUNT(1) AS cnt FROM `" + var_project_tct + "." + var_dataset_tct + "." + var_table_tct + "` WHERE itc_company_id IN ('000','1000')"}
+
+              - ejecutar_check_ibk:
+                  call: SyncBigQueryJobWithResults
+                  args:
+                    query: ${query_check_ibk}
+                    project_id: ${v_billing_project}
+                  result: resultado_check_ibk
+
+              - evaluar_carga_historica:
+                  assign:
+                    - var_carga_historica: ${int(resultado_check_ibk.rows[0].f[0].v) == 0}
+
+              - log_carga_historica:
+                  call: sys.log
+                  args:
+                    json:
+                      modo: ${var_modo}
+                      carga_historica: ${var_carga_historica}
+                      motivo: "reproceso — sin filas previas de Interbank en t_consent_transaction"
+                    severity: INFO
+
               - iterar_fechas:
                   for:
                     value: fecha_actual
@@ -209,11 +238,22 @@ source:
                           assign:
                             - var_ultima_fecha_intentada: ${fecha_actual}
 
-                      # -------- SP 1: sp_t_consent_transaction_ibk [RN-IBK-019] --------
-                      # Ya no cruza contra iden_party ni escribe en t_consent_transaction — solo
-                      # vuelca el archivo tal cual a t_consent_transaction_raw (ver cabecera del
-                      # SP). Partido en 2 (antes 3, con menos parámetros tras quitar iden_party
-                      # y p_carga_historica).
+                      # [RN-IBK-015] Carga histórica SOLO para el primer archivo del rango
+                      # (fecha_actual == _param_init), y solo si var_carga_historica = true
+                      # (reproceso sin datos previos de Interbank). Cualquier otra fecha del
+                      # mismo reproceso usa el comportamiento normal.
+                      - evaluar_carga_historica_fecha:
+                          switch:
+                            - condition: ${var_carga_historica AND fecha_actual == _param_init}
+                              assign:
+                                - var_es_esta_fecha_historica: true
+                            - condition: ${true}
+                              assign:
+                                - var_es_esta_fecha_historica: false
+
+                      # -------- SP 1: sp_t_consent_transaction_ibk --------
+                      # Partido en 3 (no 2) — con p_process_date_ini/end el SP pasó a 12 parámetros
+                      # y sql_tct_p1 solo quedaba a pocos bytes del límite de 400 por expresión.
                       - build_sql_tct_p1:
                           assign:
                             # p_process_date_ini = p_process_date_end = fecha_actual — este SP
@@ -228,15 +268,25 @@ source:
 
                       - build_sql_tct_p2:
                           assign:
-                            - sql_tct_p2: ${", '" + var_project_tct_raw + "'"
-                                + ", '" + var_dataset_tct_raw + "'"
-                                + ", '" + var_table_tct_raw + "'"
+                            - sql_tct_p2: ${", '" + var_project_iden_party + "'"
+                                + ", '" + var_dataset_iden_party + "'"
+                                + ", '" + var_table_iden_party + "'"
+                                + ", '" + var_project_tct + "'"
+                                + ", '" + var_dataset_tct + "'"
+                                + ", '" + var_table_tct + "'"}
+
+                      - build_sql_tct_p3:
+                          assign:
+                            # p_carga_historica [RN-IBK-015] — BOOL, sin comillas (string(bool)
+                            # da "true"/"false", literal SQL válido, no un STRING).
+                            - sql_tct_p3: ${", '" + var_dataset_stage + "'"
+                                + ", " + string(var_es_esta_fecha_historica)
                                 + ", v_read, v_write); "
                                 + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
 
                       - build_sql_tct:
                           assign:
-                            - query_tct: ${sql_tct_p1 + sql_tct_p2}
+                            - query_tct: ${sql_tct_p1 + sql_tct_p2 + sql_tct_p3}
 
                       - log_query_tct:
                           call: sys.log
@@ -289,11 +339,6 @@ source:
                       - log_fin_fecha:
                           assign:
                             - var_fechas_procesadas: ${var_fechas_procesadas + 1}
-                            # [RN-IBK-019] Se actualiza en CADA fecha cargada con éxito — al
-                            # terminar el loop, queda con la ÚLTIMA que sí tuvo archivo (puede no
-                            # ser var_process_dates[len-1] si las últimas fechas no tuvieran
-                            # archivo, RN-IBK-010). Es la que se centraliza después del loop.
-                            - var_ultima_fecha_cargada: ${fecha_actual}
                           next: fin_iteracion_fecha
 
                       # [RN-IBK-010] Sin archivo NO aborta el resto del proceso — se omite esta
@@ -317,90 +362,22 @@ source:
                           assign:
                             - _fin_iteracion: true
 
-              # -------- Guard: nada que centralizar si ninguna fecha tuvo archivo --------
-              - evaluar_si_hay_fechas_cargadas:
-                  switch:
-                    - condition: ${var_fechas_procesadas > 0}
-                      next: build_sql_centralizar_p1
-                    - condition: ${true}
-                      next: update_process_success
-
-              # -------- Centralizar: sp_centralizar_t_consent_transaction_ibk [RN-IBK-019] --------
-              # Se llama UNA sola vez, con el archivo de la ÚLTIMA fecha que sí tuvo archivo
-              # (var_ultima_fecha_cargada, no necesariamente process_date_fin — ver cabecera del
-              # SP). Cruza contra iden_party y escribe en t_consent_transaction; antes esto vivía
-              # dentro de sp_t_consent_transaction_ibk.sql y corría por cada fecha del rango.
-              - build_sql_centralizar_p1:
-                  assign:
-                    - sql_centralizar_p1: ${"DECLARE v_read INT64 DEFAULT 0; "
-                        + "DECLARE v_write INT64 DEFAULT 0; "
-                        + "CALL `" + var_sp_centralizar_tct + "`("
-                        + "DATE '" + var_ultima_fecha_cargada + "'"
-                        + ", '" + var_project_tct_raw + "'"
-                        + ", '" + var_dataset_tct_raw + "'"
-                        + ", '" + var_table_tct_raw + "'"}
-
-              - build_sql_centralizar_p2:
-                  assign:
-                    - sql_centralizar_p2: ${", '" + var_project_iden_party + "'"
-                        + ", '" + var_dataset_iden_party + "'"
-                        + ", '" + var_table_iden_party + "'"
-                        + ", '" + var_project_tct + "'"
-                        + ", '" + var_dataset_tct + "'"
-                        + ", '" + var_table_tct + "'"}
-
-              - build_sql_centralizar_p3:
-                  assign:
-                    - sql_centralizar_p3: ${", '" + var_dataset_stage + "'"
-                        + ", v_read, v_write); "
-                        + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
-
-              - build_sql_centralizar:
-                  assign:
-                    - query_centralizar: ${sql_centralizar_p1 + sql_centralizar_p2 + sql_centralizar_p3}
-
-              - log_query_centralizar:
-                  call: sys.log
-                  args:
-                    text: ${"[BUILD] query_centralizar = " + query_centralizar}
-                    severity: INFO
-
-              - invoque_sp_centralizar:
-                  call: TrackedBigQueryJobWithResults
-                  args:
-                    api_url: ${var_METADATA_API_URL}
-                    process_code: ${var_process_code}
-                    execution_id: ${var_execution_id}
-                    task_code: ${var_sp_centralizar_tct}
-                    execution_type: ${var_execution_type}
-                    process_date_init: ${var_ultima_fecha_cargada}
-                    process_date_end: ${var_ultima_fecha_cargada}
-                    user: ${var_user}
-                    query: ${query_centralizar}
-                    project_id: ${v_billing_project}
-                  result: tracked_result_centralizar
-
-              - set_metricas_centralizar:
-                  assign:
-                    - execution_data_read: ${tracked_result_centralizar.execution_data_read}
-                    - execution_data_write: ${tracked_result_centralizar.execution_data_write}
-                    - object_last_load_date: ${tracked_result_centralizar.object_last_load_date}
-
               # -------- SP 2: sp_ba_customer_consent_group_ibk [CAMBIO DE DISEÑO 2026-08-26] --------
-              # Ya NO se llama por fecha dentro de iterar_fechas: pasó a ser un DELETE por empresa
-              # + INSERT de TODO t_consent_transaction filtrado por CP_2/otorgado (espejo completo
-              # de Interbank, sin acotar por fecha ni por scope) — se ejecuta UNA sola vez, aquí,
-              # justo después de centralizar. Llamarla por fecha reconstruiría la tabla N veces en
-              # el mismo reproceso (ver cabecera del SP). p_process_date_ini/end ya no filtran
-              # datos dentro del SP (se mantienen en la firma por decisión del usuario) — aquí se
-              # les pasa var_ultima_fecha_cargada solo para trazabilidad en monitoring.
+              # Ya NO se llama por fecha dentro de iterar_fechas: es un DELETE por empresa +
+              # INSERT de TODO t_consent_transaction filtrado por CP_2/otorgado, con su propio
+              # QUALIFY de último evento por cliente (RN-IBK-020) — se ejecuta UNA sola vez, aquí,
+              # después de procesar todas las fechas del rango. Llamarla por fecha reconstruiría
+              # la tabla N veces en el mismo reproceso (ver cabecera del SP). p_process_date_ini/end
+              # ya no filtran datos dentro del SP (se mantienen en la firma por decisión del
+              # usuario) — aquí se les pasa el rango real de esta corrida solo para trazabilidad
+              # en monitoring.
               - build_sql_bccg_p1:
                   assign:
                     - sql_bccg_p1: ${"DECLARE v_read INT64 DEFAULT 0; "
                         + "DECLARE v_write INT64 DEFAULT 0; "
                         + "CALL `" + var_sp_ba_customer_consent_group + "`("
-                        + "DATE '" + var_ultima_fecha_cargada + "'"
-                        + ", DATE '" + var_ultima_fecha_cargada + "'"
+                        + "DATE '" + var_process_dates[0] + "'"
+                        + ", DATE '" + var_process_dates[len(var_process_dates) - 1] + "'"
                         + ", '" + var_project_bccg + "'"}
 
               - build_sql_bccg_p2:
@@ -435,8 +412,8 @@ source:
                     execution_id: ${var_execution_id}
                     task_code: ${var_sp_ba_customer_consent_group}
                     execution_type: ${var_execution_type}
-                    process_date_init: ${var_ultima_fecha_cargada}
-                    process_date_end: ${var_ultima_fecha_cargada}
+                    process_date_init: ${var_process_dates[0]}
+                    process_date_end: ${var_process_dates[len(var_process_dates) - 1]}
                     user: ${var_user}
                     query: ${query_bccg}
                     project_id: ${v_billing_project}

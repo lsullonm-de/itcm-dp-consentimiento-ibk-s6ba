@@ -1,6 +1,8 @@
--- Tabla destino: centraliza el ÚLTIMO evento de consentimiento/rechazo LPDP por cliente de
--- Interbank (IBK) — no el historial completo (cambio de diseño 2026-08-26, confirmado con el
--- usuario; el contrato original la describía como historial completo de cada evento)
+-- Tabla destino: centraliza el HISTORIAL COMPLETO de eventos de consentimiento/rechazo LPDP por
+-- cliente de Interbank (IBK) — cada consent_date distinto de un mismo cliente queda como su
+-- propia fila (RN-IBK-020, rollback 2026-08-27 de un cambio intermedio del 2026-08-26 que
+-- guardaba solo el último evento; la dedup "estado vigente" vive ahora en
+-- ba_customer_consent_group_ibk.sql)
 -- Spec: spec-ibk-20260819-001 | Módulo: consentimiento-ibk
 -- Generado por: fac-data-stage-physical-design
 -- Contrato original: input/ddl_output_t_consent_transaction.txt
@@ -14,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `${project_t_consent_transaction}.${dataset_t_consent
   business_unit STRING OPTIONS(description="Descripción de la Unidad de negocio"),
   conset_transaction_id STRING OPTIONS(description="Origen: consent_transaction_id del archivo. Confirmado con Interbank (2026-08-21) que viene SIEMPRE vacío en el archivo real — no se usa como llave de dedup/carga (ver sp_t_consent_transaction_ibk.sql), se conserva solo por compatibilidad con el contrato original"),
   customer_id STRING OPTIONS(description="Código identificador del cliente en el sistema origen IBK (origen: party_id del archivo)"),
-  id STRING OPTIONS(description="Identificador unificado ITC de la persona, resuelto vía JOIN por party_id contra iden_itc_party_prd filtrando itc_company_id IN ('000','1000') — RN-IBK-003"),
+  id STRING OPTIONS(description="Identificador unificado ITC de la persona, resuelto vía JOIN por party_id ÚNICAMENTE contra iden_itc_party_prd (RN-IBK-019) — cada registro de empresa que tenga esa persona en iden_party genera su propia fila aquí, con el itc_company_id de ESE registro"),
   conset_id STRING OPTIONS(description="Código identificador del consentimiento que da el cliente a la empresa (origen: consent_id del archivo). 'CP_2' = consentimiento LPDP consumido por ba_customer_consent_group"),
   documento_legal_id STRING OPTIONS(description="Código identificador del documento legal que contiene la información que el cliente firma"),
   approval_channel_id STRING OPTIONS(description="Código identificador del canal por el cual se contactó al cliente y dio su aprobación o rechazo"),
@@ -34,6 +36,6 @@ CREATE TABLE IF NOT EXISTS `${project_t_consent_transaction}.${dataset_t_consent
 PARTITION BY consent_date
 CLUSTER BY itc_company_name
 OPTIONS(
-  description="Centraliza el último evento (otorgado o rechazado) de consentimiento de tratamiento de datos personales (LPDP) por cliente de Interbank (IBK) — no el historial completo. Carga DELETE+INSERT por itc_company_id + consent_date (RN-IBK-005).",
+  description="Centraliza el historial completo de eventos (otorgado o rechazado) de consentimiento de tratamiento de datos personales (LPDP) por cliente de Interbank (IBK). Carga DELETE+INSERT por itc_company_id + consent_date (RN-IBK-005).",
   labels=[("team","data-platform"),("env","${env}")]
 );

@@ -1,9 +1,9 @@
 -- Test: sp_ba_customer_consent_group_ibk
 -- Spec: spec-ibk-20260819-001 | Ejecutar en fac-data-stage-testing, dataset de test aislado
 
--- v_fecha_prueba ya no filtra nada dentro del SP (CAMBIO DE DISEÑO 2026-08-26: TRUNCATE + INSERT
--- completo, sin scope por fecha) — se sigue pasando solo porque el parámetro se mantuvo en la
--- firma (decisión del usuario), para trazabilidad en monitoring.
+-- v_fecha_prueba ya no filtra nada dentro del SP (CAMBIO DE DISEÑO 2026-08-26: DELETE por
+-- empresa + INSERT completo, sin scope por fecha) — se sigue pasando solo porque el parámetro
+-- se mantuvo en la firma (decisión del usuario), para trazabilidad en monitoring.
 DECLARE v_fecha_prueba DATE DEFAULT DATE '2026-04-01';
 DECLARE v_row_count    INT64;
 DECLARE v_read         INT64;   -- MONITORING: o_execution_data_read
@@ -60,13 +60,55 @@ SELECT * FROM UNNEST([
     'CP_2', 'DOC-005', 'WEB',
     'EMP-005', 'PLC-005', 'otorgado',
     DATE '2020-01-15', 'gs://bucket/doc5.pdf'
+  ),
+  -- PARTY-006: 2 eventos del MISMO id, otorgado (más viejo) y luego rechazado (más reciente) ->
+  -- el último evento es 'rechazado', NO debe aparecer en el output aunque haya tenido un
+  -- 'otorgado' antes [RN-IBK-020, rollback 2026-08-27: t_consent_transaction ya no colapsa por
+  -- cliente, esta SP recupera su propio QUALIFY — ver T6].
+  STRUCT(
+    DATE '2026-04-01', '000', 'INTERBANK',
+    'BU01', 'Banca Personal',
+    'CT-006A', 'CUST-006', 'PARTY-006',
+    'CP_2', 'DOC-006A', 'WEB',
+    'EMP-006', 'PLC-006', 'otorgado',
+    DATE '2026-01-01', 'gs://bucket/doc6a.pdf'
+  ),
+  STRUCT(
+    DATE '2026-04-01', '000', 'INTERBANK',
+    'BU01', 'Banca Personal',
+    'CT-006B', 'CUST-006', 'PARTY-006',
+    'CP_2', 'DOC-006B', 'WEB',
+    'EMP-006', 'PLC-006', 'rechazado',
+    DATE '2026-02-01', 'gs://bucket/doc6b.pdf'
+  ),
+  -- PARTY-007: 3 eventos del MISMO id — otorgado, rechazado, otorgado de nuevo (el más
+  -- reciente) -> SÍ debe aparecer, con los datos del ÚLTIMO evento (el segundo otorgado,
+  -- DOC-007C) [ver T7].
+  STRUCT(
+    DATE '2026-04-01', '000', 'INTERBANK',
+    'BU01', 'Banca Personal',
+    'CT-007A', 'CUST-007', 'PARTY-007',
+    'CP_2', 'DOC-007A', 'WEB',
+    'EMP-007', 'PLC-007', 'otorgado',
+    DATE '2026-01-01', 'gs://bucket/doc7a.pdf'
+  ),
+  STRUCT(
+    DATE '2026-04-01', '000', 'INTERBANK',
+    'BU01', 'Banca Personal',
+    'CT-007B', 'CUST-007', 'PARTY-007',
+    'CP_2', 'DOC-007B', 'WEB',
+    'EMP-007', 'PLC-007', 'rechazado',
+    DATE '2026-02-01', 'gs://bucket/doc7b.pdf'
+  ),
+  STRUCT(
+    DATE '2026-04-01', '000', 'INTERBANK',
+    'BU01', 'Banca Personal',
+    'CT-007C', 'CUST-007', 'PARTY-007',
+    'CP_2', 'DOC-007C', 'WEB',
+    'EMP-007', 'PLC-007', 'otorgado',
+    DATE '2026-03-01', 'gs://bucket/doc7c.pdf'
   )
 ]);
--- NOTA (2026-08-26): el fixture ya NO incluye casos de "múltiples eventos por el mismo id"
--- (existían como PARTY-005/006 en la versión 2026-08-25) — esta SP asume que su fuente
--- (t_consent_transaction) ya viene con una sola fila por cliente, garantizado por
--- sp_t_consent_transaction_ibk.sql (ver su propio test, T5). Un fixture con id duplicado aquí
--- ya no representa un escenario real de entrada para esta SP.
 
 -- Fila preexistente que el DELETE por empresa + INSERT completo debe reemplazar (CAMBIO DE
 -- DISEÑO 2026-08-26: ya no es un DELETE+INSERT por partición de fecha, es un espejo completo de
@@ -95,10 +137,11 @@ CALL `${project_operation}.${dataset_sp}.sp_ba_customer_consent_group_ibk`(
 -- 3. Assertions
 -- ============================================================
 
--- T0: métricas de monitoring — 3 filas válidas (PARTY-001, PARTY-002, PARTY-005) pasan el
--- filtro RN-IBK-006, sin importar la antigüedad de consent_date (PARTY-005 es de 2020)
-ASSERT v_write = 3
-  AS 'T0: o_execution_data_write debía ser 3, se obtuvo ' || CAST(v_write AS STRING);
+-- T0: métricas de monitoring — 4 filas válidas (PARTY-001, PARTY-002, PARTY-005, PARTY-007) pasan
+-- el filtro RN-IBK-006 y el QUALIFY de último evento (PARTY-006 queda excluido — su último
+-- evento es 'rechazado')
+ASSERT v_write = 4
+  AS 'T0: o_execution_data_write debía ser 4, se obtuvo ' || CAST(v_write AS STRING);
 ASSERT v_read = v_write
   AS 'T0: o_execution_data_read debía igualar o_execution_data_write, se obtuvo read=' || CAST(v_read AS STRING) || ' write=' || CAST(v_write AS STRING);
 
@@ -111,12 +154,12 @@ SET v_row_count = (
 ASSERT v_row_count = 0
   AS 'T1: la fila preexistente PARTY-OLD debía eliminarse con el DELETE por empresa, se obtuvo ' || CAST(v_row_count AS STRING);
 
--- T2: solo los 3 casos válidos (CP_2 + otorgado) deben quedar en el output
+-- T2: solo los 4 casos válidos (CP_2 + último evento otorgado) deben quedar en el output
 SET v_row_count = (
   SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
 );
-ASSERT v_row_count = 3
-  AS 'T2: se esperaban 3 filas (PARTY-001, PARTY-002, PARTY-005), se obtuvo ' || CAST(v_row_count AS STRING);
+ASSERT v_row_count = 4
+  AS 'T2: se esperaban 4 filas (PARTY-001, PARTY-002, PARTY-005, PARTY-007), se obtuvo ' || CAST(v_row_count AS STRING);
 
 -- T3: el caso rechazado y el caso CP_1 no deben aparecer
 SET v_row_count = (
@@ -144,6 +187,32 @@ SET v_row_count = (
 );
 ASSERT v_row_count = 1
   AS 'T5: PARTY-005 (consent_date 2020-01-15) debía quedar igual, sin filtro de fecha — se obtuvo ' || CAST(v_row_count AS STRING);
+
+-- T6 (RN-IBK-020): PARTY-006 — último evento 'rechazado' (más reciente que su 'otorgado'
+-- anterior) — NO debe aparecer, aunque tuvo un 'otorgado' en el historial.
+SET v_row_count = (
+  SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
+  WHERE id = 'PARTY-006'
+);
+ASSERT v_row_count = 0
+  AS 'T6: PARTY-006 (último evento rechazado) no debía aparecer, se obtuvo ' || CAST(v_row_count AS STRING);
+
+-- T7 (RN-IBK-020): PARTY-007 — 3 eventos (otorgado, rechazado, otorgado) — debe aparecer 1 sola
+-- vez, con los datos del ÚLTIMO evento (el segundo otorgado, DOC-007C / 2026-03-01), no del
+-- primero.
+SET v_row_count = (
+  SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
+  WHERE id = 'PARTY-007'
+);
+ASSERT v_row_count = 1
+  AS 'T7: PARTY-007 debía aparecer exactamente 1 vez (último evento), se obtuvo ' || CAST(v_row_count AS STRING);
+
+SET v_row_count = (
+  SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
+  WHERE id = 'PARTY-007' AND documento_legal_id = 'DOC-007C' AND consent_date = DATE '2026-03-01'
+);
+ASSERT v_row_count = 1
+  AS 'T7b: PARTY-007 debía quedarse con los datos del último evento (DOC-007C, 2026-03-01), se obtuvo ' || CAST(v_row_count AS STRING);
 
 -- ============================================================
 -- Cleanup
