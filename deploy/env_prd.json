@@ -1,31 +1,32 @@
 {
-  "project_operation": "pendiente_definir",
-  "project_analytics": "pendiente_definir",
-  "project_billing": "pendiente_definir",
+  "project_operation": "silent-matter-270218",
+  "project_analytics": "intercorp-data-storage-pv",
+  "project_billing":   "silent-matter-270218",
 
-  "dataset_sp": "pendiente_definir",
-  "dataset_stage": "pendiente_definir",
-  "dataset_dq": "pendiente_definir",
+  "dataset_sp": "master_stage",
+  "dataset_stage": "master_stage",
+  "dataset_dq": "master_stage",
 
   "METADATA_API_URL": "https://prd-itcbi-spld-run-usct1-pv01-947655304508.us-central1.run.app",
 
-  "service_account_job": "pendiente_definir",
+  "service_account_job": "prd-itc-dp-matillion-integrati@silent-matter-270218.iam.gserviceaccount.com",
   "service_account_app": "pendiente_definir",
 
-  "project_consentimiento_ibk_archivo": "pendiente_definir",
-  "dataset_consentimiento_ibk_archivo": "pendiente_definir",
+  "project_consentimiento_ibk_archivo": "intercorp-data-storage-pv",
+  "dataset_consentimiento_ibk_archivo": "raw_ibk_dlk",
   "table_consentimiento_ibk_archivo": "t_consent_transaction_{fecha_archivo}_external",
   "gcs_bucket_consentimiento_ibk_archivo": "p-ibkbi-rdp-stg-dlk-us-suoh",
 
-  "project_iden_party": "pendiente_definir",
-  "dataset_iden_party": "pendiente_definir",
-  "table_iden_party": "iden_itc_party_prd",
+  "project_iden_party": "prd-itc-data-sensitive",
+  "dataset_iden_party": "master_pii",
+  "table_iden_party": "iden_itc_party",
 
-  "project_t_consent_transaction": "pendiente_definir",
+
+  "project_t_consent_transaction": "intercorp-data-storage-pv",
   "dataset_t_consent_transaction": "master_party",
   "table_t_consent_transaction": "t_consent_transaction",
 
-  "project_ba_customer_consent_group": "pendiente_definir",
+  "project_ba_customer_consent_group": "intercorp-data-storage-pv",
   "dataset_ba_customer_consent_group": "master_party",
   "table_ba_customer_consent_group": "ba_customer_consent_group",
 
