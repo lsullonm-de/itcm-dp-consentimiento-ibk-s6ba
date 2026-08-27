@@ -97,6 +97,11 @@ BEGIN
   -- Sufijo de fecha para la tabla temporal [RN-IBK-013] — evita choques entre ejecuciones
   -- concurrentes (ej. el scheduler normal disparando mientras corre un reproceso manual).
   DECLARE v_process_date_lit STRING;
+  -- Tipo real de load_date en la tabla destino [RN-IBK-023] — TIMESTAMP en prod, DATETIME en
+  -- dev (difiere por ambiente, ver punto 5b). v_load_date_expr es el literal SQL a insertar,
+  -- ya resuelto al tipo correcto.
+  DECLARE v_load_date_type   STRING;
+  DECLARE v_load_date_expr   STRING;
 
   SET o_execution_data_read  = 0;
   SET o_execution_data_write = 0;
@@ -327,6 +332,26 @@ BEGIN
   -- preferible a perder datos silenciosamente.
   SET v_output_path = p_project_output || '.' || p_dataset_output || '.' || p_table_output;
 
+  -- ============================================================
+  -- 6a. TIPO REAL DE load_date [RN-IBK-023] — TIMESTAMP en prod, DATETIME en dev
+  -- ============================================================
+  -- BUG REAL confirmado en el primer deploy en producción: "Query column 18 has type DATETIME
+  -- which cannot be inserted into column load_date, which has type TIMESTAMP". La tabla real de
+  -- t_consent_transaction en dev tiene load_date DATETIME (bug ya documentado, 2026-08-21), pero
+  -- la tabla real de producción (ya existía con datos de otras empresas — CINEPLANET, INTERSEGURO,
+  -- etc. — antes de este módulo) tiene load_date TIMESTAMP, el tipo del contrato original.
+  -- CREATE TABLE IF NOT EXISTS nunca recrea ninguna de las dos, así que el tipo real difiere
+  -- POR AMBIENTE — se resuelve en runtime consultando INFORMATION_SCHEMA.COLUMNS, en vez de
+  -- asumir un tipo fijo (lo que rompería SIEMPRE en alguno de los dos ambientes).
+  SET v_sql = '''SELECT data_type FROM `''' || p_project_output || '''.''' || p_dataset_output || '''.INFORMATION_SCHEMA.COLUMNS` WHERE table_name = "''' || p_table_output || '''" AND column_name = "load_date"''';
+  EXECUTE IMMEDIATE v_sql INTO v_load_date_type;
+
+  IF v_load_date_type = 'TIMESTAMP' THEN
+    SET v_load_date_expr = 'CURRENT_TIMESTAMP()';
+  ELSE
+    SET v_load_date_expr = "CURRENT_DATETIME('America/Lima')";
+  END IF;
+
   SET v_sql = '''
     DELETE FROM `''' || v_output_path || '''` t
     WHERE t.itc_company_id IN ('000','1000')
@@ -351,7 +376,7 @@ BEGIN
       approval_channel_id, employee_id, place_id, consent_type, consent_date,
       signed_document,
       'LPDP_IBK_' || source_file_name    AS record_source,
-      CURRENT_DATETIME('America/Lima')   AS load_date,
+      ''' || v_load_date_expr || '''     AS load_date,
       SESSION_USER()                     AS creation_user
     FROM `''' || v_stage_path || '''`
   ''';

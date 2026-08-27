@@ -509,6 +509,28 @@ reglas_negocio:
     campo_afectado: t_consent_transaction
     validado_por: lsullon
 
+  - id: RN-IBK-023
+    descripcion: >
+      BUG REAL confirmado en el segundo intento de deploy en producción (2026-08-27):
+      sp_t_consent_transaction_ibk.sql falló con "Query column 18 has type DATETIME which cannot
+      be inserted into column load_date, which has type TIMESTAMP". Verificado con
+      INFORMATION_SCHEMA.COLUMNS real: t_consent_transaction.load_date es TIMESTAMP en producción
+      (intercorp-data-storage-pv — la tabla ya existía con datos de otras empresas antes de este
+      módulo, con el tipo del contrato original) pero DATETIME en dev (dev-intercorp-data-storage
+      — bug ya documentado 2026-08-21, cuando el SP se ajustó a CURRENT_DATETIME()). El tipo real
+      difiere POR AMBIENTE, y CREATE TABLE IF NOT EXISTS nunca recrea ninguna de las dos tablas
+      para unificar el tipo.
+      Fix: el SP ya no asume ningún tipo fijo — consulta
+      `${p_project_output}.${p_dataset_output}.INFORMATION_SCHEMA.COLUMNS` en runtime para el
+      tipo real de load_date, y arma el literal a insertar (CURRENT_TIMESTAMP() si es TIMESTAMP,
+      CURRENT_DATETIME('America/Lima') si es cualquier otra cosa/DATETIME) — funciona en ambos
+      ambientes sin importar cuál tipo tenga la tabla real. Se verificó con datos reales que
+      ba_customer_consent_group NO tiene este problema — su load_date es DATETIME en ambos
+      ambientes, sin necesitar el mismo fix.
+    criticidad: alta
+    campo_afectado: t_consent_transaction
+    validado_por: lsullon
+
   - id: RN-IBK-017
     descripcion: >
       ba_customer_consent_group pasa de "DELETE+INSERT acotado por itc_company_id + consent_date
@@ -612,7 +634,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party SOLO por party_id (RN-IBK-019, sin excluir nada), filtrando DESPUÉS del match a itc_company_id IN ('000','1000') (RN-IBK-021), filtra por consent_date = MAX(consent_date) real del archivo salvo carga histórica (p_carga_historica, RN-IBK-015), hace delete/insert por (itc_company_id, record_source) — no por consent_date, evita colisión entre archivos con el mismo MAX(consent_date), RN-IBK-021 — guarda el HISTORIAL COMPLETO por cliente, sin QUALIFY (RN-IBK-020, rollback de RN-IBK-011), arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), y usa una tabla temporal con sufijo de fecha (RN-IBK-013) en el proyecto ${project_stage} (RN-IBK-022 — variable dedicada, no ${project_iden_party})"
+    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party SOLO por party_id (RN-IBK-019, sin excluir nada), filtrando DESPUÉS del match a itc_company_id IN ('000','1000') (RN-IBK-021), filtra por consent_date = MAX(consent_date) real del archivo salvo carga histórica (p_carga_historica, RN-IBK-015), hace delete/insert por (itc_company_id, record_source) — no por consent_date, evita colisión entre archivos con el mismo MAX(consent_date), RN-IBK-021 — guarda el HISTORIAL COMPLETO por cliente, sin QUALIFY (RN-IBK-020, rollback de RN-IBK-011), arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), usa una tabla temporal con sufijo de fecha (RN-IBK-013) en el proyecto ${project_stage} (RN-IBK-022), y resuelve en runtime el tipo real de load_date vía INFORMATION_SCHEMA.COLUMNS (TIMESTAMP en prod, DATETIME en dev — RN-IBK-023)"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
@@ -751,6 +773,7 @@ scheduling:
 # 10. RESTRICCIONES Y SUPUESTOS
 # ------------------------------------------------------------
 restricciones:
+  - "RESUELTO (2026-08-27): BUG real en el segundo intento de deploy en producción (RN-IBK-023) — sp_t_consent_transaction_ibk.sql fallaba con 'Query column 18 has type DATETIME which cannot be inserted into column load_date, which has type TIMESTAMP'. La tabla real de t_consent_transaction tiene load_date TIMESTAMP en prod pero DATETIME en dev (ya existían con datos de otras empresas antes de este módulo, CREATE TABLE IF NOT EXISTS nunca las unifica). Fix: el SP resuelve el tipo real en runtime vía INFORMATION_SCHEMA.COLUMNS y arma el literal correcto (CURRENT_TIMESTAMP() o CURRENT_DATETIME('America/Lima')) — funciona en ambos ambientes sin asumir un tipo fijo. Verificado que ba_customer_consent_group no tiene este problema (DATETIME en ambos ambientes)"
   - "RESUELTO (2026-08-27): BUG real en el primer intento de deploy en producción (RN-IBK-022) — sp_t_consent_transaction_ibk.sql fallaba con 'Dataset prd-itc-data-sensitive:master_stage was not found' porque la ruta de la tabla de stage usaba ${project_iden_party}, una coincidencia que solo se sostenía en dev. Fix: nueva variable de deploy ${project_stage} en env_dev.json (dev-intercorp-data-operation) y env_prd.json (intercorp-data-storage-pv, confirmado por el usuario y verificado con datos reales)"
   - "RESUELTO (2026-08-27): 2 fixes en sp_t_consent_transaction_ibk.sql (RN-IBK-021), pedidos por el usuario tras revisar la lógica del rollback — (a) el cruce con iden_party sigue siendo solo por party_id, pero ahora se filtra a itc_company_id IN ('000','1000') DESPUÉS del match, evitando que registros de otras empresas del grupo se cuelen en t_consent_transaction; (b) el DELETE de la carga final pasa de ser por (itc_company_id, consent_date) a (itc_company_id, record_source) — corrige de raíz la colisión real confirmada entre t_consent_transaction_20260813_external y ..._20260814_external (mismo MAX(consent_date), el segundo borraba lo insertado por el primero)"
   - "RESUELTO (2026-08-27): rollback parcial de RN-IBK-019 (RN-IBK-020), pedido por el usuario — se elimina t_consent_transaction_raw y sp_centralizar_t_consent_transaction_ibk.sql (vivieron menos de un día); sp_t_consent_transaction_ibk.sql vuelve a hacer todo directo por cada fecha del rango, con carga histórica (RN-IBK-015) y filtro MAX(consent_date) (RN-IBK-012) restaurados. t_consent_transaction vuelve a guardar el historial completo por cliente (RN-IBK-011 revertida) — un id puede tener varias filas, una por cada consent_date real. ba_customer_consent_group_ibk.sql recupera su propio QUALIFY de último evento (cuidado: se calcula sobre TODOS los consent_type antes de exigir 'otorgado', para no quedarse con un otorgado viejo si el cliente revocó después). NO se revierte: el cruce por party_id únicamente (sin itc_company_id) y el DELETE por empresa en ambas tablas de salida"
