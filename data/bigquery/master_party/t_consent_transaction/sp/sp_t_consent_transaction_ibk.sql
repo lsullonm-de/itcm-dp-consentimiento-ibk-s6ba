@@ -211,14 +211,19 @@ BEGIN
   -- registro (no el itc_company_id del archivo).
   SET v_iden_party_path = p_project_iden_party || '.' || p_dataset_iden_party || '.' || p_table_iden_party;
   -- Prefijo de tabla hardcodeado a propósito (excepción aceptada, ver restricciones del spec,
-  -- fac-data-rules-check REGLA 2/3): tabla efímera interna compartida solo entre este SP y
-  -- sp_ba_customer_consent_group_ibk.sql, no varía entre ambientes. El sufijo de FECHA
-  -- (v_process_date_lit, RN-IBK-013) sí es dinámico — evita que dos ejecuciones concurrentes
-  -- (ej. scheduler normal + reproceso manual corriendo al mismo tiempo) se pisen la tabla.
-  -- Proyecto resuelto vía ${project_iden_party} (Dataops, en deploy) y no con p_project_output:
-  -- el dataset de stage (p_dataset_stage) vive físicamente bajo el proyecto de iden_party
-  -- (dev-intercorp-data-operation), no bajo el proyecto de salida de t_consent_transaction.
-  SET v_stage_path = '${project_iden_party}' || '.' || p_dataset_stage || '.tmp_t_consent_transaction_ibk_' || v_process_date_lit;
+  -- fac-data-rules-check REGLA 2/3): tabla efímera interna de este módulo, no varía entre
+  -- ambientes. El sufijo de FECHA (v_process_date_lit, RN-IBK-013) sí es dinámico — evita que
+  -- dos ejecuciones concurrentes (ej. scheduler normal + reproceso manual corriendo al mismo
+  -- tiempo) se pisen la tabla.
+  -- Proyecto resuelto vía ${project_stage} [RN-IBK-022, 2026-08-27] — NO reutilizar
+  -- ${project_iden_party} ni ${project_output} para esto: BUG REAL confirmado en prod, donde
+  -- p_dataset_stage (master_stage) vive bajo intercorp-data-storage-pv, NO bajo
+  -- ${project_iden_party} (prd-itc-data-sensitive, un proyecto de datos sensibles/PII que no
+  -- tiene por qué hospedar tablas de stage de este módulo) — falló con
+  -- "Dataset prd-itc-data-sensitive:master_stage was not found". En dev, ${project_iden_party}
+  -- (dev-intercorp-data-operation) coincidía por casualidad con dónde vive demo_migracion ahí,
+  -- pero esa coincidencia no se sostiene entre ambientes — de ahí la variable dedicada.
+  SET v_stage_path = '${project_stage}' || '.' || p_dataset_stage || '.tmp_t_consent_transaction_ibk_' || v_process_date_lit;
 
   SET v_sql = '''
     CREATE OR REPLACE TABLE `''' || v_stage_path || '''` AS

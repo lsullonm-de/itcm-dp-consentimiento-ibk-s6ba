@@ -132,10 +132,11 @@ ASSERT v_row_count = 0
 -- ============================================================
 -- T7 (2026-08-26): la tabla de stage propia (tmp_t_consent_transaction_ibk_{fecha}) debe quedar
 -- eliminada al finalizar el SP. Sufijo _20260401 = FORMAT_DATE('%Y%m%d', v_fecha_prueba)
--- [RN-IBK-013]. Vive bajo ${project_iden_party}, no bajo project_t_consent_transaction.
+-- [RN-IBK-013]. Vive bajo ${project_stage} [RN-IBK-022] — NO ${project_iden_party} (bug real en
+-- prod: ese proyecto no siempre hospeda el dataset de stage, ver cabecera del SP).
 -- ============================================================
 SET v_row_count = (
-  SELECT COUNT(*) FROM `${project_iden_party}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
+  SELECT COUNT(*) FROM `${project_stage}.test_stage_tmp.INFORMATION_SCHEMA.TABLES`
   WHERE table_name = 'tmp_t_consent_transaction_ibk_20260401'
 );
 

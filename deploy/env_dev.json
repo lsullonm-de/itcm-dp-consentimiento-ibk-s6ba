@@ -7,6 +7,8 @@
   "dataset_stage": "demo_migracion",
   "dataset_dq": "demo_migracion",
 
+  "project_stage": "dev-intercorp-data-operation",
+
   "METADATA_API_URL":  "https://dev-itc-metadata-api-232282934791.us-central1.run.app",
 
   "service_account_job": "dev-demo-migra-matillion-job@dev-itc-customer-services.iam.gserviceaccount.com",

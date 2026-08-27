@@ -7,6 +7,8 @@
   "dataset_stage": "master_stage",
   "dataset_dq": "master_stage",
 
+  "project_stage": "intercorp-data-storage-pv",
+
   "METADATA_API_URL": "https://prd-itcbi-spld-run-usct1-pv01-947655304508.us-central1.run.app",
 
   "service_account_job": "prd-itc-dp-matillion-integrati@silent-matter-270218.iam.gserviceaccount.com",
