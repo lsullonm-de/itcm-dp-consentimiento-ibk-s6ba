@@ -68,8 +68,9 @@ SELECT * FROM UNNEST([
 -- sp_t_consent_transaction_ibk.sql (ver su propio test, T5). Un fixture con id duplicado aquí
 -- ya no representa un escenario real de entrada para esta SP.
 
--- Fila preexistente que el TRUNCATE + INSERT completo debe reemplazar (CAMBIO DE DISEÑO
--- 2026-08-26: ya no es un DELETE+INSERT por partición, es un espejo completo de la tabla).
+-- Fila preexistente que el DELETE por empresa + INSERT completo debe reemplazar (CAMBIO DE
+-- DISEÑO 2026-08-26: ya no es un DELETE+INSERT por partición de fecha, es un espejo completo de
+-- Interbank — NUNCA TRUNCATE, RN-IBK-019, para no tocar filas de otras empresas).
 CREATE OR REPLACE TABLE `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group` AS
 SELECT
   DATE '2026-04-01' AS process_date, '000' AS itc_company_id, 'INTERBANK' AS itc_company_name,
@@ -101,13 +102,14 @@ ASSERT v_write = 3
 ASSERT v_read = v_write
   AS 'T0: o_execution_data_read debía igualar o_execution_data_write, se obtuvo read=' || CAST(v_read AS STRING) || ' write=' || CAST(v_write AS STRING);
 
--- T1: la fila preexistente (PARTY-OLD) debe haber sido eliminada por el TRUNCATE
+-- T1: la fila preexistente (PARTY-OLD, itc_company_id 000) debe haber sido eliminada por el
+-- DELETE por empresa
 SET v_row_count = (
   SELECT COUNT(*) FROM `${project_ba_customer_consent_group}.test_master_party.ba_customer_consent_group`
   WHERE id = 'PARTY-OLD'
 );
 ASSERT v_row_count = 0
-  AS 'T1: la fila preexistente PARTY-OLD debía eliminarse con el TRUNCATE, se obtuvo ' || CAST(v_row_count AS STRING);
+  AS 'T1: la fila preexistente PARTY-OLD debía eliminarse con el DELETE por empresa, se obtuvo ' || CAST(v_row_count AS STRING);
 
 -- T2: solo los 3 casos válidos (CP_2 + otorgado) deben quedar en el output
 SET v_row_count = (

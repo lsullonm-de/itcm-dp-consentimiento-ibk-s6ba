@@ -3,11 +3,12 @@
 -- Generado por: fac-data-stage-coding
 --
 -- CAMBIO DE DISEÑO (2026-08-26, confirmado con el usuario): dejó de acotarse por fecha/scope.
--- Ahora es un TRUNCATE + INSERT de TODO lo que haya en t_consent_transaction que cumpla
--- CP_2/otorgado — un espejo completo, no incremental. El Workflow ya NO la llama una vez por
--- cada fecha del rango: la llama UNA sola vez, después de procesar todas las fechas de la
--- corrida (ver wf-ibk-consentimiento.yaml) — llamarla por fecha truncaría y reconstruiría la
--- tabla completa N veces en el mismo reproceso, puro desperdicio.
+-- Ahora es un DELETE por empresa + INSERT de TODO lo que haya en t_consent_transaction que
+-- cumpla CP_2/otorgado — un espejo completo de Interbank, no incremental (NUNCA TRUNCATE,
+-- RN-IBK-019: la tabla podría tener filas de otras empresas). El Workflow ya NO la llama una
+-- vez por cada fecha del rango: la llama UNA sola vez, después de procesar todas las fechas de
+-- la corrida (ver wf-ibk-consentimiento.yaml) — llamarla por fecha reconstruiría la tabla
+-- completa N veces en el mismo reproceso, puro desperdicio.
 --
 -- p_process_date_ini/end y p_dataset_stage quedan en la firma sin usarse para filtrar (decisión
 -- del usuario, 2026-08-26): esta SP ya no lee ninguna tabla de scope (tmp_t_consent_transaction_ibk
@@ -57,9 +58,11 @@ BEGIN
   SET v_output_path = p_project_output || '.' || p_dataset_output || '.' || p_table_output;
 
   -- ============================================================
-  -- 2. TRUNCATE — espejo completo, no incremental (ver cabecera)
+  -- 2. DELETE por EMPRESA — espejo completo de Interbank, no incremental (ver cabecera)
   -- ============================================================
-  SET v_sql = '''TRUNCATE TABLE `''' || v_output_path || '''`''';
+  -- NUNCA TRUNCATE (corregido 2026-08-26, RN-IBK-019): un TRUNCATE borraría también filas de
+  -- OTRAS empresas que pudiera tener ba_customer_consent_group — se acota el DELETE a Interbank.
+  SET v_sql = '''DELETE FROM `''' || v_output_path || '''` WHERE itc_company_id IN ('000','1000')''';
   EXECUTE IMMEDIATE v_sql;
 
   -- ============================================================

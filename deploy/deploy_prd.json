@@ -3,12 +3,14 @@
     "/data/bigquery/master_party/t_consent_transaction/ddl/ddl_dq_config.sql",
     "/data/bigquery/master_party/t_consent_transaction/ddl/ddl_dq_control.sql",
     "/data/bigquery/master_party/t_consent_transaction/ddl/t_consent_transaction.sql",
+    "/data/bigquery/master_party/t_consent_transaction/ddl/t_consent_transaction_raw.sql",
     "/data/bigquery/master_party/t_consent_transaction/alter/alter_t_consent_transaction_20260819_001.sql",
     "/data/bigquery/master_party/ba_customer_consent_group/ddl/ba_customer_consent_group.sql",
     "/data/bigquery/master_party/ba_customer_consent_group/alter/alter_ba_customer_consent_group_20260819_001.sql"
   ],
   "bigquery_sp": [
     "/data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql",
+    "/data/bigquery/master_party/t_consent_transaction/sp/sp_centralizar_t_consent_transaction_ibk.sql",
     "/data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql",
     "/data/bigquery/master_party/t_consent_transaction/sp/sp_dq_t_consent_transaction.sql",
     "/data/bigquery/master_party/ba_customer_consent_group/sp/sp_ba_customer_consent_group_ibk.sql",
