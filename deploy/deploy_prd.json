@@ -1,4 +1,7 @@
 {
+  "bigquery_ddl": [
+    "/data/bigquery/master_party/ba_customer_consent_group/ddl/ba_customer_consent_group.sql"
+  ],
   "bigquery_sp": [
     "/data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql",
     "/data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql",
