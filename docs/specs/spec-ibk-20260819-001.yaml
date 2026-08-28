@@ -540,11 +540,10 @@ reglas_negocio:
       la DDL, el Workflow y sp_ba_customer_consent_group_ibk.sql ya referenciaban el dataset
       exclusivamente vía esa variable (${dataset_ba_customer_consent_group} /
       p_dataset_output), sin ningún nombre hardcodeado.
-      ⚠️ RIESGO CONOCIDO: el dataset "ba_consent" NO EXISTE todavía en ninguno de los dos
-      proyectos (verificado con INFORMATION_SCHEMA.SCHEMATA en dev-intercorp-data-storage e
-      intercorp-data-storage-pv, 2026-08-28) — CREATE TABLE IF NOT EXISTS crea la tabla pero NO
-      el dataset; si no se aprovisiona antes del deploy, va a fallar con el mismo tipo de error
-      "Dataset ba_consent was not found" que ya se vio 2 veces con otros datasets (RN-IBK-022).
+      RIESGO detectado el 2026-08-28: el dataset "ba_consent" no existía todavía en ninguno de
+      los dos proyectos al momento del cambio de config (verificado con INFORMATION_SCHEMA.SCHEMATA)
+      — CREATE TABLE IF NOT EXISTS crea la tabla pero NO el dataset. RESUELTO el mismo día: el
+      usuario confirmó que el dataset ya fue aprovisionado antes de desplegar.
       t_consent_transaction NO se mueve — sigue en "master_party".
     criticidad: media
     campo_afectado: ba_customer_consent_group
@@ -792,7 +791,8 @@ scheduling:
 # 10. RESTRICCIONES Y SUPUESTOS
 # ------------------------------------------------------------
 restricciones:
-  - "PENDIENTE (2026-08-28): ba_customer_consent_group cambia de dataset a 'ba_consent' (RN-IBK-024, solo config, dataset_ba_customer_consent_group en env_dev.json/env_prd.json) — el dataset NO EXISTE todavía en ningún ambiente (verificado con INFORMATION_SCHEMA.SCHEMATA), necesita aprovisionarse (InfraOps o creación manual) antes de desplegar, o va a fallar con 'Dataset not found' igual que RN-IBK-022"
+  - "RESUELTO (2026-08-28): ba_customer_consent_group cambia de dataset a 'ba_consent' (RN-IBK-024, solo config, dataset_ba_customer_consent_group en env_dev.json/env_prd.json) — el dataset no existía en ningún ambiente al momento del cambio, el usuario confirmó su aprovisionamiento antes de desplegar"
+  - "RESUELTO (2026-08-28): pedido del usuario, deploy_prd.json se reduce a solo la sección bigquery_sp para esta corrida — se quitan bigquery_ddl/workflow/cloud_scheduler/monitoring_register (no se despliegan en este pase). deploy_dev.json no se toca, sigue con todas las secciones"
   - "RESUELTO (2026-08-27): BUG real en el segundo intento de deploy en producción (RN-IBK-023) — sp_t_consent_transaction_ibk.sql fallaba con 'Query column 18 has type DATETIME which cannot be inserted into column load_date, which has type TIMESTAMP'. La tabla real de t_consent_transaction tiene load_date TIMESTAMP en prod pero DATETIME en dev (ya existían con datos de otras empresas antes de este módulo, CREATE TABLE IF NOT EXISTS nunca las unifica). Fix: el SP resuelve el tipo real en runtime vía INFORMATION_SCHEMA.COLUMNS y arma el literal correcto (CURRENT_TIMESTAMP() o CURRENT_DATETIME('America/Lima')) — funciona en ambos ambientes sin asumir un tipo fijo. Verificado que ba_customer_consent_group no tiene este problema (DATETIME en ambos ambientes)"
   - "RESUELTO (2026-08-27): BUG real en el primer intento de deploy en producción (RN-IBK-022) — sp_t_consent_transaction_ibk.sql fallaba con 'Dataset prd-itc-data-sensitive:master_stage was not found' porque la ruta de la tabla de stage usaba ${project_iden_party}, una coincidencia que solo se sostenía en dev. Fix: nueva variable de deploy ${project_stage} en env_dev.json (dev-intercorp-data-operation) y env_prd.json (intercorp-data-storage-pv, confirmado por el usuario y verificado con datos reales)"
   - "RESUELTO (2026-08-27): 2 fixes en sp_t_consent_transaction_ibk.sql (RN-IBK-021), pedidos por el usuario tras revisar la lógica del rollback — (a) el cruce con iden_party sigue siendo solo por party_id, pero ahora se filtra a itc_company_id IN ('000','1000') DESPUÉS del match, evitando que registros de otras empresas del grupo se cuelen en t_consent_transaction; (b) el DELETE de la carga final pasa de ser por (itc_company_id, consent_date) a (itc_company_id, record_source) — corrige de raíz la colisión real confirmada entre t_consent_transaction_20260813_external y ..._20260814_external (mismo MAX(consent_date), el segundo borraba lo insertado por el primero)"
