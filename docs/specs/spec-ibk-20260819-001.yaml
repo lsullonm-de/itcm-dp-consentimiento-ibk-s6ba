@@ -545,6 +545,18 @@ reglas_negocio:
       — CREATE TABLE IF NOT EXISTS crea la tabla pero NO el dataset. RESUELTO el mismo día: el
       usuario confirmó que el dataset ya fue aprovisionado antes de desplegar.
       t_consent_transaction NO se mueve — sigue en "master_party".
+      2do RIESGO real, confirmado con datos de producción (mismo día): el primer deploy en prod
+      solo incluyó bigquery_ddl + bigquery_sp (a pedido del usuario, sin "workflow") — Cloud
+      Workflows resuelve ${dataset_ba_customer_consent_group} en tiempo de DEPLOY (queda
+      "horneado" como literal dentro del Workflow compilado), no en runtime. Como el Workflow no
+      se redesplegó, siguió llamando a sp_ba_customer_consent_group_ibk.sql con el dataset viejo
+      ('master_party') — confirmado vía INFORMATION_SCHEMA.JOBS_BY_PROJECT real: el CALL
+      ejecutado traía 'master_party' hardcodeado en el argumento, y efectivamente insertó
+      6,795,102 filas ahí (verificado que calzan exacto con lo esperado desde
+      t_consent_transaction — el SP en sí nunca tuvo un bug). ba_consent.ba_customer_consent_group
+      quedó en 0 filas. Fix: se agrega "workflow" de vuelta a deploy_prd.json para el siguiente
+      deploy. Las 6,795,102 filas en master_party quedan tal cual, por decisión explícita del
+      usuario (no se borran ni se migran).
     criticidad: media
     campo_afectado: ba_customer_consent_group
     validado_por: lsullon

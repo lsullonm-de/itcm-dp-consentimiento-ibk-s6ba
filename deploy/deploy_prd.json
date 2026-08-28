@@ -8,5 +8,8 @@
     "/data/bigquery/master_party/t_consent_transaction/sp/sp_dq_t_consent_transaction.sql",
     "/data/bigquery/master_party/ba_customer_consent_group/sp/sp_ba_customer_consent_group_ibk.sql",
     "/data/bigquery/master_party/ba_customer_consent_group/sp/sp_dq_ba_customer_consent_group.sql"
+  ],
+  "workflow": [
+    "/pipeline/workflow/master_party/t_consent_transaction/wf-ibk-consentimiento.yaml"
   ]
 }
