@@ -117,38 +117,14 @@ source:
             - var_process_dates: [ '${_param_fecha}' ]
           next: log_modo
 
-      # ---- Modo reproceso: rango [process_date_init, process_date_fin] ----
+      # ---- Modo reproceso: SOLO el último archivo del rango [RN-IBK-025, 2026-08-28] ----
+      # CORRECCIÓN (pedido por el usuario): el archivo de origen es un extracto COMPLETO/acumulado,
+      # no incremental — ya no tiene sentido reprocesar día por día. Se toma process_date_fin
+      # directamente, sin generar ni iterar el rango completo (RN-IBK-025 supera el loop anterior).
       - modo_reproceso:
-          call: googleapis.bigquery.v2.jobs.query
-          args:
-            projectId: ${v_billing_project}
-            body:
-              useLegacySql: false
-              query: ${"SELECT fecha FROM UNNEST(GENERATE_DATE_ARRAY(DATE '" + _param_init + "', DATE '" + _param_fin + "')) AS fecha ORDER BY fecha"}
-          result: bqRangoFechas
-          next: set_fechas_reproceso
-
-      - set_fechas_reproceso:
           assign:
             - var_modo: "reproceso"
-            - var_process_dates: ${map.get(bqRangoFechas, "rows")}
-          next: extraer_fechas_reproceso
-
-      # bqRangoFechas.rows viene como [{f: [{v: "2026-01-01"}]}, ...] — se aplana a una lista simple
-      - extraer_fechas_reproceso:
-          assign:
-            - _fechas_planas: []
-      - construir_lista_fechas:
-          for:
-            value: _fila
-            in: ${var_process_dates}
-            steps:
-              - agregar_fecha:
-                  assign:
-                    - _fechas_planas: ${list.concat(_fechas_planas, _fila.f[0].v)}
-      - set_fechas_planas:
-          assign:
-            - var_process_dates: ${_fechas_planas}
+            - var_process_dates: [ '${_param_fin}' ]
           next: log_modo
 
       - log_modo:
@@ -166,211 +142,139 @@ source:
             - var_execution_type: ${text.to_upper(var_modo)}
 
       # ============================================================
-      # 3. EJECUCIÓN — SP1 por cada fecha en var_process_dates, SP2 UNA sola vez al final
+      # 3. EJECUCIÓN — SP1 UNA sola vez (último archivo), SP2 UNA sola vez después
       # ============================================================
-      # ROLLBACK (2026-08-27, RN-IBK-020): revierte RN-IBK-019 — SP1 (sp_t_consent_transaction_ibk)
-      # vuelve a hacer TODO directo (tabla externa + cruce + DELETE/INSERT) por cada fecha del
-      # rango, en secuencia estricta, escribiendo directo en t_consent_transaction (sin tabla raw
-      # ni SP de centralización). SP2 (sp_ba_customer_consent_group_ibk) sigue llamándose UNA sola
-      # vez, después de terminar iterar_fechas (RN-IBK-017, no se revierte). Cada SP limpia su
-      # propia tabla de stage al terminar (ver cabecera de ambos SPs en data/bigquery/.../sp/).
-      # Si una fecha del rango falla, el except detiene el resto del reproceso — las fechas
-      # anteriores ya quedaron confirmadas (cada SP hace su propio DELETE+INSERT transaccional).
+      # CORRECCIÓN (2026-08-28, RN-IBK-025, pedido por el usuario) — SUPERA RN-IBK-020: ya no hay
+      # loop por fecha. El archivo de origen es un extracto COMPLETO/acumulado (no incremental),
+      # así que solo tiene sentido procesar el ÚLTIMO archivo — normal/manual ya eran un solo
+      # archivo; reproceso ahora también (var_process_dates ya trae un único elemento, ver
+      # modo_reproceso más arriba). Con esto desaparece también la lógica de carga histórica
+      # (RN-IBK-015, superada — ya no hace falta distinguir "primer archivo del reproceso": todo
+      # archivo se carga completo, ver sp_t_consent_transaction_ibk.sql). SP2
+      # (sp_ba_customer_consent_group_ibk) sigue llamándose una sola vez, después de SP1
+      # (RN-IBK-017, no se revierte).
       - ejecutar:
           try:
             steps:
-              # -------- CARGA HISTÓRICA [RN-IBK-015] — solo en reproceso --------
-              # Dentro del try: si esta consulta falla, debe pasar por el mismo manejo de
-              # errores (correo, checkpoint) que el resto del proceso, no caer sin control.
-              # Si t_consent_transaction todavía no tiene ninguna fila de Interbank, el PRIMER
-              # archivo del rango (process_date_init) se carga completo (sin filtro de
-              # consent_date) — el resto del rango sigue el comportamiento normal.
-              - inicializar_carga_historica:
+              - set_fecha_actual:
                   assign:
-                    - var_carga_historica: false
+                    - fecha_actual: ${var_process_dates[0]}
+                    # Checkpoint: si el proceso falla, el except abajo sabe exactamente qué fecha
+                    # se estaba procesando.
+                    - var_ultima_fecha_intentada: ${fecha_actual}
 
-              - verificar_datos_ibk_existentes:
-                  switch:
-                    - condition: ${var_modo == "reproceso"}
-                      next: build_sql_check_ibk
-                    - condition: ${true}
-                      next: iterar_fechas
-
-              - build_sql_check_ibk:
-                  assign:
-                    - query_check_ibk: ${"SELECT COUNT(1) AS cnt FROM `" + var_project_tct + "." + var_dataset_tct + "." + var_table_tct + "` WHERE itc_company_id IN ('000','1000')"}
-
-              - ejecutar_check_ibk:
-                  call: SyncBigQueryJobWithResults
-                  args:
-                    query: ${query_check_ibk}
-                    project_id: ${v_billing_project}
-                  result: resultado_check_ibk
-
-              - evaluar_carga_historica:
-                  assign:
-                    - var_carga_historica: ${int(resultado_check_ibk.rows[0].f[0].v) == 0}
-
-              - log_carga_historica:
+              - log_inicio_fecha:
                   call: sys.log
                   args:
-                    json:
-                      modo: ${var_modo}
-                      carga_historica: ${var_carga_historica}
-                      motivo: "reproceso — sin filas previas de Interbank en t_consent_transaction"
+                    text: ${"[INFO] Procesando process_date = " + fecha_actual}
                     severity: INFO
 
-              - iterar_fechas:
-                  for:
-                    value: fecha_actual
-                    in: ${var_process_dates}
+              # -------- SP 1: sp_t_consent_transaction_ibk --------
+              - build_sql_tct_p1:
+                  assign:
+                    # p_process_date_ini = p_process_date_end = fecha_actual — este SP
+                    # siempre procesa una única fecha (data/rules/bigquery.md).
+                    - sql_tct_p1: ${"DECLARE v_read INT64 DEFAULT 0; "
+                        + "DECLARE v_write INT64 DEFAULT 0; "
+                        + "CALL `" + var_sp_t_consent_transaction + "`("
+                        + "DATE '" + fecha_actual + "'"
+                        + ", DATE '" + fecha_actual + "'"
+                        + ", '" + var_project_archivo + "'"
+                        + ", '" + var_dataset_archivo + "'"}
+
+              - build_sql_tct_p2:
+                  assign:
+                    - sql_tct_p2: ${", '" + var_project_iden_party + "'"
+                        + ", '" + var_dataset_iden_party + "'"
+                        + ", '" + var_table_iden_party + "'"
+                        + ", '" + var_project_tct + "'"
+                        + ", '" + var_dataset_tct + "'"
+                        + ", '" + var_table_tct + "'"}
+
+              - build_sql_tct_p3:
+                  assign:
+                    # p_carga_historica eliminado de la firma del SP [RN-IBK-025] — ya no se pasa.
+                    - sql_tct_p3: ${", '" + var_dataset_stage + "'"
+                        + ", v_read, v_write); "
+                        + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
+
+              - build_sql_tct:
+                  assign:
+                    - query_tct: ${sql_tct_p1 + sql_tct_p2 + sql_tct_p3}
+
+              - log_query_tct:
+                  call: sys.log
+                  args:
+                    text: ${"[BUILD] query_tct = " + query_tct}
+                    severity: INFO
+
+              # invoque_sp_tct queda envuelto en su propio try/except (CAMBIO DE DISEÑO
+              # 2026-08-26, quitados los gates de integridad/DQ): antes, una fecha sin
+              # archivo se detectaba ANTES de llamar a este SP, vía el SP de integridad
+              # (etapas.integridad, eliminado). Ahora sp_t_consent_transaction_ibk.sql ya
+              # lanza su propio RAISE cuando la tabla externa tiene 0 filas (ver su punto
+              # 4) — se reutiliza ESE error para decidir "sin archivo" (RN-IBK-010) en vez
+              # de un chequeo previo separado.
+              - invoque_sp_tct:
+                  try:
                     steps:
-
-                      - log_inicio_fecha:
-                          call: sys.log
+                      - invoque_sp_tct_call:
+                          call: TrackedBigQueryJobWithResults
                           args:
-                            text: ${"[INFO] Procesando process_date = " + fecha_actual}
-                            severity: INFO
-
-                      # Checkpoint: si falla en esta fecha, el except abajo sabe exactamente
-                      # dónde se quedó — permite reanudar el reproceso desde aquí.
-                      - set_checkpoint_fecha:
-                          assign:
-                            - var_ultima_fecha_intentada: ${fecha_actual}
-
-                      # [RN-IBK-015] Carga histórica SOLO para el primer archivo del rango
-                      # (fecha_actual == _param_init), y solo si var_carga_historica = true
-                      # (reproceso sin datos previos de Interbank). Cualquier otra fecha del
-                      # mismo reproceso usa el comportamiento normal.
-                      - evaluar_carga_historica_fecha:
+                            api_url: ${var_METADATA_API_URL}
+                            process_code: ${var_process_code}
+                            execution_id: ${var_execution_id}
+                            task_code: ${var_sp_t_consent_transaction}
+                            execution_type: ${var_execution_type}
+                            process_date_init: ${fecha_actual}
+                            process_date_end: ${fecha_actual}
+                            user: ${var_user}
+                            query: ${query_tct}
+                            project_id: ${v_billing_project}
+                          result: tracked_result_tct
+                  except:
+                    as: e_tct
+                    steps:
+                      # Distingue "sin archivo" (mensaje conocido del RAISE del SP, ver su
+                      # punto 4) de un error real — solo el primero se omite en silencio.
+                      - evaluar_error_tct:
                           switch:
-                            - condition: ${var_carga_historica AND fecha_actual == _param_init}
-                              assign:
-                                - var_es_esta_fecha_historica: true
+                            - condition: ${"status" in e_tct and "errorResult" in e_tct.status and text.match_regex(e_tct.status.errorResult.message, "no se ejecuta DELETE sin INSERT de reemplazo")}
+                              next: registrar_fecha_sin_archivo
                             - condition: ${true}
-                              assign:
-                                - var_es_esta_fecha_historica: false
+                              raise: ${e_tct}
 
-                      # -------- SP 1: sp_t_consent_transaction_ibk --------
-                      # Partido en 3 (no 2) — con p_process_date_ini/end el SP pasó a 12 parámetros
-                      # y sql_tct_p1 solo quedaba a pocos bytes del límite de 400 por expresión.
-                      - build_sql_tct_p1:
-                          assign:
-                            # p_process_date_ini = p_process_date_end = fecha_actual — este SP
-                            # siempre procesa una única fecha (data/rules/bigquery.md).
-                            - sql_tct_p1: ${"DECLARE v_read INT64 DEFAULT 0; "
-                                + "DECLARE v_write INT64 DEFAULT 0; "
-                                + "CALL `" + var_sp_t_consent_transaction + "`("
-                                + "DATE '" + fecha_actual + "'"
-                                + ", DATE '" + fecha_actual + "'"
-                                + ", '" + var_project_archivo + "'"
-                                + ", '" + var_dataset_archivo + "'"}
+              - set_metricas_tct:
+                  assign:
+                    - execution_data_read: ${tracked_result_tct.execution_data_read}
+                    - execution_data_write: ${tracked_result_tct.execution_data_write}
+                    - object_last_load_date: ${tracked_result_tct.object_last_load_date}
 
-                      - build_sql_tct_p2:
-                          assign:
-                            - sql_tct_p2: ${", '" + var_project_iden_party + "'"
-                                + ", '" + var_dataset_iden_party + "'"
-                                + ", '" + var_table_iden_party + "'"
-                                + ", '" + var_project_tct + "'"
-                                + ", '" + var_dataset_tct + "'"
-                                + ", '" + var_table_tct + "'"}
+              - log_fin_fecha:
+                  assign:
+                    - var_fechas_procesadas: ${var_fechas_procesadas + 1}
+                  next: build_sql_bccg_p1
 
-                      - build_sql_tct_p3:
-                          assign:
-                            # p_carga_historica [RN-IBK-015] — BOOL, sin comillas (string(bool)
-                            # da "true"/"false", literal SQL válido, no un STRING).
-                            - sql_tct_p3: ${", '" + var_dataset_stage + "'"
-                                + ", " + string(var_es_esta_fecha_historica)
-                                + ", v_read, v_write); "
-                                + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
+              # [RN-IBK-010] Sin archivo NO es un error — se omite esta fecha y de todas formas
+              # se llama a SP2 (refleja lo que ya haya en t_consent_transaction).
+              - registrar_fecha_sin_archivo:
+                  assign:
+                    - var_fechas_sin_archivo: ${list.concat(var_fechas_sin_archivo, fecha_actual)}
+                  next: log_fecha_sin_archivo
 
-                      - build_sql_tct:
-                          assign:
-                            - query_tct: ${sql_tct_p1 + sql_tct_p2 + sql_tct_p3}
+              - log_fecha_sin_archivo:
+                  call: sys.log
+                  args:
+                    text: ${"[INFO] Sin archivo para folder_date de " + fecha_actual + " — se omite."}
+                    severity: INFO
+                  next: build_sql_bccg_p1
 
-                      - log_query_tct:
-                          call: sys.log
-                          args:
-                            text: ${"[BUILD] query_tct = " + query_tct}
-                            severity: INFO
-
-                      # invoque_sp_tct queda envuelto en su propio try/except (CAMBIO DE DISEÑO
-                      # 2026-08-26, quitados los gates de integridad/DQ): antes, una fecha sin
-                      # archivo se detectaba ANTES de llamar a este SP, vía el SP de integridad
-                      # (etapas.integridad, eliminado). Ahora sp_t_consent_transaction_ibk.sql ya
-                      # lanza su propio RAISE cuando la tabla externa tiene 0 filas (ver su punto
-                      # 4) — se reutiliza ESE error para decidir "sin archivo, sigue con la
-                      # siguiente fecha" (RN-IBK-010) en vez de un chequeo previo separado.
-                      - invoque_sp_tct:
-                          try:
-                            steps:
-                              - invoque_sp_tct_call:
-                                  call: TrackedBigQueryJobWithResults
-                                  args:
-                                    api_url: ${var_METADATA_API_URL}
-                                    process_code: ${var_process_code}
-                                    execution_id: ${var_execution_id}
-                                    task_code: ${var_sp_t_consent_transaction}
-                                    execution_type: ${var_execution_type}
-                                    process_date_init: ${fecha_actual}
-                                    process_date_end: ${fecha_actual}
-                                    user: ${var_user}
-                                    query: ${query_tct}
-                                    project_id: ${v_billing_project}
-                                  result: tracked_result_tct
-                          except:
-                            as: e_tct
-                            steps:
-                              # Distingue "sin archivo" (mensaje conocido del RAISE del SP, ver su
-                              # punto 4) de un error real — solo el primero se omite en silencio.
-                              - evaluar_error_tct:
-                                  switch:
-                                    - condition: ${"status" in e_tct and "errorResult" in e_tct.status and text.match_regex(e_tct.status.errorResult.message, "no se ejecuta DELETE sin INSERT de reemplazo")}
-                                      next: registrar_fecha_sin_archivo
-                                    - condition: ${true}
-                                      raise: ${e_tct}
-
-                      - set_metricas_tct:
-                          assign:
-                            - execution_data_read: ${tracked_result_tct.execution_data_read}
-                            - execution_data_write: ${tracked_result_tct.execution_data_write}
-                            - object_last_load_date: ${tracked_result_tct.object_last_load_date}
-
-                      - log_fin_fecha:
-                          assign:
-                            - var_fechas_procesadas: ${var_fechas_procesadas + 1}
-                          next: fin_iteracion_fecha
-
-                      # [RN-IBK-010] Sin archivo NO aborta el resto del proceso — se omite esta
-                      # fecha y se sigue con la siguiente del rango (reproceso) o se termina OK
-                      # sin cargar nada (normal/manual).
-                      - registrar_fecha_sin_archivo:
-                          assign:
-                            - var_fechas_sin_archivo: ${list.concat(var_fechas_sin_archivo, fecha_actual)}
-                          next: log_fecha_sin_archivo
-
-                      - log_fecha_sin_archivo:
-                          call: sys.log
-                          args:
-                            text: ${"[INFO] Sin archivo para folder_date de " + fecha_actual + " — se omite esta fecha."}
-                            severity: INFO
-                          next: fin_iteracion_fecha
-
-                      # Punto de convergencia de ambas ramas (procesada / sin archivo) — último
-                      # step de esta iteración del for, sin next: pasa a la siguiente fecha del rango.
-                      - fin_iteracion_fecha:
-                          assign:
-                            - _fin_iteracion: true
-
-              # -------- SP 2: sp_ba_customer_consent_group_ibk [CAMBIO DE DISEÑO 2026-08-26] --------
-              # Ya NO se llama por fecha dentro de iterar_fechas: es un DELETE por empresa +
-              # INSERT de TODO t_consent_transaction filtrado por CP_2/otorgado, con su propio
-              # QUALIFY de último evento por cliente (RN-IBK-020) — se ejecuta UNA sola vez, aquí,
-              # después de procesar todas las fechas del rango. Llamarla por fecha reconstruiría
-              # la tabla N veces en el mismo reproceso (ver cabecera del SP). p_process_date_ini/end
-              # ya no filtran datos dentro del SP (se mantienen en la firma por decisión del
-              # usuario) — aquí se les pasa el rango real de esta corrida solo para trazabilidad
-              # en monitoring.
+              # -------- SP 2: sp_ba_customer_consent_group_ibk --------
+              # DELETE por empresa + INSERT de TODO t_consent_transaction filtrado por
+              # CP_2/otorgado, con su propio QUALIFY de último evento por cliente (RN-IBK-020) —
+              # sin cambios en esta corrección. p_process_date_ini/end ya no filtran datos dentro
+              # del SP (se mantienen en la firma por decisión del usuario) — aquí se les pasa la
+              # fecha real de esta corrida solo para trazabilidad en monitoring.
               - build_sql_bccg_p1:
                   assign:
                     - sql_bccg_p1: ${"DECLARE v_read INT64 DEFAULT 0; "

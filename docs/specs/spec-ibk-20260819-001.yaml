@@ -271,6 +271,9 @@ reglas_negocio:
 
   - id: RN-IBK-012
     descripcion: >
+      SUPERADA por RN-IBK-025 (2026-08-28, pedido por el usuario) — el archivo de origen es un
+      extracto COMPLETO/acumulado, no incremental: ya NO se filtra por MAX(consent_date), cada
+      corrida carga el archivo COMPLETO. Se deja el texto de la versión RESTAURADA por historial:
       RESTAURADA por RN-IBK-020 (2026-08-27, rollback de RN-IBK-019) — este filtro por
       MAX(consent_date) vuelve a ser el vigente:
       Los DATOS se filtran por consent_date antes de insertar — no se inserta el archivo
@@ -323,6 +326,10 @@ reglas_negocio:
 
   - id: RN-IBK-015
     descripcion: >
+      SUPERADA por RN-IBK-025 (2026-08-28, pedido por el usuario) — se elimina el parámetro
+      p_carga_historica de sp_t_consent_transaction_ibk.sql y el chequeo previo en el Workflow: ya
+      no hace falta distinguir "primer archivo del reproceso", toda carga es completa (RN-IBK-012
+      superada). Se deja el texto de la versión RESTAURADA por historial:
       RESTAURADA por RN-IBK-020 (2026-08-27, rollback de RN-IBK-019) — vuelve a existir
       p_carga_historica en sp_t_consent_transaction_ibk.sql y el chequeo previo en el Workflow.
       Texto vigente:
@@ -456,6 +463,11 @@ reglas_negocio:
 
   - id: RN-IBK-021
     descripcion: >
+      El punto (2) de abajo (DELETE por record_source) fue SUPERADO por RN-IBK-025 (2026-08-28,
+      pedido por el usuario) — el DELETE vuelve a ser por itc_company_id, el escenario que motivó
+      este fix ya no aplica porque el Workflow ya no procesa más de un archivo por corrida. El
+      punto (1) (filtro de empresa después del cruce por party_id) SIGUE VIGENTE, no se toca. Se
+      deja el texto original completo por historial:
       2 fixes pedidos por el usuario (2026-08-27), en sp_t_consent_transaction_ibk.sql:
       (1) FILTRO DE EMPRESA DESPUÉS DEL CRUCE POR party_id: el cruce contra iden_itc_party_prd
       sigue siendo SOLO por party_id (RN-IBK-019, sin excluir nada — trae los ~6-7M matches), pero
@@ -561,6 +573,37 @@ reglas_negocio:
     campo_afectado: ba_customer_consent_group
     validado_por: lsullon
 
+  - id: RN-IBK-025
+    descripcion: >
+      CORRECCIÓN pedida por el usuario (2026-08-28) — el archivo de origen de Interbank es un
+      extracto COMPLETO/acumulado, no incremental. Cambia el modelo de carga de ambas tablas de
+      salida: SUPERA RN-IBK-012 (filtro MAX(consent_date)), RN-IBK-015 (carga histórica) y el
+      punto (2) de RN-IBK-021 (DELETE por record_source).
+      (1) SOLO SE PROCESA EL ÚLTIMO ARCHIVO: normal/manual ya eran un solo archivo, sin cambio. En
+      reproceso por rango (process_date_init/process_date_fin), el Workflow YA NO itera fecha por
+      fecha — modo_reproceso asigna var_process_dates = [process_date_fin] directamente, sin
+      generar el rango completo (se elimina el GENERATE_DATE_ARRAY, el aplanado de filas y el for
+      iterar_fechas). Las fechas intermedias del rango ya no se procesan.
+      (2) CARGA TOTAL, sin filtro de consent_date: sp_t_consent_transaction_ibk.sql elimina la
+      sección de cálculo de v_max_consent_date/v_date_filter_clause — el archivo se carga
+      COMPLETO siempre. Se elimina el parámetro p_carga_historica de la firma del SP (ya no hace
+      falta distinguir ningún caso especial) y toda la lógica asociada en el Workflow (chequeo
+      previo de filas existentes, var_carga_historica, var_es_esta_fecha_historica).
+      (3) DELETE POR itc_company_id EN AMBAS TABLAS: t_consent_transaction vuelve a hacer
+      DELETE WHERE itc_company_id IN ('000','1000') + INSERT de TODO el archivo (ya no por
+      record_source, RN-IBK-021 punto 2 queda superado) — cada corrida es un espejo completo de
+      Interbank, se asume que el archivo procesado siempre trae la totalidad de la historia
+      vigente. ba_customer_consent_group_ibk.sql NO cambia — ya hacía DELETE por itc_company_id +
+      INSERT con su propio QUALIFY de último evento y el filtro CP_2/otorgado (RN-IBK-020), ese
+      patrón sigue intacto.
+      Riesgo aceptado por el usuario: si el archivo de una corrida NO trae la historia completa
+      vigente, el DELETE por itc_company_id borra igual todo lo anterior — a diferencia de
+      RN-IBK-021 (protegía contra colisiones entre archivos), aquí ya no hay ninguna protección
+      contra un archivo incompleto, porque el diseño asume que eso no puede pasar.
+    criticidad: alta
+    campo_afectado: t_consent_transaction, ba_customer_consent_group, workflow
+    validado_por: lsullon
+
   - id: RN-IBK-017
     descripcion: >
       ba_customer_consent_group pasa de "DELETE+INSERT acotado por itc_company_id + consent_date
@@ -664,7 +707,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party SOLO por party_id (RN-IBK-019, sin excluir nada), filtrando DESPUÉS del match a itc_company_id IN ('000','1000') (RN-IBK-021), filtra por consent_date = MAX(consent_date) real del archivo salvo carga histórica (p_carga_historica, RN-IBK-015), hace delete/insert por (itc_company_id, record_source) — no por consent_date, evita colisión entre archivos con el mismo MAX(consent_date), RN-IBK-021 — guarda el HISTORIAL COMPLETO por cliente, sin QUALIFY (RN-IBK-020, rollback de RN-IBK-011), arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), usa una tabla temporal con sufijo de fecha (RN-IBK-013) en el proyecto ${project_stage} (RN-IBK-022), y resuelve en runtime el tipo real de load_date vía INFORMATION_SCHEMA.COLUMNS (TIMESTAMP en prod, DATETIME en dev — RN-IBK-023)"
+    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party SOLO por party_id (RN-IBK-019, sin excluir nada), filtrando DESPUÉS del match a itc_company_id IN ('000','1000') (RN-IBK-021). Carga el archivo COMPLETO, sin filtro de consent_date ni parámetro p_carga_historica (RN-IBK-025, supera RN-IBK-012/RN-IBK-015). Hace delete/insert por itc_company_id — espejo completo de Interbank (RN-IBK-025, supera el DELETE por record_source de RN-IBK-021) — guarda el HISTORIAL COMPLETO por cliente, sin QUALIFY (RN-IBK-020, rollback de RN-IBK-011), arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), usa una tabla temporal con sufijo de fecha (RN-IBK-013) en el proyecto ${project_stage} (RN-IBK-022), y resuelve en runtime el tipo real de load_date vía INFORMATION_SCHEMA.COLUMNS (TIMESTAMP en prod, DATETIME en dev — RN-IBK-023)"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
@@ -692,7 +735,7 @@ componentes:
 
   - tipo: workflow
     archivo: pipeline/workflow/master_party/t_consent_transaction/wf-ibk-consentimiento.yaml
-    descripcion: "Orquesta tabla externa + SP1 (por cada fecha del rango, directo a t_consent_transaction) + SP2 (una sola vez, al final, RN-IBK-017); soporta process_date normal/manual/reproceso. Aplica el offset de -1 día solo en modo normal (RN-IBK-014); en reproceso verifica si hay datos previos de Interbank para decidir carga histórica del primer archivo (RN-IBK-015). Sin gates de integridad/DQ (RN-IBK-018) — solo procesa/inserta y registra en la API de monitoring; fecha sin archivo se detecta por el RAISE propio de SP1"
+    descripcion: "Orquesta tabla externa + SP1 (UNA sola vez, el último archivo) + SP2 (una sola vez, después de SP1, RN-IBK-017); soporta process_date normal/manual/reproceso. Aplica el offset de -1 día solo en modo normal (RN-IBK-014). En reproceso ya NO itera el rango completo — solo procesa process_date_fin (RN-IBK-025, supera el loop día-por-día y la carga histórica RN-IBK-015). Sin gates de integridad/DQ (RN-IBK-018) — solo procesa/inserta y registra en la API de monitoring; fecha sin archivo se detecta por el RAISE propio de SP1"
 
   - tipo: cloud_scheduler
     archivo: pipeline/scheduler/master_party/t_consent_transaction/cs-ibk-consentimiento.yaml
@@ -803,6 +846,7 @@ scheduling:
 # 10. RESTRICCIONES Y SUPUESTOS
 # ------------------------------------------------------------
 restricciones:
+  - "RESUELTO (2026-08-28): corrección de modelo de carga (RN-IBK-025), pedido por el usuario — el archivo de origen de Interbank es un extracto COMPLETO/acumulado, no incremental. Se elimina el filtro MAX(consent_date) (RN-IBK-012) y el parámetro p_carga_historica (RN-IBK-015): sp_t_consent_transaction_ibk.sql siempre carga el archivo completo. El DELETE de la carga final vuelve a ser por itc_company_id (espejo completo), ya no por record_source (supera el punto 2 de RN-IBK-021). En el Workflow, reproceso por rango ya NO itera fecha por fecha — solo procesa process_date_fin (el último archivo); se elimina el GENERATE_DATE_ARRAY, el loop iterar_fechas y toda la lógica de carga histórica. ba_customer_consent_group_ibk.sql no cambia (ya hacía DELETE por itc_company_id + INSERT con QUALIFY/CP_2/otorgado, RN-IBK-020)"
   - "RESUELTO (2026-08-28): ba_customer_consent_group cambia de dataset a 'ba_consent' (RN-IBK-024, solo config, dataset_ba_customer_consent_group en env_dev.json/env_prd.json) — el dataset no existía en ningún ambiente al momento del cambio, el usuario confirmó su aprovisionamiento antes de desplegar"
   - "RESUELTO (2026-08-28): pedido del usuario, deploy_prd.json se reduce a solo la sección bigquery_sp para esta corrida — se quitan bigquery_ddl/workflow/cloud_scheduler/monitoring_register (no se despliegan en este pase). deploy_dev.json no se toca, sigue con todas las secciones"
   - "RESUELTO (2026-08-27): BUG real en el segundo intento de deploy en producción (RN-IBK-023) — sp_t_consent_transaction_ibk.sql fallaba con 'Query column 18 has type DATETIME which cannot be inserted into column load_date, which has type TIMESTAMP'. La tabla real de t_consent_transaction tiene load_date TIMESTAMP en prod pero DATETIME en dev (ya existían con datos de otras empresas antes de este módulo, CREATE TABLE IF NOT EXISTS nunca las unifica). Fix: el SP resuelve el tipo real en runtime vía INFORMATION_SCHEMA.COLUMNS y arma el literal correcto (CURRENT_TIMESTAMP() o CURRENT_DATETIME('America/Lima')) — funciona en ambos ambientes sin asumir un tipo fijo. Verificado que ba_customer_consent_group no tiene este problema (DATETIME en ambos ambientes)"

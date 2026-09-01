@@ -2,38 +2,37 @@
 -- Spec: spec-ibk-20260819-001 | Módulo: consentimiento-ibk | Fuente: consentimiento_ibk_archivo
 -- Generado por: fac-data-stage-coding
 --
--- ROLLBACK (2026-08-27, pedido por el usuario, RN-IBK-020): revierte RN-IBK-019 — vuelve a hacer
--- TODO directo (tabla externa + cruce + DELETE/INSERT) por cada fecha del rango, sin pasar por
--- una tabla raw ni centralizar solo el último archivo. Se elimina t_consent_transaction_raw y
--- sp_centralizar_t_consent_transaction_ibk.sql (vivieron menos de un día).
+-- CORRECCIÓN (2026-08-28, pedido por el usuario, RN-IBK-025): el archivo de origen es un extracto
+-- COMPLETO/acumulado, no incremental — se abandona el filtro por MAX(consent_date) (RN-IBK-012
+-- SUPERADA) y con él toda la lógica de p_carga_historica (RN-IBK-015 SUPERADA, parámetro
+-- eliminado de la firma): esta SP siempre carga el archivo COMPLETO, sin ningún filtro de
+-- consent_date.
 --
--- t_consent_transaction vuelve a guardar el HISTORIAL COMPLETO por cliente (ya NO "solo el
--- último evento", RN-IBK-011 revertida) — si un id viene otorgado, luego revocado, luego
--- otorgado de nuevo (en fechas/archivos distintos), las 3 filas conviven en la tabla, una por
--- cada consent_date real. La deduplicación "cuál es el estado vigente de cada cliente" ahora es
--- responsabilidad de ba_customer_consent_group_ibk.sql (ver su propio QUALIFY).
+-- El DELETE vuelve a ser por itc_company_id (RN-IBK-021 SUPERADA, ya no por record_source): cada
+-- corrida es un espejo completo de Interbank — se asume que el archivo procesado siempre trae la
+-- totalidad de la historia vigente, no un delta. El Workflow ya NO itera fecha por fecha: en
+-- reprocesos por rango solo se procesa el ÚLTIMO archivo (process_date_fin) — normal/manual ya
+-- eran un solo archivo (ver wf-ibk-consentimiento.yaml).
+--
+-- t_consent_transaction sigue guardando el historial de eventos tal cual viene en el archivo (una
+-- fila por cada consent_date real de cada id, RN-IBK-011 sigue revertida) — la deduplicación
+-- "estado vigente de cada cliente" sigue siendo responsabilidad de ba_customer_consent_group_ibk.sql
+-- (ver su propio QUALIFY, sin cambios).
 --
 -- El cruce con iden_party SIGUE siendo solo por party_id, sin igualar itc_company_id (RN-IBK-019,
--- NO se revierte esa parte) — cada coincidencia de iden_party genera su propia fila, con el
--- itc_company_id/id de ESE registro.
+-- no se toca) — cada coincidencia de iden_party genera su propia fila, con el itc_company_id/id de
+-- ESE registro.
 --
--- Se invoca una vez por fecha a procesar (p_process_date_ini = p_process_date_end, siempre el
--- mismo valor en ambos — el Workflow llama una vez por día, nunca pasa un rango real en una
--- sola llamada, ver data/rules/bigquery.md). El Workflow decide qué fecha(s) pasar según el
--- modo de ejecución (RN-IBK-009):
---   normal   → fecha = fecha de sistema - 1 día (el offset lo aplica el Workflow, no este SP)
---   manual   → fecha = fecha indicada por el usuario, SIN offset
---   reproceso → una llamada por cada día de [process_date_init, process_date_fin], SIN offset
+-- Se invoca una única vez por ejecución (p_process_date_ini = p_process_date_end, siempre el
+-- mismo valor en ambos — nunca un rango real en una sola llamada, ver data/rules/bigquery.md). El
+-- Workflow decide qué fecha pasar según el modo de ejecución (RN-IBK-009):
+--   normal    → fecha = fecha de sistema - 1 día (el offset lo aplica el Workflow, no este SP)
+--   manual    → fecha = fecha indicada por el usuario, SIN offset
+--   reproceso → SOLO process_date_fin (el último archivo del rango, RN-IBK-025) — las fechas
+--               intermedias del rango ya no se procesan.
 --
 -- p_process_date_ini/end representan DIRECTAMENTE la carpeta a leer (folder_date =
 -- p_process_date_ini, sin restarle un día) [RN-IBK-014].
---
--- Los DATOS se filtran por consent_date = v_max_consent_date (el MÁXIMO real del archivo,
--- RN-IBK-012) — NO contra p_process_date_ini/end directamente, porque el desfase entre
--- folder_date y el consent_date de contenido resultó variable ENTRE ARCHIVOS.
--- EXCEPCIÓN: si p_carga_historica = TRUE (RN-IBK-015), no se aplica ningún filtro de consent_date
--- — se toma TODO el historial del archivo. Reservado para el primer archivo de un reproceso
--- cuando t_consent_transaction todavía no tiene ninguna fila de Interbank (carga inicial).
 
 CREATE OR REPLACE PROCEDURE `${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk`(
   -- Este SP siempre procesa una única fecha (RN-IBK-001: una tabla externa por fecha) — el
@@ -59,11 +58,6 @@ CREATE OR REPLACE PROCEDURE `${project_operation}.${dataset_sp}.sp_t_consent_tra
   -- Stage
   p_dataset_stage       STRING,
 
-  -- Carga histórica [RN-IBK-015]: TRUE solo para el primer archivo de un reproceso cuando
-  -- t_consent_transaction no tiene ninguna fila de Interbank todavía — omite el filtro de
-  -- consent_date, trae TODO el historial del archivo. El Workflow decide este valor, no el SP.
-  p_carga_historica     BOOL,
-
   -- MONITORING [etapas.monitoring: true] — filas leídas/escritas de esta ejecución
   OUT o_execution_data_read   INT64,
   OUT o_execution_data_write  INT64
@@ -83,17 +77,6 @@ BEGIN
   DECLARE v_output_path      STRING;
   DECLARE v_sql              STRING;
   DECLARE v_row_count        INT64;
-  -- Fecha real más reciente del archivo [RN-IBK-012] — calculada, no asumida a partir de
-  -- p_process_date_ini/end (ver punto 4b).
-  DECLARE v_max_consent_date DATE;
-  -- Literales de fecha para embeber en el SQL dinámico: dentro de EXECUTE IMMEDIATE no se puede
-  -- referenciar una variable/parámetro por nombre — hay que concatenar su valor como literal.
-  DECLARE v_date_ini_lit     STRING;
-  DECLARE v_date_end_lit     STRING;
-  -- Cláusula de filtro de consent_date, armada condicionalmente [RN-IBK-015]: vacía si
-  -- p_carga_historica = TRUE (trae todo el historial del archivo), o el filtro por
-  -- v_max_consent_date en caso contrario (ver punto 4b).
-  DECLARE v_date_filter_clause STRING;
   -- Sufijo de fecha para la tabla temporal [RN-IBK-013] — evita choques entre ejecuciones
   -- concurrentes (ej. el scheduler normal disparando mientras corre un reproceso manual).
   DECLARE v_process_date_lit STRING;
@@ -177,32 +160,6 @@ BEGIN
       'sp_t_consent_transaction_ibk: 0 filas en %s (fecha_archivo=%s) — no se ejecuta DELETE sin INSERT de reemplazo. Verificar si el archivo diario de Interbank llegó a la ruta esperada.',
       v_ext_table_path, v_folder_date
     );
-  END IF;
-
-  -- ============================================================
-  -- 4b. FECHA DE REFERENCIA REAL DEL ARCHIVO [RN-IBK-012]
-  -- ============================================================
-  -- Se calcula el MAX(consent_date) REAL del archivo y se usa como referencia — se adapta a
-  -- cualquier desfase entre folder_date y el consent_date de contenido, y de paso excluye la
-  -- basura histórica tipo 1900 (nunca va a ser el máximo real de un archivo con actividad
-  -- genuina).
-  --
-  -- EXCEPCIÓN [RN-IBK-015]: si p_carga_historica = TRUE, no se calcula ni se aplica ningún
-  -- filtro — v_date_filter_clause queda vacío y el archivo se carga completo. Reservado para el
-  -- primer archivo de un reproceso cuando t_consent_transaction todavía no tiene ninguna fila de
-  -- Interbank (el Workflow decide esto, ver wf-ibk-consentimiento.yaml).
-  IF p_carga_historica THEN
-    SET v_date_filter_clause = '';
-  ELSE
-    SET v_sql = '''SELECT SAFE_CAST(MAX(consent_date) AS DATE) FROM `''' || v_ext_table_path || '''`''';
-    EXECUTE IMMEDIATE v_sql INTO v_max_consent_date;
-
-    SET v_date_ini_lit = FORMAT_DATE('%F', v_max_consent_date);
-    SET v_date_end_lit = FORMAT_DATE('%F', v_max_consent_date);
-
-    -- String simple (no triple-comillado) — los dobles comillas internas no necesitan escape
-    -- dentro de un literal delimitado por comillas simples.
-    SET v_date_filter_clause = ' AND SAFE_CAST(a.consent_date AS DATE) BETWEEN DATE("' || v_date_ini_lit || '") AND DATE("' || v_date_end_lit || '")';
   END IF;
 
   -- ============================================================
@@ -299,11 +256,8 @@ BEGIN
     ) p
       ON  p.party_id = a.party_id
     WHERE a.itc_company_id IN ('000','1000')
-      -- v_date_filter_clause ya viene armado desde el punto 4b — vacío si p_carga_historica,
-      -- o " AND SAFE_CAST(...) BETWEEN DATE(...) AND DATE(...)" en caso contrario. Se concatena
-      -- entero de una vez (nunca escribir comillas triples dentro de un comentario aquí adentro
-      -- — cierran el string antes de tiempo, ya pasó una vez).
-      ''' || v_date_filter_clause || '''
+      -- Sin filtro de consent_date [RN-IBK-025] — el archivo se carga COMPLETO, sin importar
+      -- p_process_date_ini/end (esos representan la carpeta a leer, no un filtro de contenido).
     -- ROLLBACK (2026-08-27, RN-IBK-020): sin QUALIFY — t_consent_transaction guarda el
     -- HISTORIAL COMPLETO por cliente, no solo el último evento (RN-IBK-011 revertida). Cada
     -- consent_date distinto de un mismo id queda como su propia fila; la dedup "estado vigente"
@@ -312,24 +266,14 @@ BEGIN
   EXECUTE IMMEDIATE v_sql;
 
   -- ============================================================
-  -- 6. DELETE + INSERT EN LA TABLA FINAL [RN-IBK-004] [RN-IBK-021]
+  -- 6. DELETE + INSERT EN LA TABLA FINAL [RN-IBK-004] [RN-IBK-025]
   -- ============================================================
-  -- CORREGIDO 2026-08-27 (RN-IBK-021) — BUG REAL confirmado con datos de dev: el DELETE por
-  -- (itc_company_id, consent_date) asumía que cada consent_date "pertenece" a un solo archivo,
-  -- pero dos folder_dates DISTINTOS pueden calcular el mismo v_max_consent_date real (confirmado:
-  -- t_consent_transaction_20260813_external y t_consent_transaction_20260814_external, ambos con
-  -- MAX(consent_date) = 2026-08-13) — al procesar el segundo archivo, su DELETE borraba TODO lo
-  -- que el primero acababa de insertar para esa fecha, aunque fueran archivos distintos. Pérdida
-  -- de datos real.
-  --
-  -- FIX: el DELETE ahora es por record_source (identifica el ARCHIVO que insertó cada fila, vía
-  -- source_file_name — el nombre del archivo embebe el folder_date, es determinístico por fecha
-  -- de carpeta), no por consent_date. Así, reprocesar la MISMA fecha sigue siendo idempotente
-  -- (reemplaza exactamente lo que ese mismo archivo insertó antes), pero un archivo NUEVO nunca
-  -- toca las filas insertadas por OTRO archivo, así compartan el mismo consent_date real.
-  -- Costo aceptado: si dos archivos distintos traen genuinamente al mismo cliente con el mismo
-  -- consent_date, ahora pueden convivir 2 filas en vez de que el segundo reemplace al primero —
-  -- preferible a perder datos silenciosamente.
+  -- CORRECCIÓN 2026-08-28 (RN-IBK-025, pedido por el usuario) — SUPERA RN-IBK-021: el DELETE
+  -- vuelve a ser por itc_company_id (espejo completo de Interbank), ya no por record_source. Se
+  -- abandona el escenario que motivó RN-IBK-021 (dos archivos distintos con el mismo
+  -- MAX(consent_date) pisándose el DELETE) porque ya no existe ese filtro por fecha — el archivo
+  -- procesado en cada corrida se asume COMPLETO (extracto acumulado, no incremental) y ya no se
+  -- procesa más de un archivo por corrida (el Workflow solo llama con el último, RN-IBK-025).
   SET v_output_path = p_project_output || '.' || p_dataset_output || '.' || p_table_output;
 
   -- ============================================================
@@ -352,13 +296,11 @@ BEGIN
     SET v_load_date_expr = "CURRENT_DATETIME('America/Lima')";
   END IF;
 
+  -- NUNCA TRUNCATE: t_consent_transaction tiene filas de OTRAS empresas (CINEPLANET, INTERSEGURO,
+  -- INTERFONDOS, INTELIGO SAB) — el DELETE se acota a Interbank.
   SET v_sql = '''
-    DELETE FROM `''' || v_output_path || '''` t
-    WHERE t.itc_company_id IN ('000','1000')
-      AND EXISTS (
-        SELECT 1 FROM `''' || v_stage_path || '''` s
-        WHERE t.record_source = 'LPDP_IBK_' || s.source_file_name
-      )
+    DELETE FROM `''' || v_output_path || '''`
+    WHERE itc_company_id IN ('000','1000')
   ''';
   EXECUTE IMMEDIATE v_sql;
 
