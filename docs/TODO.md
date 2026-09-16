@@ -204,6 +204,28 @@
   - `spec.yaml`: nueva RN-IBK-025; RN-IBK-012/RN-IBK-015 marcadas SUPERADAS (se deja el texto de la versión RESTAURADA por historial); RN-IBK-021 marcada con nota de que su punto (2) quedó superado; componentes[] (SP y Workflow) y restricciones[] actualizados.
   - Verificado: comillas triples balanceadas en `sp_t_consent_transaction_ibk.sql` (46, par), YAML del workflow parsea OK, YAML del spec parsea OK.
   - Pendiente: aplicar el mismo commit/push/sync a `prd` que el resto de cambios de esta sesión, y desplegar.
+- [x] **BUG real en producción, encontrado por el usuario (2026-09-16), RN-IBK-026 — 339 registros no ingresaban en una "carga full".** El usuario validó el archivo `20260915` ya desplegado en prod con esta query:
+  ```sql
+  SELECT DISTINCT r.party_id
+  FROM intercorp-data-storage-pv.raw_ibk_dlk.t_consent_transaction_20260915_external r
+  INNER JOIN intercorp-data-storage-pv.master_party.iden_itc_party i
+      ON r.party_id = i.party_id AND i.itc_company_id IN ('000', '1000')
+  LEFT JOIN intercorp-data-storage-pv.master_party.t_consent_transaction m
+      ON i.id = m.id AND m.itc_company_id IN ('000', '1000')
+  WHERE m.id IS NULL;
+  ```
+  Replicada contra prod real (billing `itc-data-governance-01`): **339 `party_id`, confirmado exacto.** Diagnóstico paso a paso con datos reales:
+  - `t_consent_transaction` en prod ya tenía el archivo `20260915` cargado completo (6,820,540 filas, un solo `record_source` — confirma que RN-IBK-025 sí está funcionando como espejo del último archivo).
+  - Los 339 tienen exactamente 1 `id` distinto en `iden_itc_party` (sin ambigüedad de doble registro de empresa) — descarta un problema de resolución de identidad.
+  - Los 339 no tienen `party_id` nulo, `consent_date` inválido, ni pertenecen a otra empresa en el archivo.
+  - **Causa raíz confirmada: los 339 tienen `consent_date_time` NULO** — el dedup de la fuente principal en `sp_t_consent_transaction_ibk.sql` (`WHERE party_id IS NOT NULL AND consent_date_time IS NOT NULL`, regla RI-IBK-T_CONSENT_TRANSACTION-002/003) las descartaba por completo. Contradice la intención de "carga total, no se excluye nada" de RN-IBK-025 — no es un bug de ejecución, es una regla de integridad de una etapa anterior que quedó pisando la carga total.
+  - Usuario, al preguntársele cómo resolver el dedup sin perder ni colapsar mal esas filas: **"debe cargar todo si es carga full, no debería omitirse nada"**.
+  - Fix aplicado: se quita el filtro `consent_date_time IS NOT NULL`; la partición del `ROW_NUMBER()` pasa de `PARTITION BY party_id, consent_date_time` a `PARTITION BY party_id, COALESCE(consent_date_time, GENERATE_UUID())` — cuando `consent_date_time` es NULO, cada fila cae en su propia partición (nunca se colapsa con otra), y solo se siguen deduplicando duplicados EXACTOS cuando sí hay un `consent_date_time` real.
+  - **Validado contra el archivo real `20260915` en prod, con la lógica ya corregida**: 6,860,398 filas raw → 6,820,879 tras el dedup nuevo, de las cuales las 339 con `consent_date_time` NULO sobreviven íntegras (antes se perdían las 339).
+  - Tests: nuevo T9 en `test_sp_t_consent_transaction_ibk.sql` documentando el caso (manual, requiere fixture con `consent_date_time` nulo).
+  - `spec.yaml`: nueva RN-IBK-026; componente de `sp_t_consent_transaction_ibk.sql` y restricciones actualizados.
+  - Verificado: comillas triples balanceadas (46, par), YAML del spec parsea OK.
+  - Pendiente: commit/push a `dev`, sync a `prd`, y volver a desplegar/reprocesar el archivo `20260915` en prod para que las 339 filas entren.
 - [x] **BUG real confirmado (2026-08-21), primera ejecución del workflow:** falló con `exception: URL not reachable ... routine UpdateProcessStatus ... in step update_process_failed`. Diagnóstico: `UpdateProcessStatus`/`CreateExecution`/`UpdateExecution` NO tenían try/except propio (a diferencia de `RegisterIntegrityResults`, que sí atrapa su error y loguea WARNING) — un hiccup de conectividad a la API de metadata (verificado externamente con curl: el servicio SÍ responde, HTTP 200/405 — probablemente cold-start/timeout puntual de Cloud Run, no una URL mala) se propagó sin control y **tapó el error real** que originalmente disparó el `except` (nunca lo vimos). Más grave: `UpdateExecution` se invoca también dentro del `except` de `TrackedBigQueryJobWithResults` — si falla ahí, pierde el error real de BigQuery antes de poder hacer `raise_error`. Fix: los 3 sub-workflows ahora atrapan su propio error y loguean WARNING (mismo patrón que `RegisterIntegrityResults`), nunca rompen el pipeline ni tapan el error original. **Pendiente:** volver a correr el workflow para ver el error real de negocio (probablemente "0 filas en la fuente principal" si aún no se subió el archivo de prueba a `gs://dev-demo-raw-sales-xrt9/...`)
 
 ### ORCHESTRATION

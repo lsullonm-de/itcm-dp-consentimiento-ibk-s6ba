@@ -164,6 +164,23 @@ ASSERT v_row_count = 0
 -- ============================================================
 
 -- ============================================================
+-- T9 (2026-09-16, RN-IBK-026, pedido por el usuario: "debe cargar todo si es carga full, no
+-- debería omitirse nada") — BUG REAL confirmado en producción con el archivo 20260915: 339
+-- filas válidas (party_id correcto, consent_date válido, id único en iden_party) traían
+-- consent_date_time NULO y el dedup de la fuente principal las descartaba por completo
+-- (`AND consent_date_time IS NOT NULL`). Fix: se quita ese filtro; la partición del ROW_NUMBER
+-- cae a GENERATE_UUID() cuando consent_date_time es NULO, así esas filas nunca se colapsan entre
+-- sí. Verificado contra datos reales de producción (no automatizado aquí, requiere fixture con
+-- consent_date_time NULO):
+--   1. COUNT(*) del archivo raw con consent_date_time NULO (ej. 339) debe sobrevivir ÍNTEGRO
+--      tras el dedup — comparar COUNT(*) FROM stage WHERE consent_date_time IS NULL contra ese
+--      mismo conteo en el archivo raw, deben ser IGUALES.
+--   2. Si el fixture trae 2+ filas del MISMO party_id con consent_date_time NULO pero
+--      consent_date/consent_type distintos, las 2 deben sobrevivir como filas separadas (no
+--      colapsar a 1) — GENERATE_UUID() les da una partición distinta a cada una.
+-- ============================================================
+
+-- ============================================================
 -- Cleanup
 -- ============================================================
 DROP TABLE IF EXISTS `${project_t_consent_transaction}.test_master_party.t_consent_transaction`;

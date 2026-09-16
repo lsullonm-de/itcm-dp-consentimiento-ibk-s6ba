@@ -604,6 +604,32 @@ reglas_negocio:
     campo_afectado: t_consent_transaction, ba_customer_consent_group, workflow
     validado_por: lsullon
 
+  - id: RN-IBK-026
+    descripcion: >
+      BUG REAL confirmado con datos de producción (2026-09-16), pedido de fix por el usuario:
+      "debe cargar todo si es carga full, no debería omitirse nada". Al validar el archivo
+      20260915 en prod (intercorp-data-storage-pv) se encontraron 339 party_id que, teniendo
+      match único y válido en iden_itc_party (empresa 000/1000), NO llegaban a
+      t_consent_transaction. Causa raíz confirmada: los 339 tienen consent_date_time NULO en el
+      archivo — el dedup de la fuente principal (sección 5 de sp_t_consent_transaction_ibk.sql,
+      RI-IBK-T_CONSENT_TRANSACTION-002/003) tenía `WHERE party_id IS NOT NULL AND
+      consent_date_time IS NOT NULL`, que descartaba esas 339 filas por completo — en contra de
+      la intención de "carga total" de RN-IBK-025. No es un problema de resolución de id (los 339
+      confirmados con exactamente 1 id distinto en iden_party, sin ambigüedad), ni de formato de
+      consent_date, ni de empresa del archivo — únicamente consent_date_time NULO.
+      Fix: se quita el filtro `consent_date_time IS NOT NULL`. La partición del
+      ROW_NUMBER() OVER (PARTITION BY party_id, consent_date_time ORDER BY load_date DESC) pasa a
+      PARTITION BY party_id, COALESCE(consent_date_time, GENERATE_UUID()) — cuando
+      consent_date_time es NULO, cada fila recibe una partición distinta (GENERATE_UUID() se
+      evalúa por fila), así nunca se colapsan entre sí aunque compartan party_id; solo se siguen
+      deduplicando duplicados EXACTOS cuando sí hay un consent_date_time real y coincide. Validado
+      contra el archivo real 20260915 en prod: las 339 filas con consent_date_time NULO
+      sobreviven íntegras tras el dedup (6,860,398 filas raw → 6,820,879 tras dedup, de las
+      cuales 339 siguen siendo las de consent_date_time NULO, ninguna se perdió).
+    criticidad: alta
+    campo_afectado: t_consent_transaction
+    validado_por: lsullon
+
   - id: RN-IBK-017
     descripcion: >
       ba_customer_consent_group pasa de "DELETE+INSERT acotado por itc_company_id + consent_date
@@ -707,7 +733,7 @@ componentes:
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_t_consent_transaction_ibk.sql
-    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party SOLO por party_id (RN-IBK-019, sin excluir nada), filtrando DESPUÉS del match a itc_company_id IN ('000','1000') (RN-IBK-021). Carga el archivo COMPLETO, sin filtro de consent_date ni parámetro p_carga_historica (RN-IBK-025, supera RN-IBK-012/RN-IBK-015). Hace delete/insert por itc_company_id — espejo completo de Interbank (RN-IBK-025, supera el DELETE por record_source de RN-IBK-021) — guarda el HISTORIAL COMPLETO por cliente, sin QUALIFY (RN-IBK-020, rollback de RN-IBK-011), arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), usa una tabla temporal con sufijo de fecha (RN-IBK-013) en el proyecto ${project_stage} (RN-IBK-022), y resuelve en runtime el tipo real de load_date vía INFORMATION_SCHEMA.COLUMNS (TIMESTAMP en prod, DATETIME en dev — RN-IBK-023)"
+    descripcion: "folder_date = p_process_date_ini directo, sin offset (RN-IBK-014). Cruce con iden_itc_party SOLO por party_id (RN-IBK-019, sin excluir nada), filtrando DESPUÉS del match a itc_company_id IN ('000','1000') (RN-IBK-021). Carga el archivo COMPLETO, sin filtro de consent_date ni parámetro p_carga_historica (RN-IBK-025, supera RN-IBK-012/RN-IBK-015). El dedup de la fuente principal ya NO descarta filas con consent_date_time NULO (RN-IBK-026) — la partición del ROW_NUMBER cae a GENERATE_UUID() en ese caso, para no perder ni colapsar mal esas filas. Hace delete/insert por itc_company_id — espejo completo de Interbank (RN-IBK-025, supera el DELETE por record_source de RN-IBK-021) — guarda el HISTORIAL COMPLETO por cliente, sin QUALIFY (RN-IBK-020, rollback de RN-IBK-011), arma record_source = LPDP_IBK_{archivo} vía _FILE_NAME (RN-IBK-016), usa una tabla temporal con sufijo de fecha (RN-IBK-013) en el proyecto ${project_stage} (RN-IBK-022), y resuelve en runtime el tipo real de load_date vía INFORMATION_SCHEMA.COLUMNS (TIMESTAMP en prod, DATETIME en dev — RN-IBK-023)"
 
   - tipo: sp
     archivo: data/bigquery/master_party/t_consent_transaction/sp/sp_integridad_t_consent_transaction.sql
@@ -846,6 +872,7 @@ scheduling:
 # 10. RESTRICCIONES Y SUPUESTOS
 # ------------------------------------------------------------
 restricciones:
+  - "RESUELTO (2026-09-16): BUG real en producción (RN-IBK-026), encontrado por el usuario al validar el archivo 20260915 — 339 party_id con match único y válido en iden_party no llegaban a t_consent_transaction porque traían consent_date_time NULO y el dedup de la fuente principal los descartaba (WHERE consent_date_time IS NOT NULL). Contradecía la intención de carga total de RN-IBK-025. Fix: se quita el filtro; la partición del ROW_NUMBER cae a GENERATE_UUID() cuando consent_date_time es NULO, para no perder esas filas ni colapsarlas entre sí por error. Validado contra datos reales de prod: las 339 filas sobreviven íntegras tras el fix"
   - "RESUELTO (2026-08-28): corrección de modelo de carga (RN-IBK-025), pedido por el usuario — el archivo de origen de Interbank es un extracto COMPLETO/acumulado, no incremental. Se elimina el filtro MAX(consent_date) (RN-IBK-012) y el parámetro p_carga_historica (RN-IBK-015): sp_t_consent_transaction_ibk.sql siempre carga el archivo completo. El DELETE de la carga final vuelve a ser por itc_company_id (espejo completo), ya no por record_source (supera el punto 2 de RN-IBK-021). En el Workflow, reproceso por rango ya NO itera fecha por fecha — solo procesa process_date_fin (el último archivo); se elimina el GENERATE_DATE_ARRAY, el loop iterar_fechas y toda la lógica de carga histórica. ba_customer_consent_group_ibk.sql no cambia (ya hacía DELETE por itc_company_id + INSERT con QUALIFY/CP_2/otorgado, RN-IBK-020)"
   - "RESUELTO (2026-08-28): ba_customer_consent_group cambia de dataset a 'ba_consent' (RN-IBK-024, solo config, dataset_ba_customer_consent_group en env_dev.json/env_prd.json) — el dataset no existía en ningún ambiente al momento del cambio, el usuario confirmó su aprovisionamiento antes de desplegar"
   - "RESUELTO (2026-08-28): pedido del usuario, deploy_prd.json se reduce a solo la sección bigquery_sp para esta corrida — se quitan bigquery_ddl/workflow/cloud_scheduler/monitoring_register (no se despliegan en este pase). deploy_dev.json no se toca, sigue con todas las secciones"

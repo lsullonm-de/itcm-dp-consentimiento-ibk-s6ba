@@ -208,15 +208,21 @@ BEGIN
       a.signed_document                  AS signed_document,
       a.source_file_name                 AS source_file_name
     FROM (
-      -- [RI-IBK-T_CONSENT_TRANSACTION-002/003] excluir duplicados y llave nula de la fuente
-      -- principal — patrón obligatorio de @.claude/data/standard/data-integrity.md Sección 4.
-      -- Llave = party_id + consent_date_time (NO consent_transaction_id): confirmado con datos
-      -- reales de Interbank (2026-08-21) que ese campo viene SIEMPRE vacío en el archivo, tanto
-      -- en dev como en producción — no es utilizable como parte de la llave del evento. Se sigue
-      -- seleccionando como conset_transaction_id más abajo (columna de auditoría, casi siempre
-      -- NULL), pero ya no participa en el dedup ni en el filtro de llave nula. Tie-break por
-      -- load_date (timestamp de escritura del archivo origen) ante duplicados exactos de
-      -- party_id + consent_date_time.
+      -- [RI-IBK-T_CONSENT_TRANSACTION-002/003] excluir duplicados de la fuente principal —
+      -- patrón de @.claude/data/standard/data-integrity.md Sección 4, AJUSTADO por RN-IBK-026
+      -- (2026-09-16, pedido por el usuario: "debe cargar todo si es carga full, no debería
+      -- omitirse nada"). Llave = party_id + consent_date_time (NO consent_transaction_id, que
+      -- confirmado con datos reales de Interbank 2026-08-21 viene SIEMPRE vacío). Se sigue
+      -- seleccionando consent_transaction_id más abajo como conset_transaction_id (columna de
+      -- auditoría), pero no participa en el dedup.
+      --
+      -- BUG REAL confirmado con datos de producción (2026-09-16, archivo 20260915): 339 filas
+      -- válidas (party_id correcto, consent_date válido, con match único en iden_party) traían
+      -- consent_date_time NULO — el filtro anterior (`AND consent_date_time IS NOT NULL`) las
+      -- descartaba por completo, en contra de la intención de "carga total" de RN-IBK-025. Fix:
+      -- se quita ese filtro; la partición cae a GENERATE_UUID() cuando consent_date_time es NULO,
+      -- de forma que esas filas NUNCA se colapsan entre sí (cada una gana su propio rn=1) — solo
+      -- se deduplican duplicados EXACTOS cuando sí hay un consent_date_time real y coincide.
       SELECT * EXCEPT(rn)
       FROM (
         SELECT t.*,
@@ -225,11 +231,11 @@ BEGIN
           -- para armar record_source = LPDP_IBK_{archivo} más abajo [RN-IBK-016].
           REGEXP_EXTRACT(t._FILE_NAME, r'[^/]+$') AS source_file_name,
           ROW_NUMBER() OVER (
-            PARTITION BY party_id, consent_date_time
+            PARTITION BY party_id, COALESCE(consent_date_time, GENERATE_UUID())
             ORDER BY load_date DESC
           ) AS rn
         FROM `''' || v_ext_table_path || '''` t
-        WHERE party_id IS NOT NULL AND consent_date_time IS NOT NULL
+        WHERE party_id IS NOT NULL
       )
       WHERE rn = 1
     ) a
