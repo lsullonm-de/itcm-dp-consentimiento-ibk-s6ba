@@ -69,10 +69,8 @@ source:
       # ============================================================
       # 2. DETERMINAR MODO DE EJECUCIÓN [RN-IBK-009]
       # ============================================================
-      # normal    → sin argumentos: usa la fecha de sistema ACTUAL (no "ayer" — a diferencia del
-      #             default estándar del framework. El offset de 1 día ya lo aplica el SP sobre
-      #             process_date para calcular folder_date [RN-IBK-002], así que aquí process_date
-      #             debe ser HOY, no ayer)
+      # normal    → sin argumentos: usa la carpeta de HOY (America/Lima), sin offset [RN-IBK-028] —
+      #             Interbank deja el archivo del día D el mismo día D (lunes a viernes)
       # manual    → args.process_date con una fecha específica
       # reproceso → args.process_date_init + args.process_date_fin (rango, ambos inclusive)
       - normalizar_args:
@@ -91,16 +89,18 @@ source:
               next: modo_normal
 
       # ---- Modo normal: fecha de sistema actual (America/Lima) ----
-      # [RN-IBK-014, 2026-08-26] El offset de -1 día (archivo de ayer) se aplica AQUÍ, no en el
-      # SP — var_process_dates queda con la carpeta real a leer, igual que manual/reproceso
-      # (que nunca llevan offset, la fecha que manda el usuario ya es la carpeta exacta).
+      # [RN-IBK-028, 2026-10-26] SUPERA el offset de -1 día de RN-IBK-014: Interbank deja el
+      # archivo del día D el mismo día D, así que la carpeta a leer es la de HOY. Con el offset,
+      # el lunes leía la carpeta del domingo (inexistente) y el archivo del viernes nunca se
+      # procesaba en modo normal. Sábado/domingo (sin archivo) se omiten sin error vía
+      # RN-IBK-010 (ver registrar_fecha_sin_archivo). manual/reproceso no cambian.
       - modo_normal:
           call: googleapis.bigquery.v2.jobs.query
           args:
             projectId: ${v_billing_project}
             body:
               useLegacySql: false
-              query: "SELECT FORMAT_DATE('%F', DATE_SUB(CURRENT_DATE('America/Lima'), INTERVAL 1 DAY)) AS fecha"
+              query: "SELECT FORMAT_DATE('%F', CURRENT_DATE('America/Lima')) AS fecha"
           result: bqFechaHoy
           next: set_fecha_normal
 

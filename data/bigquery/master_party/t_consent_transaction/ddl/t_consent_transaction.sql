@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS `${project_t_consent_transaction}.${dataset_t_consent
   place_id STRING OPTIONS(description="Código identificador del lugar donde se realiza la venta, físico o canal online"),
   consent_type STRING OPTIONS(description="Indica la aprobación ('otorgado') o rechazo del tratamiento de datos"),
   consent_date DATE OPTIONS(description="Fecha en la que el cliente responde — valor real contenido en el archivo, NO se calcula por offset fijo respecto al folder_date (RN-IBK-004). Campo de partición y llave de DELETE+INSERT junto con itc_company_id"),
+  -- Columna ya existente en la tabla real (confirmado por el usuario, 2026-10-26) — poblada desde
+  -- RN-IBK-027; el SP resuelve su tipo real en runtime vía INFORMATION_SCHEMA.
+  consent_date_time DATETIME OPTIONS(description="Fecha y hora real del evento (origen: consent_date_time del archivo IBK). Desempata eventos del mismo consent_date en ba_customer_consent_group (RN-IBK-027)"),
   signed_document STRING OPTIONS(description="Ruta donde se almacena el documento firmado por el cliente"),
   record_source STRING OPTIONS(description="Dato de auditoría: aplicativo origen de los datos"),
   -- DATETIME, no TIMESTAMP como indicaba el contrato original (input/ddl_output_t_consent_transaction.txt):

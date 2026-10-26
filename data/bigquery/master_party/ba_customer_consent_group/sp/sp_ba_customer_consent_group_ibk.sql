@@ -97,7 +97,9 @@ BEGIN
     FROM `''' || v_source_path || '''` tct
     WHERE tct.conset_id = 'CP_2'
       AND tct.itc_company_id IN ('000','1000')
-    QUALIFY ROW_NUMBER() OVER (PARTITION BY tct.id ORDER BY tct.consent_date DESC) = 1
+    -- [RN-IBK-027] consent_date_time desempata eventos del mismo día (otorgado y rechazado el
+    -- mismo consent_date → gana el más reciente). NULL queda al final (DESC NULLS LAST).
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY tct.id ORDER BY tct.consent_date DESC, tct.consent_date_time DESC) = 1
       AND tct.consent_type = 'otorgado'
   ''';
   EXECUTE IMMEDIATE v_sql;

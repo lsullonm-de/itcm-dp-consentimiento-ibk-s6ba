@@ -85,6 +85,11 @@ BEGIN
   -- ya resuelto al tipo correcto.
   DECLARE v_load_date_type   STRING;
   DECLARE v_load_date_expr   STRING;
+  -- Tipo real de consent_date_time en la tabla destino [RN-IBK-027] — la columna ya existe en
+  -- la tabla real; se resuelve igual que load_date para no asumir un tipo fijo por ambiente.
+  -- v_consent_dt_expr es la expresión SQL a insertar, ya convertida al tipo correcto.
+  DECLARE v_consent_dt_type  STRING;
+  DECLARE v_consent_dt_expr  STRING;
 
   SET o_execution_data_read  = 0;
   SET o_execution_data_write = 0;
@@ -205,6 +210,8 @@ BEGIN
       a.place_id                         AS place_id,
       a.consent_type                     AS consent_type,
       SAFE_CAST(a.consent_date AS DATE)  AS consent_date,
+      -- [RN-IBK-027] se conserva como STRING en stage; el cast al tipo real se hace en el INSERT
+      a.consent_date_time                AS consent_date_time,
       a.signed_document                  AS signed_document,
       a.source_file_name                 AS source_file_name
     FROM (
@@ -302,6 +309,27 @@ BEGIN
     SET v_load_date_expr = "CURRENT_DATETIME('America/Lima')";
   END IF;
 
+  -- ============================================================
+  -- 6b. TIPO REAL DE consent_date_time [RN-IBK-027]
+  -- ============================================================
+  -- Antes no se persistía (solo se usaba en el dedup del archivo). Ahora se inserta para que
+  -- ba_customer_consent_group pueda desempatar eventos del mismo consent_date (ej. otorgado y
+  -- rechazado el mismo día → gana el más reciente). SAFE_CAST: un valor mal formado queda NULL
+  -- en vez de romper la carga.
+  SET v_sql = '''SELECT data_type FROM `''' || p_project_output || '''.''' || p_dataset_output || '''.INFORMATION_SCHEMA.COLUMNS` WHERE table_name = "''' || p_table_output || '''" AND column_name = "consent_date_time"''';
+  EXECUTE IMMEDIATE v_sql INTO v_consent_dt_type;
+
+  IF v_consent_dt_type IS NULL THEN
+    RAISE USING MESSAGE = FORMAT(
+      'sp_t_consent_transaction_ibk: la columna consent_date_time no existe en %s — agregarla antes de ejecutar este SP (RN-IBK-027).',
+      v_output_path
+    );
+  ELSEIF v_consent_dt_type = 'STRING' THEN
+    SET v_consent_dt_expr = 'consent_date_time';
+  ELSE
+    SET v_consent_dt_expr = 'SAFE_CAST(consent_date_time AS ' || v_consent_dt_type || ')';
+  END IF;
+
   -- NUNCA TRUNCATE: t_consent_transaction tiene filas de OTRAS empresas (CINEPLANET, INTERSEGURO,
   -- INTERFONDOS, INTELIGO SAB) — el DELETE se acota a Interbank.
   SET v_sql = '''
@@ -317,11 +345,12 @@ BEGIN
     (process_date, itc_company_id, itc_company_name, business_unit_id, business_unit,
      conset_transaction_id, customer_id, id, conset_id, documento_legal_id,
      approval_channel_id, employee_id, place_id, consent_type, consent_date,
-     signed_document, record_source, load_date, creation_user)
+     consent_date_time, signed_document, record_source, load_date, creation_user)
     SELECT
       process_date, itc_company_id, itc_company_name, business_unit_id, business_unit,
       conset_transaction_id, customer_id, id, conset_id, documento_legal_id,
       approval_channel_id, employee_id, place_id, consent_type, consent_date,
+      ''' || v_consent_dt_expr || '''    AS consent_date_time,
       signed_document,
       'LPDP_IBK_' || source_file_name    AS record_source,
       ''' || v_load_date_expr || '''     AS load_date,
