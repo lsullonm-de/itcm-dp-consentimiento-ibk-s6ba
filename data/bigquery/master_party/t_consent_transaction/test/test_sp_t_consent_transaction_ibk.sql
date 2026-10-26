@@ -48,6 +48,7 @@ CALL `${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk`(
   '${project_iden_party}', '${dataset_iden_party}', '${table_iden_party}',
   '${project_t_consent_transaction}', 'test_master_party', 't_consent_transaction',
   'test_stage_tmp',
+  'FULL',   -- [RN-IBK-029] carga base
   v_read, v_write
 );
 
@@ -80,7 +81,8 @@ ASSERT v_row_count = 0
   AS 'T2: se esperaban 0 filas con id NULL en el fixture de test (todas con match en iden_party), se obtuvo ' || CAST(v_row_count AS STRING);
 
 -- ============================================================
--- T3: reproceso — volver a llamar el SP para la misma fecha no debe duplicar filas
+-- T3: INCREMENTAL sobre la misma fecha [RN-IBK-029] — el MERGE solo-insert no debe insertar
+-- nada (todos los eventos ya existen tras la carga FULL de T1) ni duplicar filas
 -- ============================================================
 CALL `${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk`(
   v_fecha_prueba, v_fecha_prueba,
@@ -88,8 +90,12 @@ CALL `${project_operation}.${dataset_sp}.sp_t_consent_transaction_ibk`(
   '${project_iden_party}', '${dataset_iden_party}', '${table_iden_party}',
   '${project_t_consent_transaction}', 'test_master_party', 't_consent_transaction',
   'test_stage_tmp',
+  'INCREMENTAL',
   v_read, v_write
 );
+
+ASSERT v_write = 0
+  AS 'T3: INCREMENTAL sobre el mismo archivo no debía insertar filas, se insertaron ' || CAST(v_write AS STRING);
 
 SET v_row_count = (
   SELECT COUNT(*)

@@ -108,6 +108,7 @@ source:
           assign:
             - var_modo: "normal"
             - var_process_dates: [ '${bqFechaHoy.rows[0].f[0].v}' ]
+            - var_tipo_carga: "INCREMENTAL"
           next: log_modo
 
       # ---- Modo manual: una sola fecha indicada por el usuario ----
@@ -115,16 +116,21 @@ source:
           assign:
             - var_modo: "manual"
             - var_process_dates: [ '${_param_fecha}' ]
+            - var_tipo_carga: "INCREMENTAL"
           next: log_modo
 
       # ---- Modo reproceso: SOLO el último archivo del rango [RN-IBK-025, 2026-08-28] ----
       # CORRECCIÓN (pedido por el usuario): el archivo de origen es un extracto COMPLETO/acumulado,
       # no incremental — ya no tiene sentido reprocesar día por día. Se toma process_date_fin
       # directamente, sin generar ni iterar el rango completo (RN-IBK-025 supera el loop anterior).
+      # [RN-IBK-029, 2026-10-26] El reproceso es la carga FULL (DELETE IBK + INSERT): rehace la
+      # BASE de t_consent_transaction y reinicia la trazabilidad de llegada. normal/manual son
+      # INCREMENTAL (MERGE solo-insert).
       - modo_reproceso:
           assign:
             - var_modo: "reproceso"
             - var_process_dates: [ '${_param_fin}' ]
+            - var_tipo_carga: "FULL"
           next: log_modo
 
       - log_modo:
@@ -132,6 +138,7 @@ source:
           args:
             json:
               modo: ${var_modo}
+              tipo_carga: ${var_tipo_carga}
               cantidad_fechas: ${len(var_process_dates)}
               fechas: ${var_process_dates}
             severity: INFO
@@ -194,7 +201,9 @@ source:
               - build_sql_tct_p3:
                   assign:
                     # p_carga_historica eliminado de la firma del SP [RN-IBK-025] — ya no se pasa.
+                    # p_tipo_carga [RN-IBK-029]: FULL en reproceso, INCREMENTAL en normal/manual.
                     - sql_tct_p3: ${", '" + var_dataset_stage + "'"
+                        + ", '" + var_tipo_carga + "'"
                         + ", v_read, v_write); "
                         + "SELECT v_read AS execution_data_read, v_write AS execution_data_write"}
 
