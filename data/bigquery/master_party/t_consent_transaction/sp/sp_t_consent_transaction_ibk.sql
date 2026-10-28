@@ -26,8 +26,8 @@
 -- Se invoca una única vez por ejecución (p_process_date_ini = p_process_date_end, siempre el
 -- mismo valor en ambos — nunca un rango real en una sola llamada, ver data/rules/bigquery.md). El
 -- Workflow decide qué fecha pasar según el modo de ejecución (RN-IBK-009):
---   normal    → fecha = último día hábil (lunes → viernes, resto → ayer; el Workflow lo calcula,
---               RN-IBK-028) — p_tipo_carga 'INCREMENTAL'
+--   normal    → fecha = fecha de sistema, sin offset (el Workflow lo calcula, RN-IBK-028) —
+--               p_tipo_carga 'INCREMENTAL'
 --   manual    → fecha = fecha indicada por el usuario, SIN offset — p_tipo_carga 'INCREMENTAL'
 --   reproceso → SOLO process_date_fin (el último archivo del rango, RN-IBK-025) — las fechas
 --               intermedias del rango ya no se procesan — p_tipo_carga 'FULL' (rehace la base)

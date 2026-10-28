@@ -69,9 +69,8 @@ source:
       # ============================================================
       # 2. DETERMINAR MODO DE EJECUCIÓN [RN-IBK-009]
       # ============================================================
-      # normal    → sin argumentos: usa la carpeta del ÚLTIMO DÍA HÁBIL (America/Lima) [RN-IBK-028] —
-      #             Interbank deja el archivo del día D en la noche de D (lunes a viernes) y el
-      #             proceso corre en la mañana de D+1; el lunes lee el viernes
+      # normal    → sin argumentos: usa la carpeta de HOY (America/Lima), sin offset [RN-IBK-028] —
+      #             desde el 2026-10-28 Interbank deja el archivo del día D antes de la corrida de D
       # manual    → args.process_date con una fecha específica
       # reproceso → args.process_date_init + args.process_date_fin (rango, ambos inclusive)
       - normalizar_args:
@@ -90,21 +89,18 @@ source:
               next: modo_normal
 
       # ---- Modo normal: fecha de sistema actual (America/Lima) ----
-      # [RN-IBK-028, corregida 2026-10-27] Interbank deja el archivo del día D en la NOCHE de D y
-      # el proceso corre en la MAÑANA de D+1 → la carpeta a leer es la del último día hábil:
-      # lunes → viernes (-3), resto → día anterior (-1). Con un -1 fijo (RN-IBK-014) el lunes
-      # leía el domingo (inexistente) y el archivo del viernes nunca se procesaba en modo normal;
-      # con "hoy" (versión del 2026-10-26) el archivo aún no había llegado. DAYOFWEEK: 1=domingo,
-      # 2=lunes. Si corre sábado/domingo: sábado relee el viernes (el MERGE no inserta nada
-      # repetido), domingo busca el sábado y se omite sin error vía RN-IBK-010. Un archivo que
-      # llegó tarde se recupera en modo manual con su fecha. manual/reproceso no cambian.
+      # [RN-IBK-028, corregida 2026-10-28] Desde el 2026-10-28 Interbank deja el archivo del día D
+      # ANTES de la corrida de la mañana de D → la carpeta a leer es la de HOY, sin offset (antes
+      # el archivo llegaba en la noche de D y se leía el último día hábil). Sábado/domingo no hay
+      # archivo: se omiten sin error vía RN-IBK-010 (ver registrar_fecha_sin_archivo). Un archivo
+      # que llegue tarde se recupera en modo manual con su fecha. manual/reproceso no cambian.
       - modo_normal:
           call: googleapis.bigquery.v2.jobs.query
           args:
             projectId: ${v_billing_project}
             body:
               useLegacySql: false
-              query: "SELECT FORMAT_DATE('%F', DATE_SUB(CURRENT_DATE('America/Lima'), INTERVAL IF(EXTRACT(DAYOFWEEK FROM CURRENT_DATE('America/Lima')) = 2, 3, 1) DAY)) AS fecha"
+              query: "SELECT FORMAT_DATE('%F', CURRENT_DATE('America/Lima')) AS fecha"
           result: bqFechaHoy
           next: set_fecha_normal
 
